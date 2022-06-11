@@ -88,18 +88,20 @@ const sendResponse = async (req:any, res:any, data:any, session:ISession) => {
     const domain = isProduction ? req.hostname : ""
 
     session.cookies.forEach((cookie:Cookie) => {
-        if(cookie.maxAge > 0){
-            res.cookie(cookie.key, cookie.value, {
-                domain:domain,
-                expires:cookie.expires,
-                httpOnly:cookie.httpOnly,
-                maxAge:cookie.maxAge,
-                path:cookie.path,
-                secure:cookie.secure,
-                sameSite:cookie.sameSite,
-                encode: String
-            });
-        }
+
+        if(cookie.maxAge <= 0) return;
+
+        res.cookie(cookie.key, cookie.value, {
+            domain:domain,
+            expires:cookie.expires,
+            httpOnly:cookie.httpOnly,
+            maxAge:cookie.maxAge,
+            path:cookie.path,
+            secure:cookie.secure,
+            sameSite:cookie.sameSite,
+            encode: String
+        });
+
     })
 
     res.set({"ig-auth":session.isAuthenticated});

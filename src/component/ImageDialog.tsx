@@ -18,6 +18,11 @@ let swipeState = {
     direction: "",
 }
 
+const SCALE = 3;
+let tapped :boolean = false;
+let zoomed = false;
+let rect :any = null;
+
 const isHorizontalAction = () => {
     if(swipeState.direction === direction.right || swipeState.direction === direction.left){
         return true;
@@ -29,6 +34,7 @@ const isHorizontalAction = () => {
 const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => void,mediaId:string}) => {
 
     const ref = useRef<HTMLDivElement>(null);
+    const imageRef = useRef<HTMLImageElement>(null);
 
     const getDirection = useCallback((xDiff,yDiff) => {
 
@@ -120,9 +126,6 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
         swipeState = {...swipeState, moveY: yDiff, moveX: xDiff};
 
         if(isHorizontalAction()){
-            if(ref.current){
-                //ref.current.style.transform = `translate(${-swipeState.moveX}px, ${0}px)`
-            }
             return;
         }
 
@@ -137,6 +140,52 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
         }
 
     },[getDirection]);
+
+    const onImageTap = useCallback((e) => {
+
+        if(!tapped) {
+            tapped = true;
+
+            setTimeout(() => {
+                tapped = false;
+            }, 1000 );
+
+            return;
+        }
+
+        tapped = false;
+        changeScale(e)
+
+    },[])
+
+    const changeScale = (e:TouchEvent) => {
+
+        if(!imageRef.current) return;
+
+        if(zoomed){
+            imageRef.current.style["transform"] = "scale(1)"
+            zoomed = false
+        }else{
+
+            let x = e.touches[0].pageX - rect.left;
+            let y = e.touches[0].pageY - rect.top;
+
+            const nextTop = rect.top - y * 2
+            const nextBottom = (rect.top + rect.height * SCALE) - y * 2
+
+            if(nextTop > 0){
+                y = rect.top / 2;
+            }else if(nextBottom < window.screen.height){
+                y = rect.height - rect.top / 2
+            }
+
+            imageRef.current.style["transform-origin" as any] = `${x}px ${y}px`
+            imageRef.current.style["transform"] = `scale(${SCALE})`
+            zoomed = true;
+
+        }
+
+    }
 
     const handleKeydown = useCallback((e:KeyboardEvent) => {
 
@@ -154,6 +203,8 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
         window.addEventListener("touchmove", onTouchMove, { passive: false });
         window.addEventListener("touchend", onTouchEnd);
         document.addEventListener("keydown", handleKeydown, { passive: false });
+        imageRef.current?.addEventListener("touchstart", onImageTap, { passive: false });
+        rect = imageRef.current?.getBoundingClientRect();
 
         return (() => {
             window.removeEventListener("touchstart", onTouchStart);
@@ -162,13 +213,14 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
             document.removeEventListener("keydown", handleKeydown);
         });
 
-    }, [onTouchStart,onTouchMove,onTouchEnd,handleKeydown]);
+    }, [onTouchStart,onTouchMove,onTouchEnd,handleKeydown, onImageTap]);
 
     useEffect( () => () =>  {document.body.style.overflow = ""}, [] );
 
-    const Image = styled("img")({
+    const ImageViewer = styled("img")({
         maxHeight: "100%",
         maxWidth: "100%",
+        transition: "transform 0.5s",
     });
 
     const Backdrop = styled("div")({
@@ -201,7 +253,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
     return (
         <Backdrop>
             <Contaner ref={ref}>
-                <Image alt={mediaId} src={mediaUrl}/>
+                <ImageViewer ref={imageRef} alt={mediaId} src={mediaUrl}/>
             </Contaner>
         </Backdrop>
     )

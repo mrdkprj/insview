@@ -57,7 +57,9 @@ function App(){
     },[])
 
     const onIdle = useCallback( async (scrollTop :number) => {
-        await save(mediaState.user.username, scrollTop);
+        if(mediaState.rowIndex !== scrollTop){
+            await save(mediaState.user.username, scrollTop);
+        }
     },[mediaState]);
 
     const onUsernameDialogClose = (history:IHistory) => {

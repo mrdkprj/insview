@@ -10,6 +10,7 @@ export interface IMediaState {
     history: IHistory,
     isAuthenticated:boolean,
     followings: IFollowing,
+    rowIndex: number,
 };
 
 export const initialMediaState : IMediaState = {
@@ -21,6 +22,7 @@ export const initialMediaState : IMediaState = {
     history:{},
     isAuthenticated:false,
     followings:{users:[], hasNext:false, next:""},
+    rowIndex: 0,
 }
 
 export interface IMediaAction {
@@ -45,13 +47,21 @@ export const mediaStateReducer = (state: IMediaState, action: IMediaAction): IMe
         case MediaAction.reset:
             const user = emptyUser;
             user.username = action.value;
-            return {...state, user: user, data: [], selected: 0, next:"", isAuthenticated:false};
+            return {...state, user: user, data: [], selected: 0, next:"", isAuthenticated:false, rowIndex:0};
 
         case MediaAction.update:
-            return {...state, user: action.value.user, data: action.value.media, selected: 0, next:action.value.next, history: action.value.history, isAuthenticated:action.value.isAuthenticated};
+            return {...state,
+                user: action.value.user,
+                data: action.value.media,
+                selected: 0,
+                next:action.value.next,
+                history: action.value.history,
+                isAuthenticated:action.value.isAuthenticated,
+                rowIndex:action.value.rowIndex
+            };
 
         case MediaAction.append:
-            return {...state, data:state.data.concat(action.value.media), next:action.value.next, isAuthenticated:action.value.isAuthenticated}
+            return {...state, data:state.data.concat(action.value.media), next:action.value.next, isAuthenticated:action.value.isAuthenticated, rowIndex: action.value.rowIndex}
 
         case MediaAction.select:
             return {...state, selected:action.value};
