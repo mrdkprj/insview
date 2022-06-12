@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig, AxiosRequestHeaders, AxiosResponse } from "axios";
+import axios, { AxiosRequestConfig, AxiosRequestHeaders, AxiosResponse, AxiosResponseHeaders } from "axios";
 import { IMedia, IMediaResponse, IUser, AuthError, IAuthResponse, IFollowing, IgRequest, IgResponse, ISession} from "./src/response";
 import tough from "tough-cookie";
 //import crypto from "crypto";
@@ -502,6 +502,17 @@ const formatFollowings = (data:any) :IFollowing => {
 
 }
 
+const extractToken = (headers:AxiosResponseHeaders) => {
+
+    const setCookieHeader = headers["set-cookie"] || [];
+
+    const cookies :tough.Cookie[] = setCookieHeader.map(c => Cookie.parse(c) || new tough.Cookie());
+
+    const { value: csrftoken } = cookies.find(({ key }) => key === "csrftoken") || {}
+
+    return csrftoken;
+}
+
 const login = async (req:IgRequest) : Promise<IgResponse<IAuthResponse>> => {
 
     console.log("----------try login----------")
@@ -526,11 +537,8 @@ const login = async (req:IgRequest) : Promise<IgResponse<IAuthResponse>> => {
         headers["x-instagram-ajax"] = rolloutHash;
 
         const baseResult = await axios.request(options);
-        const baseResultHeaders = baseResult.headers["set-cookie"] || [];
 
-        const baseCookies :tough.Cookie[] = baseResultHeaders.map(c => Cookie.parse(c) || new tough.Cookie());
-
-        const { value: baseCsrftoken } = baseCookies.find(({ key }) => key === "csrftoken") || {}
+        const baseCsrftoken = extractToken(baseResult.headers)
 
         if(!baseCsrftoken){
             throw new Error("Token not found")
@@ -594,11 +602,7 @@ const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosR
 
     let x = 10;
 
-    const checkHeaders = res.headers["set-cookie"] || [];
-
-    const checkCookies :tough.Cookie[] = checkHeaders.map(c => Cookie.parse(c) || new tough.Cookie());
-
-    const { value: checkToken } = checkCookies.find(({ key }) => key === "csrftoken") || {}
+    const checkToken = extractToken(res.headers);
 
     if(!checkToken){
         throw new Error("Token not found")
@@ -617,13 +621,14 @@ const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosR
     options.data = params;
     options.method = "POST"
 
-    const authResponse = await axios.request(options)
+    const redirectResponse = await axios.request(options)
 
     console.log("----------challenge response-------")
-    console.log(authResponse.data)
+    console.log(redirectResponse.data)
+    console.log(redirectResponse.headers)
 
-    const data = {success:authResponse.data.authenticated};
-    const session = getSession(authResponse.headers);
+    const data = {success:redirectResponse.data.status === "ok"};
+    const session = getSession(redirectResponse.headers);
 
     return {
         data,
