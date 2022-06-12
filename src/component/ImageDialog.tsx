@@ -119,6 +119,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
         const xDiff = swipeState.startX - e.touches[0].clientX;
         const yDiff = swipeState.startY - e.touches[0].clientY;
 
+        console.log(yDiff)
         if(!swipeState.direction){
             swipeState.direction = getDirection(xDiff,yDiff);
         }

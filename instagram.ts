@@ -575,7 +575,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<IAuthResponse>> => {
     }catch(ex:any){
 
         if(ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required"){
-            return await challenge(options, ex.response)
+            return await challenge(req.data.username, options, ex.response)
         }
 
         console.log("Login failed")
@@ -590,7 +590,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<IAuthResponse>> => {
     }
 }
 
-const challenge = async (options:AxiosRequestConfig, res:AxiosResponse<any, any>) :Promise<IgResponse<IAuthResponse>> => {
+const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosResponse<any, any>) :Promise<IgResponse<IAuthResponse>> => {
 
     let x = 10;
 
@@ -608,27 +608,14 @@ const challenge = async (options:AxiosRequestConfig, res:AxiosResponse<any, any>
         options.headers["x-csrftoken"] = checkToken;
     }
 
-    options.method = "GET"
-    options.url = baseUrl + res.data.checkpoint_url;
-
-    const checkres = await axios.request(options);
-
-    if(x > 0){
-        console.log("-------challenge---------")
-        console.log(res.data)
-        throw new Error("failed")
-    }
-
-    const url = "https://www.instagram.com/challenge/";
+    const url = baseUrl + res.data.checkpoint_url;
     const params = new URLSearchParams();
     params.append("choice", "0")
-    params.append("next", `//${res.data.checkpoint_url}`)
+    params.append("next", `/${username}`)
 
-    if(options.headers){
-        options.headers["x-csrftoken"] = checkToken;
-    }
     options.url = url;
     options.data = params;
+    options.method = "POST"
 
     const authResponse = await axios.request(options)
 
