@@ -572,8 +572,8 @@ const login = async (req:IgRequest) : Promise<IgResponse<IAuthResponse>> => {
         console.log("----------auth response-------")
         console.log(authResponse.data)
 
-        const data = {success:authResponse.data.authenticated};
         session = getSession(authResponse.headers);
+        const data = {success:session.isAuthenticated};
 
         return {
             data,
@@ -615,7 +615,7 @@ const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosR
     const url = baseUrl + res.data.checkpoint_url;
     const params = new URLSearchParams();
     params.append("choice", "0")
-    params.append("next", `/${username}`)
+    params.append("next", `/${username}/`)
 
     options.url = url;
     options.data = params;
@@ -625,10 +625,25 @@ const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosR
 
     console.log("----------challenge response-------")
     console.log(redirectResponse.data)
-    console.log(redirectResponse.headers)
 
-    const data = {success:redirectResponse.data.status === "ok"};
-    const session = getSession(redirectResponse.headers);
+    options.url = baseUrl + `/${username}/`
+    options.method = "GET"
+    options.data = "";
+
+    const nextToken = extractToken(redirectResponse.headers);
+    if(!nextToken){
+        throw new Error("Token not found")
+    }
+
+    if(options.headers){
+        options.headers["x-csrftoken"] = nextToken;
+    }
+
+    const nextResponse = await axios.request(options)
+    console.log(nextResponse.data)
+
+    const session = getSession(nextResponse.headers);
+    const data = {success:session.isAuthenticated};
 
     return {
         data,
