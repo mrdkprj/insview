@@ -142,9 +142,10 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     },[getDirection]);
 
-    const onImageTap = useCallback((e) => {
+    const onImageTap = useCallback((e:TouchEvent) => {
 
         if(!tapped) {
+
             tapped = true;
 
             setTimeout(() => {
@@ -155,6 +156,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
         }
 
         tapped = false;
+        e.preventDefault();
         changeScale(e)
 
     },[])
@@ -221,7 +223,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
     const ImageViewer = styled("img")({
         maxHeight: "100%",
         maxWidth: "100%",
-        transition: "transform 0.5s",
+        transition: "transform 1s",
     });
 
     const Backdrop = styled("div")({

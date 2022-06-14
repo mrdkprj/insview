@@ -613,24 +613,49 @@ const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosR
     }
 
     const url = baseUrl + res.data.checkpoint_url;
-    const params = new URLSearchParams();
-    params.append("choice", "0")
-    params.append("next", `/${username}/`)
-
     options.url = url;
-    options.data = params;
-    options.method = "POST"
-
-    const redirectResponse = await axios.request(options)
-
-    console.log("----------challenge response-------")
-    console.log(redirectResponse.data)
-
-    options.url = baseUrl + `/${username}/`
     options.method = "GET"
     options.data = "";
 
-    const nextToken = extractToken(redirectResponse.headers);
+    const redirectResponse = await axios.request(options)
+
+    const redToken = extractToken(redirectResponse.headers);
+
+    if(!redToken){
+        throw new Error("Token not found")
+    }
+
+    let sharedData :any;
+    try{
+        sharedData  = JSON.parse(redirectResponse.data.match(/<script type="text\/javascript">window\._sharedData = (.*)<\/script>/)[1].slice(0, -1));
+    }catch(ex:any){
+        sharedData = {rollout_hash:null};
+    }
+
+    const rolloutHash = sharedData.rollout_hash;
+
+    if(options.headers){
+        options.headers["x-requested-with"] = "XMLHttpRequest"
+        options.headers["x-csrftoken"] = redToken;
+        if(rolloutHash){
+            options.headers["x-instagram-ajax"] = rolloutHash;
+        }
+        options.headers["content-type"] = "application/x-www-form-urlencoded"
+    }
+
+    const params = new URLSearchParams();
+    params.append("choice", "0")
+    params.append("next", `/${username}/`)
+    options.data = params;
+    options.method = "POST"
+
+    const nextRes = await axios.request(options)
+
+    console.log("----------challenge response-------")
+    console.log(nextRes.data)
+
+    const nextToken = extractToken(nextRes.headers);
+
     if(!nextToken){
         throw new Error("Token not found")
     }
@@ -639,10 +664,14 @@ const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosR
         options.headers["x-csrftoken"] = nextToken;
     }
 
-    const nextResponse = await axios.request(options)
-    console.log(nextResponse.data)
+    options.url = baseUrl + "/zerohor3/";
+    options.method = "GET"
+    options.data = "";
 
-    const session = getSession(nextResponse.headers);
+    const finalRes = await axios.request(options)
+    console.log(finalRes.data)
+
+    const session = getSession(finalRes.headers);
     const data = {success:session.isAuthenticated};
 
     return {
