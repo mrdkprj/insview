@@ -669,7 +669,8 @@ const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosR
     options.data = "";
 
     const finalRes = await axios.request(options)
-    console.log(finalRes.data)
+    console.log(finalRes.headers)
+    console.log(res.data.checkpoint_url)
 
     const session = getSession(finalRes.headers);
     const data = {success:session.isAuthenticated};
