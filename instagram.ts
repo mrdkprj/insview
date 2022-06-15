@@ -1,6 +1,7 @@
 import axios, { AxiosRequestConfig, AxiosRequestHeaders, AxiosResponse, AxiosResponseHeaders } from "axios";
 import { IMedia, IMediaResponse, IUser, AuthError, IAuthResponse, IFollowing, IgRequest, IgResponse, ISession} from "./src/response";
 import tough from "tough-cookie";
+import fs from "fs";
 //import crypto from "crypto";
 
 const GRAPH_QL = "#GRAPH_QL";
@@ -598,6 +599,26 @@ const login = async (req:IgRequest) : Promise<IgResponse<IAuthResponse>> => {
     }
 }
 
+const setC = (headers:any) => {
+
+    const cookies = headers["set-cookie"] instanceof Array ? headers["set-cookie"] : [headers["set-cookie"]]
+
+    let cook :string = "";
+
+    cookies.forEach((cookieString:string) => {
+
+        const cookie = Cookie.parse(cookieString);
+
+        if(!cookie){
+            return
+        }
+
+        cook += `${cookie.key}=${cookie.value};`
+
+    })
+
+    return cook;
+}
 const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosResponse<any, any>) :Promise<IgResponse<IAuthResponse>> => {
 
     let x = 10;
@@ -610,6 +631,7 @@ const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosR
 
     if(options.headers){
         options.headers["x-csrftoken"] = checkToken;
+        options.headers.Cookie = setC(res.headers)
     }
 
     const url = baseUrl + res.data.checkpoint_url;
@@ -617,9 +639,13 @@ const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosR
     options.method = "GET"
     options.data = "";
 
-    const redirectResponse = await axios.request(options)
+    const checkRes = await axios.request(options)
 
-    const redToken = extractToken(redirectResponse.headers);
+    const redToken = extractToken(checkRes.headers);
+
+    console.log(res.request.responseURL)
+    console.log(checkRes.headers)
+    console.log(checkRes.data)
 
     if(!redToken){
         throw new Error("Token not found")
@@ -627,7 +653,7 @@ const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosR
 
     let sharedData :any;
     try{
-        sharedData  = JSON.parse(redirectResponse.data.match(/<script type="text\/javascript">window\._sharedData = (.*)<\/script>/)[1].slice(0, -1));
+        sharedData  = JSON.parse(checkRes.data.match(/<script type="text\/javascript">window\._sharedData = (.*)<\/script>/)[1].slice(0, -1));
     }catch(ex:any){
         sharedData = {rollout_hash:null};
     }
