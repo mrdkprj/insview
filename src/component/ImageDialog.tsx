@@ -148,6 +148,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
         e.stopPropagation();
 
         onTouchStart(e);
+
         if(!tapped) {
 
             tapped = true;
@@ -227,7 +228,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
     const ImageViewer = styled("img")({
         maxHeight: "100%",
         maxWidth: "100%",
-        transition: "transform 0.5s",
+        transition: "transform 0.7s",
     });
 
     const Backdrop = styled("div")({
