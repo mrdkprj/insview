@@ -1,8 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosRequestHeaders, AxiosResponse, AxiosResponseHeaders } from "axios";
 import { IMedia, IMediaResponse, IUser, AuthError, IAuthResponse, IFollowing, IgRequest, IgResponse, ISession} from "./src/response";
 import tough from "tough-cookie";
-import fs from "fs";
-//import crypto from "crypto";
 
 const GRAPH_QL = "#GRAPH_QL";
 const baseUrl = "https://www.instagram.com"
@@ -699,7 +697,8 @@ const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosR
     console.log(res.data.checkpoint_url)
 
     const session = getSession(finalRes.headers);
-    const data = {success:session.isAuthenticated};
+    //const data = {success:session.isAuthenticated};
+    const data = {success:true};
 
     return {
         data,

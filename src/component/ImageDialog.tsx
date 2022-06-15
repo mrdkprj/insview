@@ -55,7 +55,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
     },[])
 
     const onTouchStart = useCallback((e) => {
-
+        console.log("start")
         swipeState = {
             startX: e.touches[0].clientX,
             startY: e.touches[0].clientY,
@@ -144,6 +144,10 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     const onImageTap = useCallback((e:TouchEvent) => {
 
+        e.preventDefault();
+        e.stopPropagation();
+
+        onTouchStart(e);
         if(!tapped) {
 
             tapped = true;
@@ -156,11 +160,10 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
         }
 
         tapped = false;
-        e.preventDefault();
-        e.stopPropagation();
+
         changeScale(e)
 
-    },[])
+    },[onTouchStart])
 
     const changeScale = (e:TouchEvent) => {
 
