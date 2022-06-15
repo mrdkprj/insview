@@ -144,11 +144,6 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     const onImageTap = useCallback((e:TouchEvent) => {
 
-        e.preventDefault();
-        e.stopPropagation();
-
-        onTouchStart(e);
-
         if(!tapped) {
 
             tapped = true;
@@ -164,7 +159,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
         changeScale(e)
 
-    },[onTouchStart])
+    },[])
 
     const changeScale = (e:TouchEvent) => {
 

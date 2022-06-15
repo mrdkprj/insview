@@ -48,6 +48,7 @@ const getSession = (headers:any) :ISession => {
             }
 
             if(cookie.key.toLocaleLowerCase() === "sessionid"){
+                console.log(cookie.expires)
                 session.isAuthenticated = true;
             }
 
