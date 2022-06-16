@@ -644,30 +644,17 @@ const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosR
 
     const redToken = extractToken(checkRes.headers);
 
-    console.log(res.request.responseURL)
     console.log(checkRes.headers)
-    console.log(checkRes.data)
 
     if(!redToken){
         throw new Error("Token not found")
     }
 
     console.log("----------challenge post start-------")
-    let sharedData :any;
-    try{
-        sharedData  = JSON.parse(checkRes.data.match(/<script type="text\/javascript">window\._sharedData = (.*)<\/script>/)[1].slice(0, -1));
-    }catch(ex:any){
-        sharedData = {rollout_hash:null};
-    }
-
-    const rolloutHash = sharedData.rollout_hash;
 
     if(options.headers){
         options.headers["x-requested-with"] = "XMLHttpRequest"
         options.headers["x-csrftoken"] = redToken;
-        if(rolloutHash){
-            options.headers["x-instagram-ajax"] = rolloutHash;
-        }
         options.headers["content-type"] = "application/x-www-form-urlencoded"
     }
 
