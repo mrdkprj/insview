@@ -642,7 +642,7 @@ const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosR
 
     const checkToken = extractToken(checkRes.headers);
 
-    console.log(checkRes.headers)
+    console.log(checkRes.data)
 
     if(!checkToken){
         throw new Error("Token not found")
@@ -651,13 +651,14 @@ const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosR
     console.log("----------challenge post start-------")
 
     try{
+        /*
         if(options.headers){
             options.headers["x-requested-with"] = "XMLHttpRequest"
             options.headers["x-csrftoken"] = checkToken;
             options.headers["content-type"] = "application/x-www-form-urlencoded"
             options.headers.Cookie = setC(checkRes.headers)
         }
-
+*/
         const params = new URLSearchParams();
         params.append("choice", "1")
         //params.append("next", `/${username}/`)
