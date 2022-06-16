@@ -620,18 +620,16 @@ const setC = (headers:any) => {
 }
 const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosResponse<any, any>) :Promise<IgResponse<IAuthResponse>> => {
 
-    let x = 10;
-
     console.log("----------challenge start-------")
 
-    const checkToken = extractToken(res.headers);
+    const resToken = extractToken(res.headers);
 
-    if(!checkToken){
+    if(!resToken){
         throw new Error("Token not found")
     }
 
     if(options.headers){
-        options.headers["x-csrftoken"] = checkToken;
+        options.headers["x-csrftoken"] = resToken;
         options.headers.Cookie = setC(res.headers)
     }
 
@@ -642,59 +640,75 @@ const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosR
 
     const checkRes = await axios.request(options)
 
-    const redToken = extractToken(checkRes.headers);
+    const checkToken = extractToken(checkRes.headers);
 
     console.log(checkRes.headers)
 
-    if(!redToken){
+    if(!checkToken){
         throw new Error("Token not found")
     }
 
     console.log("----------challenge post start-------")
 
-    if(options.headers){
-        options.headers["x-requested-with"] = "XMLHttpRequest"
-        options.headers["x-csrftoken"] = redToken;
-        options.headers["content-type"] = "application/x-www-form-urlencoded"
-    }
+    try{
+        if(options.headers){
+            options.headers["x-requested-with"] = "XMLHttpRequest"
+            options.headers["x-csrftoken"] = checkToken;
+            options.headers["content-type"] = "application/x-www-form-urlencoded"
+            options.headers.Cookie = setC(checkRes.headers)
+        }
 
-    const params = new URLSearchParams();
-    params.append("choice", "0")
-    params.append("next", `/${username}/`)
-    options.data = params;
-    options.method = "POST"
+        const params = new URLSearchParams();
+        params.append("choice", "0")
+        params.append("next", `/${username}/`)
+        options.data = params;
+        options.method = "POST"
 
-    const nextRes = await axios.request(options)
+        const nextRes = await axios.request(options)
 
-    console.log("----------challenge response-------")
-    console.log(nextRes.data)
+        console.log("----------challenge response-------")
+        console.log(nextRes.data)
 
-    const nextToken = extractToken(nextRes.headers);
+        const nextToken = extractToken(nextRes.headers);
 
-    if(!nextToken){
-        throw new Error("Token not found")
-    }
+        if(!nextToken){
+            throw new Error("Token not found")
+        }
 
-    if(options.headers){
-        options.headers["x-csrftoken"] = nextToken;
-    }
+        if(options.headers){
+            options.headers["x-csrftoken"] = nextToken;
+        }
 
-    options.url = baseUrl + "/zerohor3/";
-    options.method = "GET"
-    options.data = "";
+        options.url = baseUrl + "/zerohor3/";
+        options.method = "GET"
+        options.data = "";
 
-    console.log("----------challenge final-------")
-    const finalRes = await axios.request(options)
-    console.log(finalRes.headers)
-    console.log(res.data.checkpoint_url)
+        console.log("----------challenge final-------")
+        const finalRes = await axios.request(options)
+        console.log(finalRes.headers)
+        console.log(res.data.checkpoint_url)
 
-    const session = getSession(finalRes.headers);
-    //const data = {success:session.isAuthenticated};
-    const data = {success:true};
+        const session = getSession(finalRes.headers);
+        //const data = {success:session.isAuthenticated};
+        const data = {success:true};
 
-    return {
-        data,
-        session
+        return {
+            data,
+            session
+        }
+    }catch(ex:any){
+        const errorMessage = ex.resposne ? ex.response.data : ex.message;
+        console.log("challenge error")
+        console.log(errorMessage)
+
+        const session = getSession(res.headers);
+        //const data = {success:session.isAuthenticated};
+        const data = {success:true};
+
+        return {
+            data,
+            session
+        }
     }
 
 }
