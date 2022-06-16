@@ -668,7 +668,7 @@ const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosR
 
         console.log("----------challenge response-------")
         console.log(nextRes.data)
-
+/*
         const nextToken = extractToken(nextRes.headers);
 
         if(!nextToken){
@@ -691,10 +691,10 @@ const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosR
         const session = getSession(finalRes.headers);
         //const data = {success:session.isAuthenticated};
         const data = {success:true};
-
+*/
         return {
-            data,
-            session
+            data:{success:true},
+            session:getSession(nextRes.headers)
         }
     }catch(ex:any){
         const errorMessage = ex.resposne ? ex.response.data : ex.message;
