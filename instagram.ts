@@ -700,18 +700,18 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<IAuthResponse>> => 
 
     const headers = createHeaders(baseUrl, currentSession);
     headers.Cookie = req.headers.cookie ?? "";
+    headers["content-type"] = "application/x-www-form-urlencoded"
 
-    const data = {
-        csrfmiddlewaretoken: currentSession.csrfToken,
-        verify: "Verify Account",
-        security_code: req.data.code,
-    }
+    const params = new URLSearchParams();
+    params.append("csrfmiddlewaretoken", currentSession.csrfToken)
+    params.append("verify",  "Verify Account")
+    params.append("security_code", req.data.code)
 
     const options :AxiosRequestConfig = {
         url,
         method: "POST",
         headers,
-        data,
+        data: params,
         withCredentials:true
     }
 
