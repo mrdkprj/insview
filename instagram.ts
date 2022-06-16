@@ -651,14 +651,12 @@ const requestChallenge = async (username:string, options:AxiosRequestConfig, res
 
     const checkToken = extractToken(checkRes.headers);
 
-    console.log(checkRes.data)
-
     if(!checkToken){
         throw new Error("Token not found")
     }
 
     console.log("----------challenge post start-------")
-
+    //"rollout_hash":"(.*)",
     const params = new URLSearchParams();
     params.append("choice", "1")
     options.data = params;
@@ -686,7 +684,7 @@ const requestChallenge = async (username:string, options:AxiosRequestConfig, res
 const challenge = async (req:IgRequest) : Promise<IgResponse<IAuthResponse>> => {
 
     const currentSession = getSession(req.headers);
-
+    console.log(req.data)
     let x = 0;
     if(x > 0){
         console.log(req.data)
@@ -698,8 +696,10 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<IAuthResponse>> => 
 
     const url = req.data.endpoint;
 
-    const headers = createHeaders(baseUrl, currentSession);
+    const headers = createHeaders(url, currentSession);
     headers.Cookie = req.headers.cookie ?? "";
+
+    headers["x-requested-with"] = "XMLHttpRequest"
     headers["content-type"] = "application/x-www-form-urlencoded"
 
     const params = new URLSearchParams();
@@ -721,7 +721,7 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<IAuthResponse>> => 
 
         console.log(response.data)
         const session = getSession(response.headers);
-        const data = {success:session.isAuthenticated, challenge:false, endpoint:""};
+        const data = {success:session.isAuthenticated, challenge:!session.isAuthenticated, endpoint:url};
 
         return {
             data,
