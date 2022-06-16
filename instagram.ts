@@ -720,7 +720,15 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<IAuthResponse>> => 
         const response = await axios.request(options);
 
         console.log(response.data)
-        const session = getSession(response.headers);
+
+        options.url = response.data.location;
+        options.data = "";
+        options.method = "GET"
+        const res = await axios.request(options);
+
+        console.log(res.data)
+
+        const session = getSession(res.headers);
         const data = {success:session.isAuthenticated, challenge:!session.isAuthenticated, endpoint:url};
 
         return {
