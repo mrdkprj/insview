@@ -622,6 +622,8 @@ const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosR
 
     let x = 10;
 
+    console.log("----------challenge start-------")
+
     const checkToken = extractToken(res.headers);
 
     if(!checkToken){
@@ -650,6 +652,7 @@ const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosR
         throw new Error("Token not found")
     }
 
+    console.log("----------challenge post start-------")
     let sharedData :any;
     try{
         sharedData  = JSON.parse(checkRes.data.match(/<script type="text\/javascript">window\._sharedData = (.*)<\/script>/)[1].slice(0, -1));
@@ -693,6 +696,7 @@ const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosR
     options.method = "GET"
     options.data = "";
 
+    console.log("----------challenge final-------")
     const finalRes = await axios.request(options)
     console.log(finalRes.headers)
     console.log(res.data.checkpoint_url)
