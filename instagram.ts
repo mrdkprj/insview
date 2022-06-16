@@ -659,8 +659,8 @@ const challenge = async (username:string, options:AxiosRequestConfig, res:AxiosR
         }
 
         const params = new URLSearchParams();
-        params.append("choice", "0")
-        params.append("next", `/${username}/`)
+        params.append("choice", "1")
+        //params.append("next", `/${username}/`)
         options.data = params;
         options.method = "POST"
 
