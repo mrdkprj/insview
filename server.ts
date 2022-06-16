@@ -8,7 +8,7 @@ import type { Cookie } from "tough-cookie";
 import db from "./db/db"
 import { AuthError, IHistory, IMediaResponse, ISession, IUser } from "./src/response";
 import { IMediaTable } from "./db/IDatabase";
-import {login, requestMedia, requestMore, requestImage, logout, requestFollowings, getSession} from "./instagram"
+import {login, challenge, requestMedia, requestMore, requestImage, logout, requestFollowings, getSession} from "./instagram"
 
 declare module "express-session" {
     interface SessionData {
@@ -181,6 +181,12 @@ app.post("/login", async (req, res) => {
 
 })
 
+app.post("/challenge", async (req, res) => {
+
+    await tryChallenge(req, res, req.body.code, req.body.endpoint);
+
+})
+
 app.post("/logout", async (req:any, res:any) => {
 
     await tryLogout(req, res);
@@ -267,6 +273,22 @@ const tryLogin = async (req:any, res:any, username:string, password:string) => {
         sendErrorResponse(res, ex, "Login failed");
 
     }
+}
+
+const tryChallenge = async (req:any, res:any, code:string, endpoint:string) => {
+
+    try{
+
+        const result = await challenge({data:{code, endpoint}, headers:req.headers})
+
+        await sendResponse(req, res, result.data, result.session);
+
+    }catch(ex:any){
+
+        sendErrorResponse(res, ex, "Challenge failed");
+
+    }
+
 }
 
 const tryLogout = async (req:any, res:any) => {

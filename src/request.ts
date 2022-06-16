@@ -115,6 +115,34 @@ const getFollowings = async (next:string) => {
     }
 }
 
+const challenge = async (code:string, endpoint:string) => {
+
+    const url = "/challenge";
+    const method = "POST";
+    const data = {code,endpoint};
+
+    const headers = {"Content-Type": "application/json"}
+
+    const options :AxiosRequestConfig = {
+        method,
+        url,
+        headers,
+        data,
+        withCredentials:true
+    }
+
+    try{
+        const result :AxiosResponse<IAuthResponse> = await axios.request(options);
+
+        return result.data;
+
+    }catch(ex:any){
+
+        return throwError(ex)
+
+    }
+}
+
 const logout = async () => {
 
     const url = "/logout";
@@ -200,4 +228,4 @@ const throwError = (ex:any) => {
 
 }
 
-export { login, logout, query, queryMore, getFollowings, save, deleteHistory}
+export { login, challenge, logout, query, queryMore, getFollowings, save, deleteHistory}

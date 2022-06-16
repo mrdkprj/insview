@@ -16,7 +16,7 @@ import ImageDialog from "./component/ImageDialog";
 import LoginDialog from "./component/LoginDialog"
 import AccountDialog from "./component/AccountDialog";
 import {Grid, scrollTo} from "./component/Grid"
-import {query, save, queryMore, login, logout, getFollowings, deleteHistory} from "./request";
+import {query, save, queryMore, login, challenge, logout, getFollowings, deleteHistory} from "./request";
 import useWindowDimensions from "./dimensions";
 import {appStateReducer, initialAppState, AppAction} from "./state/appStateReducer";
 import {mediaStateReducer, initialMediaState, MediaAction} from "./state/mediaStateReducer";
@@ -156,8 +156,13 @@ function App(){
         try{
 
             const result = await login(username, password);
-            dispatchMediaState({type:MediaAction.toggleAuth, value: result.success})
-            dispatchAppState({type:AppAction.toggleLoginModal, value:!result.success})
+
+            dispatchAppState({type:AppAction.toggleVerification, value:{value:result.challenge, url:result.endpoint}})
+
+            if(!result.challenge){
+                dispatchMediaState({type:MediaAction.toggleAuth, value: result.success})
+                dispatchAppState({type:AppAction.toggleLoginModal, value:!result.success})
+            }
 
         }catch(ex:any){
 
@@ -168,6 +173,29 @@ function App(){
         }
 
     },[handleError]);
+
+    const verifyCode = useCallback( async (code:string) => {
+
+        try{
+
+            const result = await challenge(code, appState.checkpointUrl);
+
+            dispatchAppState({type:AppAction.toggleVerification, value:{value:result.challenge, url:result.endpoint}})
+
+            if(!result.challenge){
+                dispatchMediaState({type:MediaAction.toggleAuth, value: result.success})
+                dispatchAppState({type:AppAction.toggleLoginModal, value:!result.success})
+            }
+
+        }catch(ex:any){
+
+            handleError(ex, "Verification failed")
+
+        }finally{
+            dispatchAppState({type:AppAction.end})
+        }
+
+    },[handleError, appState.checkpointUrl])
 
     const openAccountDialog = async () => {
 
@@ -275,7 +303,7 @@ function App(){
             }
 
             {appState.openLoginModal &&
-                <LoginDialog onClose={closeLoginDialog} onSubmit={requestLogin} open={appState.openLoginModal}/>
+                <LoginDialog onClose={closeLoginDialog} onSubmit={requestLogin} onCodeSubmit={verifyCode} open={appState.openLoginModal} requireCode={appState.requireVerification}/>
             }
 
             {appState.openAccountModal &&

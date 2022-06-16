@@ -81,7 +81,9 @@ export const emptyResponse :IMediaResponse = {
 }
 
 export interface IAuthResponse {
-    success:boolean
+    success:boolean,
+    challenge:boolean,
+    endpoint:string
 }
 
 export interface IgRequest{

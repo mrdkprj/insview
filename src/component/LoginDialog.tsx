@@ -11,7 +11,9 @@ import DialogContent from "@mui/material/DialogContent";
 
 export interface IUsernameDialogProps {
     open:boolean,
-    onSubmit: (username:string, password:string) => void,
+    requireCode:boolean,
+    onSubmit: (username:string, password:string) => Promise<void>,
+    onCodeSubmit: (code:string) => Promise<void>,
     onClose: () => void,
 }
 
@@ -20,8 +22,10 @@ const LoginDialog = (props:IUsernameDialogProps) => {
     const [hasError, setHasError] = useState(false);
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const [code, setCode] = useState("");
 
-    let errorMessage = "You should input username/password";
+    const EMPTY_ID = "You should input username/password";
+    const EMPTY_CODE = "You should input code"
 
     const onSubmit = () => {
 
@@ -33,12 +37,24 @@ const LoginDialog = (props:IUsernameDialogProps) => {
         }
     }
 
+    const onSubmitCode = () => {
+        if(code){
+            props.onCodeSubmit(code);
+        }else{
+            setHasError(true);
+        }
+    }
+
     const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setUsername(e.target.value);
     };
 
     const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setPassword(e.target.value);
+    };
+
+    const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setCode(e.target.value);
     };
 
     return (
@@ -64,37 +80,58 @@ const LoginDialog = (props:IUsernameDialogProps) => {
                 </Toolbar>
             </AppBar>
             <DialogContent sx={{marginTop:"30px"}}>
-                <form>
-                    <TextField
-                        error={hasError}
-                        inputProps={{ spellCheck: "false" }}
-                        autoComplete="off"
-                        margin="dense"
-                        label="Username"
-                        fullWidth
-                        variant="standard"
-                        value={username}
-                        onChange={handleUsernameChange}
-                        helperText={hasError ? errorMessage : ""}
-                    />
-                    <TextField
-                        type={"password"}
-                        error={hasError}
-                        inputProps={{ spellCheck: "false" }}
-                        autoComplete="off"
-                        margin="dense"
-                        label="Password"
-                        fullWidth
-                        variant="standard"
-                        value={password}
-                        onChange={handlePasswordChange}
-                        helperText={hasError ? errorMessage : ""}
-                    />
-                    <div style={{display:"flex", justifyContent:"center", marginTop:"30px"}}>
-                        <Button onClick={props.onClose}>Cancel</Button>
-                        <Button onClick={onSubmit}>Login</Button>
-                    </div>
-                </form>
+                {props.requireCode ?
+                    <form>
+                        <TextField
+                            type={"number"}
+                            error={hasError}
+                            inputProps={{ spellCheck: "false" }}
+                            autoComplete="off"
+                            margin="dense"
+                            label="Code"
+                            fullWidth
+                            variant="standard"
+                            value={code}
+                            onChange={handleCodeChange}
+                            helperText={hasError ? EMPTY_CODE : ""}
+                        />
+                        <div style={{display:"flex", justifyContent:"center", marginTop:"30px"}}>
+                            <Button onClick={onSubmitCode}>Verify</Button>
+                        </div>
+                    </form>
+                    :
+                    <form>
+                        <TextField
+                            error={hasError}
+                            inputProps={{ spellCheck: "false" }}
+                            autoComplete="off"
+                            margin="dense"
+                            label="Username"
+                            fullWidth
+                            variant="standard"
+                            value={username}
+                            onChange={handleUsernameChange}
+                            helperText={hasError ? EMPTY_ID : ""}
+                        />
+                        <TextField
+                            type={"password"}
+                            error={hasError}
+                            inputProps={{ spellCheck: "false" }}
+                            autoComplete="off"
+                            margin="dense"
+                            label="Password"
+                            fullWidth
+                            variant="standard"
+                            value={password}
+                            onChange={handlePasswordChange}
+                            helperText={hasError ? EMPTY_ID : ""}
+                        />
+                        <div style={{display:"flex", justifyContent:"center", marginTop:"30px"}}>
+                            <Button onClick={props.onClose}>Cancel</Button>
+                            <Button onClick={onSubmit}>Login</Button>
+                        </div>
+                    </form>
+                }
             </DialogContent>
         </Dialog>
     )
