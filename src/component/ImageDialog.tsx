@@ -36,6 +36,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     const ref = useRef<HTMLDivElement>(null);
     const imageRef = useRef<HTMLImageElement>(null);
+    const dref = useRef<HTMLDivElement>(null);
 
     const getDirection = useCallback((xDiff,yDiff) => {
 
@@ -90,7 +91,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     const onTouchEnd = useCallback((e) => {
 
-        if(ref.current) ref.current.style["backgroundColor"] = "blue"
+        if(dref.current) dref.current.innerHTML = "touch end"
 
         if(!swipeState.swiping) return;
 
@@ -106,6 +107,8 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
         cleanupSwipe();
 
+        if(dref.current) dref.current.innerHTML = "clean up"
+
         if(ref.current){
             ref.current.style.transform = `translate(${0}px, ${0}px)`
         }
@@ -115,7 +118,8 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     const onTouchMove = useCallback((e) => {
 
-        if(ref.current) ref.current.style["backgroundColor"] = "red"
+        if(dref.current) dref.current.innerHTML = "moving"
+
         e.preventDefault();
 
         if(!swipeState.swiping) return;
@@ -148,23 +152,24 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     const onImageTap = useCallback((e:TouchEvent) => {
 
+        if(dref.current) dref.current.innerHTML = "tap start"
+
         if(!tapped) {
 
             tapped = true;
-            if(ref.current) ref.current.style["backgroundColor"] = "#fff"
+            if(dref.current) dref.current.innerHTML = "single tap"
 
             timer = setTimeout(() => {
                 tapped = false;
-                if(ref.current) ref.current.style["backgroundColor"] = "#888"
+                if(dref.current) dref.current.innerHTML = "time out"
             }, 1000 );
 
             return;
         }
 
-        window.alert("double")
+        if(dref.current) dref.current.innerHTML = "double tap"
         clearTimeout(timer)
         tapped = false;
-        if(ref.current) ref.current.style["backgroundColor"] = "#888"
 
         //changeScale(e)
 
@@ -264,6 +269,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     return (
         <Backdrop>
+            <div ref={dref} style={{position:"fixed", top:"0px", left:"0px",color:"#fff",zIndex:9999}}></div>
             <Contaner ref={ref}>
                 <ImageViewer ref={imageRef} alt={mediaId} src={mediaUrl}/>
             </Contaner>
