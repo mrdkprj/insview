@@ -23,6 +23,7 @@ let tapped :boolean = false;
 let zoomed = false;
 let rect :any = null;
 let timer :any = null;
+let log :string = ""
 
 const isHorizontalAction = () => {
     if(swipeState.direction === direction.right || swipeState.direction === direction.left){
@@ -91,8 +92,6 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     const onTouchEnd = useCallback((e) => {
 
-        if(dref.current) dref.current.innerHTML = "touch end"
-
         if(!swipeState.swiping) return;
 
         if(swipeState.close){
@@ -107,7 +106,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
         cleanupSwipe();
 
-        if(dref.current) dref.current.innerHTML = "clean up"
+        log += "clean up, "
 
         if(ref.current){
             ref.current.style.transform = `translate(${0}px, ${0}px)`
@@ -118,7 +117,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     const onTouchMove = useCallback((e) => {
 
-        if(dref.current) dref.current.innerHTML = "moving"
+        log += "moved, "
 
         e.preventDefault();
 
@@ -152,22 +151,25 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     const onImageTap = useCallback((e:TouchEvent) => {
 
-        if(dref.current) dref.current.innerHTML = "tap start"
+        log += "tapped,"
+
+        if(dref.current) dref.current.innerHTML = log
 
         if(!tapped) {
 
             tapped = true;
-            if(dref.current) dref.current.innerHTML = "single tap"
+
+            log += "single tap,"
 
             timer = setTimeout(() => {
                 tapped = false;
-                if(dref.current) dref.current.innerHTML = "time out"
+                log += "time out,"
             }, 1000 );
 
             return;
         }
 
-        if(dref.current) dref.current.innerHTML = "double tap"
+        log += "double tap!!!,"
         clearTimeout(timer)
         tapped = false;
 
