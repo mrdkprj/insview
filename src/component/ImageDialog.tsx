@@ -22,6 +22,7 @@ const SCALE = 3;
 let tapped :boolean = false;
 let zoomed = false;
 let rect :any = null;
+let timer :any = null;
 
 const isHorizontalAction = () => {
     if(swipeState.direction === direction.right || swipeState.direction === direction.left){
@@ -152,17 +153,18 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
             tapped = true;
             if(ref.current) ref.current.style["backgroundColor"] = "#fff"
 
-            setTimeout(() => {
+            timer = setTimeout(() => {
                 tapped = false;
                 if(ref.current) ref.current.style["backgroundColor"] = "#888"
             }, 1000 );
 
             //return;
-        }else{
+        }
 
+        clearTimeout(timer)
         tapped = false;
         if(ref.current) ref.current.style["backgroundColor"] = "#888"
-        }
+
         //changeScale(e)
 
     },[])
