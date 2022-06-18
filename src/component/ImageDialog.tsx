@@ -22,6 +22,7 @@ const SCALE = 3;
 let tapped :boolean = false;
 let zoomed = false;
 let rect :any = null;
+let timer :any = null;
 
 const isHorizontalAction = () => {
     if(swipeState.direction === direction.right || swipeState.direction === direction.left){
@@ -35,7 +36,6 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     const ref = useRef<HTMLDivElement>(null);
     const imageRef = useRef<HTMLImageElement>(null);
-    const timer = useRef<NodeJS.Timeout | null>(null);
 
     const getDirection = useCallback((xDiff,yDiff) => {
 
@@ -90,6 +90,8 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     const onTouchEnd = useCallback((e) => {
 
+        if(ref.current) ref.current.style["backgroundColor"] = "blue"
+
         if(!swipeState.swiping) return;
 
         if(swipeState.close){
@@ -108,11 +110,12 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
             ref.current.style.transform = `translate(${0}px, ${0}px)`
         }
 
-    },[closeDialog,cleanupSwipe]);
+    },[ref, closeDialog,cleanupSwipe]);
 
 
     const onTouchMove = useCallback((e) => {
 
+        if(ref.current) ref.current.style["backgroundColor"] = "red"
         e.preventDefault();
 
         if(!swipeState.swiping) return;
@@ -145,20 +148,25 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     const onImageTap = useCallback((e:TouchEvent) => {
 
-        if(!timer.current) {
+        if(!tapped) {
 
-            timer.current = setTimeout(() => {
-                timer.current = null;
-            }, 300 );
+            tapped = true;
+            if(ref.current) ref.current.style["backgroundColor"] = "#fff"
 
-            //return;
-        }else{
+            timer = setTimeout(() => {
+                tapped = false;
+                if(ref.current) ref.current.style["backgroundColor"] = "#888"
+            }, 1000 );
 
-        clearTimeout(timer.current)
-        timer.current = null;
-
-        changeScale(e)
+            return;
         }
+
+        window.alert("double")
+        clearTimeout(timer)
+        tapped = false;
+        if(ref.current) ref.current.style["backgroundColor"] = "#888"
+
+        //changeScale(e)
 
     },[])
 
