@@ -664,7 +664,7 @@ const requestChallenge = async (username:string, options:AxiosRequestConfig, res
 
     const nextRes = await axios.request(options)
 
-    const session = getSession(nextRes.headers);
+    const session = getSession(res.headers);
 
     if(nextRes.data.type && nextRes.data.type === "CHALLENGE"){
 
@@ -703,8 +703,8 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<IAuthResponse>> => 
     headers["content-type"] = "application/x-www-form-urlencoded"
 
     const params = new URLSearchParams();
-    params.append("csrfmiddlewaretoken", currentSession.csrfToken)
-    params.append("verify",  "Verify Account")
+    //params.append("csrfmiddlewaretoken", currentSession.csrfToken)
+    //params.append("verify",  "Verify Account")
     params.append("security_code", req.data.code)
 
     const options :AxiosRequestConfig = {
