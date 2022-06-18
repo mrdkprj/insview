@@ -157,12 +157,12 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
                 if(ref.current) ref.current.style["backgroundColor"] = "#888"
             }, 1000 );
 
-            return;
-        }
+            //return;
+        }else{
 
         tapped = false;
         if(ref.current) ref.current.style["backgroundColor"] = "#888"
-
+        }
         //changeScale(e)
 
     },[])
