@@ -151,19 +151,16 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
         if(!tapped) {
 
             tapped = true;
-            if(ref.current) ref.current.style["backgroundColor"] = "#fff"
 
             timer = setTimeout(() => {
                 tapped = false;
-                if(ref.current) ref.current.style["backgroundColor"] = "#888"
             }, 1000 );
 
-            //return;
+            return;
         }
 
         clearTimeout(timer)
         tapped = false;
-        if(ref.current) ref.current.style["backgroundColor"] = "#888"
 
         changeScale(e)
 
