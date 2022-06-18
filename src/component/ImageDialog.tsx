@@ -103,12 +103,12 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
         }
 
         cleanupSwipe();
-
+/*
         if(ref.current){
             ref.current.style.transform = `translate(${0}px, ${0}px)`
         }
-
-    },[ref, closeDialog,cleanupSwipe]);
+*/
+    },[closeDialog,cleanupSwipe]);
 
 
     const onTouchMove = useCallback((e) => {
