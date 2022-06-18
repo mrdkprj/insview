@@ -204,17 +204,14 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
         document.body.style.overflow = "hidden";
 
-        window.addEventListener("touchstart", onTouchStart);
-        window.addEventListener("touchmove", onTouchMove, { passive: false });
-        window.addEventListener("touchend", onTouchEnd);
+        ref.current?.addEventListener("touchstart", onTouchStart);
+        ref.current?.addEventListener("touchmove", onTouchMove, { passive: false });
+        ref.current?.addEventListener("touchend", onTouchEnd);
         document.addEventListener("keydown", handleKeydown, { passive: false });
         imageRef.current?.addEventListener("click", onImageTap, { passive: false });
         rect = imageRef.current?.getBoundingClientRect();
 
         return (() => {
-            window.removeEventListener("touchstart", onTouchStart);
-            window.removeEventListener("touchmove", onTouchMove);
-            window.removeEventListener("touchend", onTouchEnd);
             document.removeEventListener("keydown", handleKeydown);
         });
 
