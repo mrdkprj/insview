@@ -151,31 +151,37 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     const onImageTap = useCallback((e:TouchEvent) => {
 
-        log += "tapped,"
-
-        if(dref.current) dref.current.innerHTML = log
+        log += "enter,"
+        write();
 
         if(!tapped) {
 
             tapped = true;
 
             log += "single tap,"
+            write();
 
             timer = setTimeout(() => {
                 tapped = false;
                 log += "time out,"
+                write();
             }, 1000 );
 
             return;
         }
 
-        log += "double tap!!!,"
+        log += "double,"
+        write();
         clearTimeout(timer)
         tapped = false;
 
         //changeScale(e)
 
     },[])
+
+    const write = () =>{
+        if(dref.current) dref.current.innerHTML = log
+    }
 
     const changeScale = (e:TouchEvent) => {
 
@@ -215,7 +221,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
     },[closeDialog]);
 
     useEffect(() => {
-
+        log += "useeffect, "
         document.body.style.overflow = "hidden";
 
         window.addEventListener("touchstart", onTouchStart);
