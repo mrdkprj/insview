@@ -22,7 +22,6 @@ const SCALE = 3;
 let tapped :boolean = false;
 let zoomed = false;
 let rect :any = null;
-let timer :any = null;
 
 const isHorizontalAction = () => {
     if(swipeState.direction === direction.right || swipeState.direction === direction.left){
@@ -36,6 +35,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     const ref = useRef<HTMLDivElement>(null);
     const imageRef = useRef<HTMLImageElement>(null);
+    const timer = useRef<NodeJS.Timeout | null>(null);
 
     const getDirection = useCallback((xDiff,yDiff) => {
 
@@ -90,8 +90,6 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     const onTouchEnd = useCallback((e) => {
 
-        if(ref.current) ref.current.style["backgroundColor"] = "blue"
-
         if(!swipeState.swiping) return;
 
         if(swipeState.close){
@@ -115,7 +113,6 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     const onTouchMove = useCallback((e) => {
 
-        if(ref.current) ref.current.style["backgroundColor"] = "red"
         e.preventDefault();
 
         if(!swipeState.swiping) return;
@@ -148,19 +145,17 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     const onImageTap = useCallback((e:TouchEvent) => {
 
-        if(!tapped) {
+        if(!timer.current) {
 
-            tapped = true;
-
-            timer = setTimeout(() => {
-                tapped = false;
+            timer.current = setTimeout(() => {
+                timer.current = null;
             }, 1000 );
 
             //return;
         }else{
 
-        clearTimeout(timer)
-        tapped = false;
+        clearTimeout(timer.current)
+        timer.current = null;
 
         changeScale(e)
         }
