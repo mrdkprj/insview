@@ -149,7 +149,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     },[getDirection]);
 
-    const onImageTap = useCallback((e:TouchEvent) => {
+    const onImageTap = useCallback((e:MouseEvent) => {
 
         log += "enter,"
         write();
@@ -175,7 +175,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
         clearTimeout(timer)
         tapped = false;
 
-        //changeScale(e)
+        changeScale(e)
 
     },[])
 
@@ -183,7 +183,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
         if(dref.current) dref.current.innerHTML = log
     }
 
-    const changeScale = (e:TouchEvent) => {
+    const changeScale = (e:MouseEvent) => {
 
         if(!imageRef.current) return;
 
@@ -192,8 +192,8 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
             zoomed = false
         }else{
 
-            let x = e.touches[0].pageX - rect.left;
-            let y = e.touches[0].pageY - rect.top;
+            let x = e.pageX - rect.left;
+            let y = e.pageY - rect.top;
 
             const nextTop = rect.top - y * 2
             const nextBottom = (rect.top + rect.height * SCALE) - y * 2
@@ -228,7 +228,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
         window.addEventListener("touchmove", onTouchMove, { passive: false });
         window.addEventListener("touchend", onTouchEnd);
         document.addEventListener("keydown", handleKeydown, { passive: false });
-        imageRef.current?.addEventListener("touchstart", onImageTap, { passive: false });
+        imageRef.current?.addEventListener("click", onImageTap, { passive: false });
         rect = imageRef.current?.getBoundingClientRect();
 
         return (() => {
