@@ -156,13 +156,14 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
                 tapped = false;
             }, 1000 );
 
-            return;
-        }
+            //return;
+        }else{
 
         clearTimeout(timer)
         tapped = false;
 
         changeScale(e)
+        }
 
     },[])
 
