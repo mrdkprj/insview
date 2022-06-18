@@ -23,7 +23,6 @@ let tapped :boolean = false;
 let zoomed = false;
 let rect :any = null;
 let timer :any = null;
-let log :string = ""
 
 const isHorizontalAction = () => {
     if(swipeState.direction === direction.right || swipeState.direction === direction.left){
@@ -37,7 +36,6 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     const ref = useRef<HTMLDivElement>(null);
     const imageRef = useRef<HTMLImageElement>(null);
-    const dref = useRef<HTMLDivElement>(null);
 
     const getDirection = useCallback((xDiff,yDiff) => {
 
@@ -58,7 +56,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
     },[])
 
     const onTouchStart = useCallback((e) => {
-        console.log("start")
+
         swipeState = {
             startX: e.touches[0].clientX,
             startY: e.touches[0].clientY,
@@ -106,8 +104,6 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
         cleanupSwipe();
 
-        log += "clean up, "
-
         if(ref.current){
             ref.current.style.transform = `translate(${0}px, ${0}px)`
         }
@@ -116,8 +112,6 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
 
     const onTouchMove = useCallback((e) => {
-
-        log += "moved, "
 
         e.preventDefault();
 
@@ -151,37 +145,23 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     const onImageTap = useCallback((e:MouseEvent) => {
 
-        log += "enter,"
-        write();
-
         if(!tapped) {
 
             tapped = true;
 
-            log += "single tap,"
-            write();
-
             timer = setTimeout(() => {
                 tapped = false;
-                log += "time out,"
-                write();
-            }, 1000 );
+            }, 300 );
 
             return;
         }
 
-        log += "double,"
-        write();
         clearTimeout(timer)
         tapped = false;
 
         changeScale(e)
 
     },[])
-
-    const write = () =>{
-        if(dref.current) dref.current.innerHTML = log
-    }
 
     const changeScale = (e:MouseEvent) => {
 
@@ -221,7 +201,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
     },[closeDialog]);
 
     useEffect(() => {
-        log += "useeffect, "
+
         document.body.style.overflow = "hidden";
 
         window.addEventListener("touchstart", onTouchStart);
@@ -277,7 +257,6 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     return (
         <Backdrop>
-            <div ref={dref} style={{position:"fixed", top:"0px", left:"0px",color:"#fff",zIndex:9999}}></div>
             <Contaner ref={ref}>
                 <ImageViewer ref={imageRef} alt={mediaId} src={mediaUrl}/>
             </Contaner>
