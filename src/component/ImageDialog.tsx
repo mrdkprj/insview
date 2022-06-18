@@ -89,6 +89,8 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     const onTouchEnd = useCallback((e) => {
 
+        if(ref.current) ref.current.style["backgroundColor"] = "blue"
+
         if(!swipeState.swiping) return;
 
         if(swipeState.close){
@@ -112,6 +114,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     const onTouchMove = useCallback((e) => {
 
+        if(ref.current) ref.current.style["backgroundColor"] = "red"
         e.preventDefault();
 
         if(!swipeState.swiping) return;
@@ -147,17 +150,20 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
         if(!tapped) {
 
             tapped = true;
+            if(ref.current) ref.current.style["backgroundColor"] = "#fff"
 
             setTimeout(() => {
                 tapped = false;
+                if(ref.current) ref.current.style["backgroundColor"] = "#888"
             }, 1000 );
 
             return;
         }
 
         tapped = false;
+        if(ref.current) ref.current.style["backgroundColor"] = "#888"
 
-        changeScale(e)
+        //changeScale(e)
 
     },[])
 
