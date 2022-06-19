@@ -115,12 +115,18 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
         e.preventDefault();
 
-        if(!swipeState.swiping) return;
+        if(!swipeState.swiping && !zoomed) return;
 
         const xDiff = swipeState.startX - e.touches[0].clientX;
         const yDiff = swipeState.startY - e.touches[0].clientY;
 
-        console.log(yDiff)
+        if(zoomed && imageRef.current){
+            //const r = imageRef.current.getBoundingClientRect();
+            //console.log(r)
+            //imageRef.current.style["transform"] = `scale(3) translate(${xDiff}px, ${yDiff}px`
+            return;
+        }
+
         if(!swipeState.direction){
             swipeState.direction = getDirection(xDiff,yDiff);
         }
@@ -143,7 +149,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     },[getDirection]);
 
-    const onImageTap = useCallback((e:MouseEvent) => {
+    const onImageClick = useCallback((e:MouseEvent) => {
 
         if(!tapped) {
 
@@ -165,7 +171,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     const changeScale = (e:MouseEvent) => {
 
-        if(!imageRef.current) return;
+        if(!imageRef.current || !ref.current) return;
 
         if(zoomed){
             imageRef.current.style["transform"] = "scale(1)"
@@ -186,6 +192,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
             imageRef.current.style["transform-origin" as any] = `${x}px ${y}px`
             imageRef.current.style["transform"] = `scale(${SCALE})`
+
             zoomed = true;
 
         }
@@ -207,15 +214,16 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
         ref.current?.addEventListener("touchstart", onTouchStart);
         ref.current?.addEventListener("touchmove", onTouchMove, { passive: false });
         ref.current?.addEventListener("touchend", onTouchEnd);
+        imageRef.current?.addEventListener("click", onImageClick, { passive: false });
         document.addEventListener("keydown", handleKeydown, { passive: false });
-        imageRef.current?.addEventListener("click", onImageTap, { passive: false });
+
         rect = imageRef.current?.getBoundingClientRect();
 
         return (() => {
             document.removeEventListener("keydown", handleKeydown);
         });
 
-    }, [onTouchStart,onTouchMove,onTouchEnd,handleKeydown, onImageTap]);
+    }, [onTouchStart,onTouchMove,onTouchEnd,handleKeydown, onImageClick]);
 
     useEffect( () => () =>  {document.body.style.overflow = ""}, [] );
 

@@ -6,7 +6,7 @@ import { Sequelize, DataTypes, Options } from "sequelize";
 import type { Cookie } from "tough-cookie";
 
 import db from "./db/db"
-import { AuthError, IHistory, IMediaResponse, ISession, IUser } from "./src/response";
+import { AuthError, emptyResponse, IAuthResponse, IHistory, IMediaResponse, ISession, IUser } from "./src/response";
 import { IMediaTable } from "./db/IDatabase";
 import {login, challenge, requestMedia, requestMore, requestImage, logout, requestFollowings, getSession} from "./instagram"
 
@@ -266,7 +266,19 @@ const tryLogin = async (req:any, res:any, username:string, password:string) => {
 
         req.session.account = username;
 
-        await sendResponse(req, res, result.data, result.session);
+        let media = await db.restore(req.session.account);
+        try{
+            media = await db.restore(req.session.account);
+        }catch(ex:any){
+            media = emptyResponse;
+        }
+
+        const authResponse :IAuthResponse = {
+            status: result.data,
+            media
+        }
+
+        await sendResponse(req, res, authResponse, result.session);
 
     }catch(ex:any){
 

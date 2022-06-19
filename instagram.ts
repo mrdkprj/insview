@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosRequestHeaders, AxiosResponse, AxiosResponseHeaders } from "axios";
-import { IMedia, IMediaResponse, IUser, AuthError, IAuthResponse, IFollowing, IgRequest, IgResponse, ISession} from "./src/response";
+import { IMedia, IMediaResponse, IUser, AuthError, ILoginResponse, IFollowing, IgRequest, IgResponse, ISession} from "./src/response";
 import tough from "tough-cookie";
 
 const GRAPH_QL = "#GRAPH_QL";
@@ -48,7 +48,10 @@ const getSession = (headers:any) :ISession => {
             }
 
             if(cookie.key.toLocaleLowerCase() === "sessionid"){
+                console.log(cookie.key)
                 console.log(cookie.expires)
+                console.log(cookie.maxAge)
+                console.log("------------")
                 session.isAuthenticated = true;
             }
 
@@ -513,7 +516,7 @@ const extractToken = (headers:AxiosResponseHeaders) => {
     return csrftoken;
 }
 
-const login = async (req:IgRequest) : Promise<IgResponse<IAuthResponse>> => {
+const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
     let x = 0;
 
@@ -627,7 +630,7 @@ const setC = (headers:any) => {
 
     return cook;
 }
-const requestChallenge = async (username:string, options:AxiosRequestConfig, res:AxiosResponse<any, any>) :Promise<IgResponse<IAuthResponse>> => {
+const requestChallenge = async (username:string, options:AxiosRequestConfig, res:AxiosResponse<any, any>) :Promise<IgResponse<ILoginResponse>> => {
 
     console.log("----------challenge start-------")
 
@@ -681,7 +684,7 @@ const requestChallenge = async (username:string, options:AxiosRequestConfig, res
 
 }
 
-const challenge = async (req:IgRequest) : Promise<IgResponse<IAuthResponse>> => {
+const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
     const currentSession = getSession(req.headers);
     console.log(req.data)

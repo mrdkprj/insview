@@ -157,11 +157,12 @@ function App(){
 
             const result = await login(username, password);
 
-            dispatchAppState({type:AppAction.toggleVerification, value:{value:result.challenge, url:result.endpoint}})
+            dispatchAppState({type:AppAction.toggleVerification, value:{value:result.status.challenge, url:result.status.endpoint}})
 
-            if(!result.challenge){
-                dispatchMediaState({type:MediaAction.toggleAuth, value: result.success})
-                dispatchAppState({type:AppAction.toggleLoginModal, value:!result.success})
+            if(!result.status.challenge){
+                dispatchMediaState({type:MediaAction.toggleAuth, value: result.status.success})
+                dispatchAppState({type:AppAction.toggleLoginModal, value:!result.status.success})
+                dispatchMediaState({type:MediaAction.update, value: result.media})
             }
 
         }catch(ex:any){
@@ -180,11 +181,11 @@ function App(){
 
             const result = await challenge(code, appState.checkpointUrl);
 
-            dispatchAppState({type:AppAction.toggleVerification, value:{value:result.challenge, url:result.endpoint}})
+            dispatchAppState({type:AppAction.toggleVerification, value:{value:result.status.challenge, url:result.status.endpoint}})
 
-            if(!result.challenge){
-                dispatchMediaState({type:MediaAction.toggleAuth, value: result.success})
-                dispatchAppState({type:AppAction.toggleLoginModal, value:!result.success})
+            if(!result.status.challenge){
+                dispatchMediaState({type:MediaAction.toggleAuth, value: result.status.success})
+                dispatchAppState({type:AppAction.toggleLoginModal, value:!result.status.success})
             }
 
         }catch(ex:any){

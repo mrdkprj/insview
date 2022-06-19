@@ -80,10 +80,15 @@ export const emptyResponse :IMediaResponse = {
     isAuthenticated:false
 }
 
-export interface IAuthResponse {
+export interface ILoginResponse {
     success:boolean,
     challenge:boolean,
-    endpoint:string
+    endpoint:string,
+}
+
+export interface IAuthResponse {
+    status:ILoginResponse,
+    media:IMediaResponse
 }
 
 export interface IgRequest{
