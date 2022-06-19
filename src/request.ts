@@ -115,11 +115,11 @@ const getFollowings = async (next:string) => {
     }
 }
 
-const challenge = async (code:string, endpoint:string) => {
+const challenge = async (username:string, code:string, endpoint:string) => {
 
     const url = "/challenge";
     const method = "POST";
-    const data = {code,endpoint};
+    const data = {username, code, endpoint};
 
     const headers = {"Content-Type": "application/json"}
 

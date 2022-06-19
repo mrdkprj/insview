@@ -13,7 +13,7 @@ export interface IUsernameDialogProps {
     open:boolean,
     requireCode:boolean,
     onSubmit: (username:string, password:string) => Promise<void>,
-    onCodeSubmit: (code:string) => Promise<void>,
+    onCodeSubmit: (username:string, code:string) => Promise<void>,
     onClose: () => void,
 }
 
@@ -39,7 +39,7 @@ const LoginDialog = (props:IUsernameDialogProps) => {
 
     const onSubmitCode = () => {
         if(code){
-            props.onCodeSubmit(code);
+            props.onCodeSubmit(username, code);
         }else{
             setHasError(true);
         }

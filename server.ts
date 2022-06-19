@@ -182,7 +182,11 @@ app.post("/login", async (req, res) => {
 
 app.post("/challenge", async (req, res) => {
 
-    await tryChallenge(req, res, req.body.code, req.body.endpoint);
+    const username = req.body.username;
+    const code = req.body.code;
+    const endpoint = req.body.endpoint;
+
+    await tryChallenge(req, res, username, code, endpoint);
 
 })
 
@@ -253,6 +257,19 @@ const tryRestore = async (req:any, res:any) => {
 
 }
 
+const restoreBySession = async (req:any) => {
+
+    if(!req.session.account){
+        return emptyResponse;
+    }
+
+    try{
+       return await db.restore(req.session.account);
+    }catch(ex:any){
+        return emptyResponse;
+    }
+
+}
 const tryLogin = async (req:any, res:any, username:string, password:string) => {
 
     if(!username || !password){
@@ -263,14 +280,11 @@ const tryLogin = async (req:any, res:any, username:string, password:string) => {
 
         const result = await login({data:{username, password}, headers:req.headers})
 
-        req.session.account = username;
-
-        let media = await db.restore(req.session.account);
-        try{
-            media = await db.restore(req.session.account);
-        }catch(ex:any){
-            media = emptyResponse;
+        if(result.data.success){
+            req.session.account = username;
         }
+
+        const media = await restoreBySession(req);
 
         const authResponse :IAuthResponse = {
             status: result.data,
@@ -286,13 +300,24 @@ const tryLogin = async (req:any, res:any, username:string, password:string) => {
     }
 }
 
-const tryChallenge = async (req:any, res:any, code:string, endpoint:string) => {
+const tryChallenge = async (req:any, res:any, username:string, code:string, endpoint:string) => {
 
     try{
 
         const result = await challenge({data:{code, endpoint}, headers:req.headers})
 
-        await sendResponse(req, res, result.data, result.session);
+        if(result.data.success){
+            req.session.account = username;
+        }
+
+        const media = await restoreBySession(req);
+
+        const authResponse :IAuthResponse = {
+            status: result.data,
+            media
+        }
+
+        await sendResponse(req, res, authResponse, result.session);
 
     }catch(ex:any){
 

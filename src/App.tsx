@@ -175,11 +175,11 @@ function App(){
 
     },[handleError]);
 
-    const verifyCode = useCallback( async (code:string) => {
+    const verifyCode = useCallback( async (username:string, code:string) => {
 
         try{
 
-            const result = await challenge(code, appState.checkpointUrl);
+            const result = await challenge(username, code, appState.checkpointUrl);
 
             dispatchAppState({type:AppAction.toggleVerification, value:{value:result.status.challenge, url:result.status.endpoint}})
 

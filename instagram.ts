@@ -514,6 +514,10 @@ const extractToken = (headers:AxiosResponseHeaders) => {
 
     const { value: csrftoken } = cookies.find(({ key }) => key === "csrftoken") || {}
 
+    if(!csrftoken){
+        return "";
+    }
+
     return csrftoken;
 }
 
@@ -611,13 +615,23 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     }
 }
 
-const setC = (headers:any) => {
+const requestChallenge = async (username:string, options:AxiosRequestConfig, res:AxiosResponse<any, any>) :Promise<IgResponse<ILoginResponse>> => {
 
-    const cookies = headers["set-cookie"] instanceof Array ? headers["set-cookie"] : [headers["set-cookie"]]
+    console.log("---------- challenge start -------")
 
-    let cook :string = "";
+    if(!options.headers){
+        throw new Error("headers empty");
+    }
 
-    cookies.forEach((cookieString:string) => {
+    const resToken = extractToken(res.headers);
+
+    options.headers["x-csrftoken"] = resToken;
+
+    const responseCookies = res.headers["set-cookie"] instanceof Array ? res.headers["set-cookie"] : [res.headers["set-cookie"]]
+
+    let requestCookies :string = "";
+
+    responseCookies.forEach((cookieString:any) => {
 
         const cookie = Cookie.parse(cookieString);
 
@@ -625,42 +639,21 @@ const setC = (headers:any) => {
             return
         }
 
-        cook += `${cookie.key}=${cookie.value};`
+        requestCookies += `${cookie.key}=${cookie.value};`
 
     })
 
-    return cook;
-}
-const requestChallenge = async (username:string, options:AxiosRequestConfig, res:AxiosResponse<any, any>) :Promise<IgResponse<ILoginResponse>> => {
-
-    console.log("----------challenge start-------")
-
-    const resToken = extractToken(res.headers);
-
-    if(!resToken){
-        throw new Error("Token not found")
-    }
-
-    if(options.headers){
-        options.headers["x-csrftoken"] = resToken;
-        options.headers.Cookie = setC(res.headers)
-    }
+    options.headers.Cookie = requestCookies;
 
     const url = baseUrl + res.data.checkpoint_url;
     options.url = url;
     options.method = "GET"
     options.data = "";
 
-    const checkRes = await axios.request(options)
+    await axios.request(options)
 
-    const checkToken = extractToken(checkRes.headers);
+    console.log("---------- challenge post start -------")
 
-    if(!checkToken){
-        throw new Error("Token not found")
-    }
-
-    console.log("----------challenge post start-------")
-    //"rollout_hash":"(.*)",
     const params = new URLSearchParams();
     params.append("choice", "1")
     options.data = params;
@@ -688,45 +681,33 @@ const requestChallenge = async (username:string, options:AxiosRequestConfig, res
 const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
     const currentSession = getSession(req.headers);
-    console.log(req.data)
-    let x = 0;
-    if(x > 0){
-        console.log(req.data)
-        return {
-            data:{success:false, challenge:true, endpoint:req.data.endpoint},
-            session: currentSession
-        }
-    }
-
-    const url = req.data.endpoint;
-
-    const headers = createHeaders(url, currentSession);
-    headers.Cookie = req.headers.cookie ?? "";
-
-    headers["x-requested-with"] = "XMLHttpRequest"
-    headers["content-type"] = "application/x-www-form-urlencoded"
-
-    const params = new URLSearchParams();
-    //params.append("csrfmiddlewaretoken", currentSession.csrfToken)
-    //params.append("verify",  "Verify Account")
-    params.append("security_code", req.data.code)
-
-    const options :AxiosRequestConfig = {
-        url,
-        method: "POST",
-        headers,
-        data: params,
-        withCredentials:true
-    }
 
     try{
+
+        const url = req.data.endpoint;
+
+        const headers = createHeaders(url, currentSession);
+        headers.Cookie = req.headers.cookie ?? "";
+        headers["x-requested-with"] = "XMLHttpRequest"
+        headers["content-type"] = "application/x-www-form-urlencoded"
+
+        const params = new URLSearchParams();
+        params.append("security_code", req.data.code)
+
+        const options :AxiosRequestConfig = {
+            url,
+            method: "POST",
+            headers,
+            data: params,
+            withCredentials:true
+        }
 
         const response = await axios.request(options);
 
         console.log(response.data)
 
         const session = getSession(response.headers);
-        const data = {success:session.isAuthenticated, challenge:!session.isAuthenticated, endpoint:url};
+        const data = {success:session.isAuthenticated, challenge:!session.isAuthenticated, endpoint:""};
 
         return {
             data,
