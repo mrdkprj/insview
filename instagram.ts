@@ -725,14 +725,7 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =>
 
         console.log(response.data)
 
-        options.url = response.data.location;
-        options.data = "";
-        options.method = "GET"
-        const res = await axios.request(options);
-
-        console.log(res.data)
-
-        const session = getSession(res.headers);
+        const session = getSession(response.headers);
         const data = {success:session.isAuthenticated, challenge:!session.isAuthenticated, endpoint:url};
 
         return {
