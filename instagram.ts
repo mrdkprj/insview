@@ -47,19 +47,20 @@ const getSession = (headers:any) :ISession => {
                 return
             }
 
-            if(cookie.key.toLocaleLowerCase() === "sessionid"){
-                console.log(cookie.key)
-                console.log(cookie.expires)
-                console.log(cookie.maxAge)
-                console.log("------------")
+            if(cookie.key.toLowerCase() === "sessionid"){
                 session.isAuthenticated = true;
+                if(!cookie.expires){
+                    const expires = new Date();
+                    expires.setTime(expires.getTime() + (8*60*60*1000));
+                    cookie.expires = expires
+                }
             }
 
-            if(cookie.key.toLocaleLowerCase() === "csrftoken"){
+            if(cookie.key.toLowerCase() === "csrftoken"){
                 session.csrfToken = cookie.value;
             }
 
-            if(cookie.key.toLocaleLowerCase() === "ds_user_id"){
+            if(cookie.key.toLowerCase() === "ds_user_id"){
                 session.userId = cookie.value;
             }
 

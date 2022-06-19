@@ -160,9 +160,9 @@ function App(){
             dispatchAppState({type:AppAction.toggleVerification, value:{value:result.status.challenge, url:result.status.endpoint}})
 
             if(!result.status.challenge){
+                dispatchMediaState({type:MediaAction.update, value: result.media})
                 dispatchMediaState({type:MediaAction.toggleAuth, value: result.status.success})
                 dispatchAppState({type:AppAction.toggleLoginModal, value:!result.status.success})
-                dispatchMediaState({type:MediaAction.update, value: result.media})
             }
 
         }catch(ex:any){

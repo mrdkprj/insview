@@ -95,7 +95,6 @@ const sendResponse = async (req:any, res:any, data:any, session:ISession) => {
             domain:domain,
             expires:cookie.expires,
             httpOnly:cookie.httpOnly,
-            maxAge:cookie.maxAge,
             path:cookie.path,
             secure:cookie.secure,
             sameSite:cookie.sameSite,
