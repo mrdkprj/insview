@@ -528,18 +528,9 @@ const extractToken = (headers:AxiosResponseHeaders) => {
 
 const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
-    const account = req.data.account;
-
-    let x = 10;
-
-    if(x > 0){
-        return {
-            data:{account, success:false,challenge:true, endpoint:"abc"},
-            session:getSession(req.headers)
-        }
-    }
-
     console.log("----------try login----------")
+
+    const account = req.data.account;
 
     let session = getSession(req.headers);
 
@@ -686,23 +677,6 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 }
 
 const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
-
-    let x = parseInt(req.data.code);
-    console.log(req.data)
-    if(x>0){
-        x = 0;
-        return {
-            data:{account:req.data.account, success:false,challenge:true, endpoint:"abc"},
-            session:getSession(req.headers)
-        }
-    }
-
-    if(x === 0){
-        return {
-            data:{account:req.data.account, success:true,challenge:false, endpoint:"abc"},
-            session:getSession(req.headers)
-        }
-    }
 
     const currentSession = getSession(req.headers);
 
