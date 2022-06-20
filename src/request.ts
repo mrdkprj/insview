@@ -59,11 +59,11 @@ const queryMore = async (user:IUser, next:string) => {
 
 }
 
-const login = async (username:string, password:string) => {
+const login = async (account:string, password:string) => {
 
     const url = "/login";
     const method = "POST";
-    const data = {username, password};
+    const data = {account, password};
 
     const headers = {"Content-Type": "application/json"}
 
@@ -115,11 +115,11 @@ const getFollowings = async (next:string) => {
     }
 }
 
-const challenge = async (username:string, code:string, endpoint:string) => {
+const challenge = async (account:string, code:string, endpoint:string) => {
 
     const url = "/challenge";
     const method = "POST";
-    const data = {username, code, endpoint};
+    const data = {account, code, endpoint};
 
     const headers = {"Content-Type": "application/json"}
 

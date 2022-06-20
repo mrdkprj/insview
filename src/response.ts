@@ -81,6 +81,7 @@ export const emptyResponse :IMediaResponse = {
 }
 
 export interface ILoginResponse {
+    account:string,
     success:boolean,
     challenge:boolean,
     endpoint:string,
@@ -107,6 +108,7 @@ export interface ISession {
     userId:string,
     userAgent:string,
     cookies: Cookie[],
+    expires: Date | null,
 }
 
 export const ErrorSession = {

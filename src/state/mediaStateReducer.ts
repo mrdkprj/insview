@@ -8,7 +8,6 @@ export interface IMediaState {
     data: IMedia[],
     selected: number,
     history: IHistory,
-    isAuthenticated:boolean,
     followings: IFollowing,
     rowIndex: number,
 };
@@ -20,7 +19,6 @@ export const initialMediaState : IMediaState = {
     data: [],
     selected: 0,
     history:{},
-    isAuthenticated:false,
     followings:{users:[], hasNext:false, next:""},
     rowIndex: 0,
 }
@@ -37,7 +35,6 @@ export const MediaAction = {
     select: "select",
     history: "history",
     followings: "followings",
-    toggleAuth:"auth",
     toggleLock: "toggleLock",
 }
 
@@ -47,7 +44,7 @@ export const mediaStateReducer = (state: IMediaState, action: IMediaAction): IMe
         case MediaAction.reset:
             const user = emptyUser;
             user.username = action.value;
-            return {...state, user: user, data: [], selected: 0, next:"", isAuthenticated:false, rowIndex:0};
+            return {...state, user: user, data: [], selected: 0, next:"", rowIndex:0};
 
         case MediaAction.update:
             return {...state,
@@ -56,21 +53,17 @@ export const mediaStateReducer = (state: IMediaState, action: IMediaAction): IMe
                 selected: 0,
                 next:action.value.next,
                 history: action.value.history,
-                isAuthenticated:action.value.isAuthenticated,
                 rowIndex:action.value.rowIndex
             };
 
         case MediaAction.append:
-            return {...state, data:state.data.concat(action.value.media), next:action.value.next, isAuthenticated:action.value.isAuthenticated, rowIndex: action.value.rowIndex}
+            return {...state, data:state.data.concat(action.value.media), next:action.value.next, rowIndex: action.value.rowIndex}
 
         case MediaAction.select:
             return {...state, selected:action.value};
 
         case MediaAction.history:
             return {...state, history:action.value};
-
-        case MediaAction.toggleAuth:
-            return {...state, isAuthenticated:action.value};
 
         case MediaAction.toggleLock:
             return {...state, locked:action.value};

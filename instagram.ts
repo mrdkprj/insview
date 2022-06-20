@@ -26,6 +26,7 @@ const getSession = (headers:any) :ISession => {
             userId:"",
             userAgent: headers["user-agent"],
             cookies:[],
+            expires: null,
         }
 
         if(!headers.cookie && !headers["set-cookie"]){
@@ -48,12 +49,19 @@ const getSession = (headers:any) :ISession => {
             }
 
             if(cookie.key.toLowerCase() === "sessionid"){
+
                 session.isAuthenticated = true;
+
                 if(!cookie.expires){
                     const expires = new Date();
                     expires.setTime(expires.getTime() + (8*60*60*1000));
                     cookie.expires = expires
                 }
+
+                if(cookie.expires !== "Infinity"){
+                    session.expires = cookie.expires;
+                }
+
             }
 
             if(cookie.key.toLowerCase() === "csrftoken"){
@@ -445,9 +453,6 @@ const formatGraph = (data:any, session:ISession, user:IUser) : IMediaResponse =>
 const requestFollowings = async (req:IgRequest) : Promise<IgResponse<IFollowing>> => {
 
     const currentSession = getSession(req.headers);
-    if(!currentSession.isAuthenticated){
-        throw new AuthError("")
-    }
 
     const params = req.data.next ? {
         id: currentSession.userId,
@@ -523,11 +528,13 @@ const extractToken = (headers:AxiosResponseHeaders) => {
 
 const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
-    let x = 0;
+    const account = req.data.account;
+
+    let x = 10;
 
     if(x > 0){
         return {
-            data:{success:false,challenge:true, endpoint:"abc"},
+            data:{account, success:false,challenge:true, endpoint:"abc"},
             session:getSession(req.headers)
         }
     }
@@ -574,7 +581,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         }
 
         const params = new URLSearchParams();
-        params.append("username", req.data.username)
+        params.append("username", account)
         params.append("enc_password", createEncPassword(req.data.password))
         params.append("queryParams", "{}")
         params.append("optIntoOneTap", "false")
@@ -590,7 +597,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         console.log(authResponse.data)
 
         session = getSession(authResponse.headers);
-        const data = {success:session.isAuthenticated, challenge:false, endpoint:""};
+        const data = {account, success:session.isAuthenticated, challenge:false, endpoint:""};
 
         return {
             data,
@@ -600,7 +607,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     }catch(ex:any){
 
         if(ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required"){
-            return await requestChallenge(req.data.username, options, ex.response)
+            return await requestChallenge(account, options, ex.response)
         }
 
         console.log("Login failed")
@@ -615,7 +622,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     }
 }
 
-const requestChallenge = async (username:string, options:AxiosRequestConfig, res:AxiosResponse<any, any>) :Promise<IgResponse<ILoginResponse>> => {
+const requestChallenge = async (account:string, options:AxiosRequestConfig, res:AxiosResponse<any, any>) :Promise<IgResponse<ILoginResponse>> => {
 
     console.log("---------- challenge start -------")
 
@@ -666,19 +673,36 @@ const requestChallenge = async (username:string, options:AxiosRequestConfig, res
     if(nextRes.data.type && nextRes.data.type === "CHALLENGE"){
 
         return {
-            data:{success:false, challenge: true, endpoint:url},
+            data:{account:account, success:false, challenge: true, endpoint:url},
             session
         }
     }
 
     return {
-        data:{success:false, challenge: false, endpoint: ""},
+        data:{account, success:false, challenge: false, endpoint: ""},
         session
     }
 
 }
 
 const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
+
+    let x = parseInt(req.data.code);
+    console.log(req.data)
+    if(x>0){
+        x = 0;
+        return {
+            data:{account:req.data.account, success:false,challenge:true, endpoint:"abc"},
+            session:getSession(req.headers)
+        }
+    }
+
+    if(x === 0){
+        return {
+            data:{account:req.data.account, success:true,challenge:false, endpoint:"abc"},
+            session:getSession(req.headers)
+        }
+    }
 
     const currentSession = getSession(req.headers);
 
@@ -707,7 +731,7 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =>
         console.log(response.data)
 
         const session = getSession(response.headers);
-        const data = {success:session.isAuthenticated, challenge:!session.isAuthenticated, endpoint:""};
+        const data = {account:req.data.account, success:session.isAuthenticated, challenge:!session.isAuthenticated, endpoint:""};
 
         return {
             data,
@@ -716,7 +740,7 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =>
 
     }catch(ex:any){
         return {
-            data:{success:false, challenge:true, endpoint:req.data.endpoint},
+            data:{account:req.data.account, success:false, challenge:true, endpoint:req.data.endpoint},
             session: currentSession
         }
     }

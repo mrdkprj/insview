@@ -7,20 +7,23 @@ import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import CloseIcon from "@mui/icons-material/Close";
 import TextField from "@mui/material/TextField";
+import PasswordIcon from '@mui/icons-material/Password';
+import PinIcon from '@mui/icons-material/Pin';
 import DialogContent from "@mui/material/DialogContent";
 
 export interface IUsernameDialogProps {
     open:boolean,
     requireCode:boolean,
-    onSubmit: (username:string, password:string) => Promise<void>,
-    onCodeSubmit: (username:string, code:string) => Promise<void>,
+    onSubmit: (account:string, password:string) => Promise<void>,
+    onCodeSubmit: (code:string) => Promise<void>,
     onClose: () => void,
 }
 
 const LoginDialog = (props:IUsernameDialogProps) => {
 
     const [hasError, setHasError] = useState(false);
-    const [username, setUsername] = useState("");
+    const [isChallenge, setIsChallenge] = useState(props.requireCode);
+    const [account, setAccount] = useState("");
     const [password, setPassword] = useState("");
     const [code, setCode] = useState("");
 
@@ -29,9 +32,9 @@ const LoginDialog = (props:IUsernameDialogProps) => {
 
     const onSubmit = () => {
 
-        if(username && password){
+        if(account && password){
             setHasError(false);
-            props.onSubmit(username, password)
+            props.onSubmit(account, password)
         }else{
             setHasError(true);
         }
@@ -39,14 +42,14 @@ const LoginDialog = (props:IUsernameDialogProps) => {
 
     const onSubmitCode = () => {
         if(code){
-            props.onCodeSubmit(username, code);
+            props.onCodeSubmit(code);
         }else{
             setHasError(true);
         }
     }
 
     const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setUsername(e.target.value);
+        setAccount(e.target.value);
     };
 
     const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,6 +59,10 @@ const LoginDialog = (props:IUsernameDialogProps) => {
     const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setCode(e.target.value);
     };
+
+    const toggleDisplay = () => {
+        setIsChallenge(!isChallenge);
+    }
 
     return (
         <Dialog
@@ -67,20 +74,19 @@ const LoginDialog = (props:IUsernameDialogProps) => {
             hideBackdrop={true}
         >
             <AppBar sx={{ position: "relative" }}>
+
                 <Toolbar>
-                    <IconButton
-                        edge="start"
-                        color="inherit"
-                        onClick={props.onClose}
-                        aria-label="close"
-                    >
+                <IconButton edge="start" color="inherit" onClick={props.onClose}>
                         <CloseIcon />
-                    </IconButton>
+                </IconButton>
                     <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">Authenticate</Typography>
+                    <IconButton edge="end" color="inherit" onClick={toggleDisplay}>
+                        {isChallenge ? <PasswordIcon /> : <PinIcon />}
+                    </IconButton>
                 </Toolbar>
             </AppBar>
             <DialogContent sx={{marginTop:"30px"}}>
-                {props.requireCode ?
+                {isChallenge ?
                     <form>
                         <TextField
                             type={"number"}
@@ -109,7 +115,7 @@ const LoginDialog = (props:IUsernameDialogProps) => {
                             label="Username"
                             fullWidth
                             variant="standard"
-                            value={username}
+                            value={account}
                             onChange={handleUsernameChange}
                             helperText={hasError ? EMPTY_ID : ""}
                         />

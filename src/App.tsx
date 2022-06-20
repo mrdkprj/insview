@@ -15,13 +15,14 @@ import UsernameDialog from "./component/UsernameDialog"
 import ImageDialog from "./component/ImageDialog";
 import LoginDialog from "./component/LoginDialog"
 import AccountDialog from "./component/AccountDialog";
+import IconButton from "@mui/material/IconButton";
 import {Grid, scrollTo} from "./component/Grid"
 import {query, save, queryMore, login, challenge, logout, getFollowings, deleteHistory} from "./request";
 import useWindowDimensions from "./dimensions";
 import {appStateReducer, initialAppState, AppAction} from "./state/appStateReducer";
 import {mediaStateReducer, initialMediaState, MediaAction} from "./state/mediaStateReducer";
+import {authStateReducer, initialAuthState, AuthAction} from "./state/authStateReducer";
 import { IHistory, emptyResponse } from "./response";
-import IconButton from "@mui/material/IconButton";
 
 function App(){
 
@@ -30,12 +31,12 @@ function App(){
     const { width, height } = useWindowDimensions();
 
     const [appState, dispatchAppState] = useReducer(appStateReducer, initialAppState);
-
     const [mediaState, dispatchMediaState] = useReducer(mediaStateReducer, initialMediaState);
+    const [authState, dispatchAuthState] = useReducer(authStateReducer, initialAuthState);
 
     const handleError = useCallback( async (ex:any, message:string = "") => {
 
-        dispatchMediaState({type:MediaAction.toggleAuth, value: ex.data.igAuth})
+        dispatchAuthState({type:AuthAction.toggleAuth, value: ex.data.igAuth})
 
         if(!ex.data.igAuth){
             return openLoginDialog();
@@ -149,19 +150,20 @@ function App(){
 
     },[mediaState.user.username, handleError])
 
-    const requestLogin = useCallback( async(username:string, password:string) => {
+    const requestLogin = useCallback( async(account:string, password:string) => {
 
         dispatchAppState({type:AppAction.start})
 
         try{
 
-            const result = await login(username, password);
+            dispatchAuthState({type:AuthAction.init, value:account});
 
-            dispatchAppState({type:AppAction.toggleVerification, value:{value:result.status.challenge, url:result.status.endpoint}})
+            const result = await login(account, password);
+
+            dispatchAuthState({type:AuthAction.update, value:result.status})
 
             if(!result.status.challenge){
                 dispatchMediaState({type:MediaAction.update, value: result.media})
-                dispatchMediaState({type:MediaAction.toggleAuth, value: result.status.success})
                 dispatchAppState({type:AppAction.toggleLoginModal, value:!result.status.success})
             }
 
@@ -175,16 +177,15 @@ function App(){
 
     },[handleError]);
 
-    const verifyCode = useCallback( async (username:string, code:string) => {
+    const verifyCode = useCallback( async (code:string) => {
 
         try{
 
-            const result = await challenge(username, code, appState.checkpointUrl);
+            const result = await challenge(authState.account, code, authState.endpoint);
 
-            dispatchAppState({type:AppAction.toggleVerification, value:{value:result.status.challenge, url:result.status.endpoint}})
+            dispatchAuthState({type:AuthAction.update, value:result.status})
 
             if(!result.status.challenge){
-                dispatchMediaState({type:MediaAction.toggleAuth, value: result.status.success})
                 dispatchAppState({type:AppAction.toggleLoginModal, value:!result.status.success})
             }
 
@@ -196,7 +197,7 @@ function App(){
             dispatchAppState({type:AppAction.end})
         }
 
-    },[handleError, appState.checkpointUrl])
+    },[handleError, authState.account, authState.endpoint])
 
     const openAccountDialog = async () => {
 
@@ -204,7 +205,7 @@ function App(){
             await requestFollowing();
         }
 
-        if(mediaState.isAuthenticated){
+        if(authState.success){
             dispatchAppState({type:AppAction.toggleAccountModal, value:true})
         }
 
@@ -260,7 +261,7 @@ function App(){
 
         try{
             await logout();
-            dispatchMediaState({type:MediaAction.toggleAuth, value: false})
+            dispatchAuthState({type:AuthAction.init, value:""})
             closeAccountDialog();
         }catch(ex:any){
             handleError(ex, "Logout attempt failed")
@@ -304,7 +305,7 @@ function App(){
             }
 
             {appState.openLoginModal &&
-                <LoginDialog onClose={closeLoginDialog} onSubmit={requestLogin} onCodeSubmit={verifyCode} open={appState.openLoginModal} requireCode={appState.requireVerification}/>
+                <LoginDialog onClose={closeLoginDialog} onSubmit={requestLogin} onCodeSubmit={verifyCode} open={appState.openLoginModal} requireCode={authState.challenge}/>
             }
 
             {appState.openAccountModal &&
@@ -320,7 +321,7 @@ function App(){
             }
 
             <AppBar position="fixed" style={{height: barHeight, display:"flex", justifyContent: "center", alignItems:"center"}} sx={{ bgcolor:"#fff"}}>
-                {mediaState.isAuthenticated ?
+                {authState.success ?
                     <IconButton size="small" style={{position:"absolute", left:"5px"}} onClick={openAccountDialog}>
                         <InstagramIcon/>
                     </IconButton>

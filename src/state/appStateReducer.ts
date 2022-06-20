@@ -6,8 +6,6 @@ export interface IAppState {
     openAccountModal: boolean,
     hasError: boolean,
     errorMessage: string,
-    requireVerification:boolean,
-    checkpointUrl:string
 };
 
 export const initialAppState : IAppState = {
@@ -18,8 +16,6 @@ export const initialAppState : IAppState = {
     openAccountModal: false,
     hasError: false,
     errorMessage: "",
-    requireVerification: false,
-    checkpointUrl:"",
 }
 
 export interface IAppAction {
@@ -34,7 +30,6 @@ export const AppAction = {
     toggleImageModal: "toggleImageModal",
     toggleLoginModal: "toggleLoginModal",
     toggleAccountModal: "toggleAccountModal",
-    toggleVerification: "toggleVerification",
     showError: "showError",
     hideError: "hideError"
 }
@@ -58,9 +53,6 @@ export const appStateReducer = (state: IAppState, action: IAppAction): IAppState
 
         case AppAction.toggleAccountModal:
             return {...state, openAccountModal:action.value};
-
-        case AppAction.toggleVerification:
-            return {...state, requireVerification:action.value.value, checkpointUrl: action.value.url};
 
         case AppAction.showError:
             return {...state, hasError:true, errorMessage: action.value};

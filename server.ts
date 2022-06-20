@@ -130,7 +130,7 @@ const sendErrorResponse = (res:any, ex:any, message:string = "") => {
 
 app.use((req, res, next) => {
 
-    const passthru = ["/login", "/logout"]
+    const passthru = ["/login", "/logout", "/challenge"]
 
     if(req.session.account || passthru.includes(req.path) || req.method === "GET"){
         next()
@@ -173,20 +173,20 @@ app.post("/querymore", async (req, res) => {
 
 app.post("/login", async (req, res) => {
 
-    const username = req.body.username;
+    const account = req.body.account;
     const password = req.body.password;
 
-    await tryLogin(req, res, username, password);
+    await tryLogin(req, res, account, password);
 
 })
 
 app.post("/challenge", async (req, res) => {
 
-    const username = req.body.username;
+    const account = req.body.account;
     const code = req.body.code;
     const endpoint = req.body.endpoint;
 
-    await tryChallenge(req, res, username, code, endpoint);
+    await tryChallenge(req, res, account, code, endpoint);
 
 })
 
@@ -270,18 +270,18 @@ const restoreBySession = async (req:any) => {
     }
 
 }
-const tryLogin = async (req:any, res:any, username:string, password:string) => {
+const tryLogin = async (req:any, res:any, account:string, password:string) => {
 
-    if(!username || !password){
+    if(!account || !password){
         return sendErrorResponse(res, {message:"Username/password required"});
     }
 
     try{
 
-        const result = await login({data:{username, password}, headers:req.headers})
+        const result = await login({data:{account, password}, headers:req.headers})
 
         if(result.data.success){
-            req.session.account = username;
+            req.session.account = account;
         }
 
         const media = await restoreBySession(req);
@@ -300,14 +300,14 @@ const tryLogin = async (req:any, res:any, username:string, password:string) => {
     }
 }
 
-const tryChallenge = async (req:any, res:any, username:string, code:string, endpoint:string) => {
+const tryChallenge = async (req:any, res:any, account:string, code:string, endpoint:string) => {
 
     try{
 
-        const result = await challenge({data:{code, endpoint}, headers:req.headers})
+        const result = await challenge({data:{account, code, endpoint}, headers:req.headers})
 
         if(result.data.success){
-            req.session.account = username;
+            req.session.account = account;
         }
 
         const media = await restoreBySession(req);
