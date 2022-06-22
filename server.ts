@@ -420,6 +420,8 @@ const refresh = async  (req:any, res:any, username:string, history:IHistory) => 
 
         const igResponse = await requestMedia({data:{username},headers:req.headers});
 
+        history[username] = igResponse.data.history[username];
+
         igResponse.data.history = history;
 
         await db.saveMedia(req.session.account, igResponse.data);

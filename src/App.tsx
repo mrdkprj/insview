@@ -88,8 +88,9 @@ function App(){
         try{
 
             const result = await query(username, history, refresh);
-            dispatchMediaState({type:MediaAction.update, value: result})
-            scrollTo(result.rowIndex)
+            dispatchAuthState({type:AuthAction.toggleAuth, value:result.status})
+            dispatchMediaState({type:MediaAction.update, value: result.data})
+            scrollTo(result.data.rowIndex)
 
         }catch(ex:any){
 
@@ -113,7 +114,8 @@ function App(){
 
             dispatchMediaState({type:MediaAction.toggleLock, value: true})
             const result = await queryMore(mediaState.user, mediaState.next);
-            dispatchMediaState({type:MediaAction.append, value: result})
+            dispatchAuthState({type:AuthAction.toggleAuth, value:result.status})
+            dispatchMediaState({type:MediaAction.append, value: result.data})
 
         }catch(ex:any){
 
@@ -223,7 +225,8 @@ function App(){
 
             const result = await getFollowings(mediaState.followings.next);
 
-            dispatchMediaState({type:MediaAction.followings, value: result})
+            dispatchAuthState({type:AuthAction.toggleAuth, value:result.status})
+            dispatchMediaState({type:MediaAction.followings, value: result.data})
 
         }catch(ex:any){
 

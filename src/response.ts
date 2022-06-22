@@ -22,6 +22,11 @@ export class RequestError extends Error {
     }
 }
 
+export interface IResponse<T> {
+    status: boolean,
+    data: T,
+}
+
 export interface IMedia {
     id: string,
     media_url: string;
@@ -111,10 +116,3 @@ export interface ISession {
     expires: Date | null,
 }
 
-export const ErrorSession = {
-    isAuthenticated:false,
-    csrfToken:"",
-    userId:"",
-    userAgent:"",
-    cookies: [],
-}

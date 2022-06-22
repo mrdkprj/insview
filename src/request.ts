@@ -1,7 +1,21 @@
-import axios, {AxiosRequestConfig, AxiosResponse} from "axios";
-import {IMediaResponse, IHistory, IUser, IAuthResponse, IFollowing, RequestError} from "./response"
+import axios, {AxiosRequestConfig, AxiosResponse, AxiosResponseHeaders} from "axios";
+import {IMediaResponse, IHistory, IUser, IAuthResponse, IFollowing, RequestError, IResponse} from "./response"
 
-const query = async (username: string, history:IHistory, refresh:boolean) => {
+const getState = (headers:AxiosResponseHeaders) :boolean => {
+
+    return headers["ig-auth"] === "true" ? true : false;
+
+}
+
+const throwError = (ex:any) => {
+
+    const authState = ex.response.headers["ig-auth"] === "true" ? true : false;
+
+    throw new RequestError(ex.response.data, {igAuth: authState})
+
+}
+
+const query = async (username: string, history:IHistory, refresh:boolean) : Promise<IResponse<IMediaResponse>> => {
 
     const url = "/query";
     const method = "POST";
@@ -20,7 +34,10 @@ const query = async (username: string, history:IHistory, refresh:boolean) => {
     try{
         const result :AxiosResponse<IMediaResponse> = await axios.request(options);
 
-        return result.data;
+        return {
+            status: getState(result.headers),
+            data: result.data,
+        }
 
     }catch(ex:any){
 
@@ -30,7 +47,7 @@ const query = async (username: string, history:IHistory, refresh:boolean) => {
 
 }
 
-const queryMore = async (user:IUser, next:string) => {
+const queryMore = async (user:IUser, next:string) : Promise<IResponse<IMediaResponse>> => {
 
     const url = "/querymore";
     const method = "POST";
@@ -49,7 +66,10 @@ const queryMore = async (user:IUser, next:string) => {
     try{
         const result :AxiosResponse<IMediaResponse> = await axios.request(options);
 
-        return result.data;
+        return {
+            status: getState(result.headers),
+            data: result.data,
+        }
 
     }catch(ex:any){
 
@@ -59,7 +79,7 @@ const queryMore = async (user:IUser, next:string) => {
 
 }
 
-const login = async (account:string, password:string) => {
+const login = async (account:string, password:string) : Promise<IAuthResponse> => {
 
     const url = "/login";
     const method = "POST";
@@ -87,7 +107,7 @@ const login = async (account:string, password:string) => {
     }
 }
 
-const getFollowings = async (next:string) => {
+const getFollowings = async (next:string) : Promise<IResponse<IFollowing>> => {
 
     const url = "/following";
     const method = "POST";
@@ -106,7 +126,10 @@ const getFollowings = async (next:string) => {
     try{
         const result :AxiosResponse<IFollowing> = await axios.request(options);
 
-        return result.data;
+        return {
+            status: getState(result.headers),
+            data: result.data,
+        }
 
     }catch(ex:any){
 
@@ -115,7 +138,7 @@ const getFollowings = async (next:string) => {
     }
 }
 
-const challenge = async (account:string, code:string, endpoint:string) => {
+const challenge = async (account:string, code:string, endpoint:string) : Promise<IAuthResponse> => {
 
     const url = "/challenge";
     const method = "POST";
@@ -143,7 +166,7 @@ const challenge = async (account:string, code:string, endpoint:string) => {
     }
 }
 
-const logout = async () => {
+const logout = async () : Promise<IAuthResponse> => {
 
     const url = "/logout";
     const method = "POST";
@@ -218,14 +241,6 @@ const deleteHistory = async (history:IHistory, current:string, target:string) =>
 
         return throwError(ex)
     }
-}
-
-const throwError = (ex:any) => {
-
-    const authState = ex.response.headers["ig-auth"] === "true" ? true : false;
-
-    throw new RequestError(ex.response.data, {igAuth: authState})
-
 }
 
 export { login, challenge, logout, query, queryMore, getFollowings, save, deleteHistory}

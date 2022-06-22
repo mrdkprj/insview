@@ -211,7 +211,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
         document.body.style.overflow = "hidden";
 
-        ref.current?.addEventListener("touchstart", onTouchStart);
+        ref.current?.addEventListener("touchstart", onTouchStart, { passive: false });
         ref.current?.addEventListener("touchmove", onTouchMove, { passive: false });
         ref.current?.addEventListener("touchend", onTouchEnd);
         imageRef.current?.addEventListener("click", onImageClick, { passive: false });

@@ -288,7 +288,7 @@ const formatMedia = (data:any) :IMediaResponse =>{
         biography: root.biography,
     }
 
-    const history = {}
+    const history = {username: user}
 
     return {username, media, user, rowIndex, next, history, isAuthenticated:true};
 }
