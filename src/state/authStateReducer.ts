@@ -26,7 +26,7 @@ export const authStateReducer = (state: ILoginResponse, action: IAuthAction): IL
             return {...state, ...initState};
 
         case AuthAction.update:
-            return {...state, ...action.value};
+            return {...state, ...action.value}
 
         case AuthAction.toggleAuth:
             return {...state, success:action.value}

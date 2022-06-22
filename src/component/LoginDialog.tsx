@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useState, useEffect} from "react";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import AppBar from "@mui/material/AppBar";
@@ -23,6 +23,7 @@ const LoginDialog = (props:IUsernameDialogProps) => {
 
     const [hasError, setHasError] = useState(false);
     const [isChallenge, setIsChallenge] = useState(props.requireCode);
+
     const [account, setAccount] = useState("");
     const [password, setPassword] = useState("");
     const [code, setCode] = useState("");
@@ -63,6 +64,10 @@ const LoginDialog = (props:IUsernameDialogProps) => {
     const toggleDisplay = () => {
         setIsChallenge(!isChallenge);
     }
+
+    useEffect(() =>{
+        setIsChallenge(props.requireCode)
+    },[props.requireCode])
 
     return (
         <Dialog
