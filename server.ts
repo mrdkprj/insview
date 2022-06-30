@@ -270,6 +270,17 @@ const restoreBySession = async (req:any) => {
     }
 
 }
+
+const saveSession = (req:any, account:string, session:ISession) => {
+
+    req.session.account = account
+
+    if(session.expires){
+        const maxAge = session.expires.getTime() - new Date().getTime();
+        req.session.cookie.maxAge = maxAge
+    }
+}
+
 const tryLogin = async (req:any, res:any, account:string, password:string) => {
 
     if(!account || !password){
@@ -281,7 +292,7 @@ const tryLogin = async (req:any, res:any, account:string, password:string) => {
         const result = await login({data:{account, password}, headers:req.headers})
 
         if(result.data.success){
-            req.session.account = account;
+            saveSession(req, account, result.session);
         }
 
         const media = await restoreBySession(req);
@@ -307,7 +318,7 @@ const tryChallenge = async (req:any, res:any, account:string, code:string, endpo
         const result = await challenge({data:{account, code, endpoint}, headers:req.headers})
 
         if(result.data.success){
-            req.session.account = account;
+            saveSession(req, account, result.session);
         }
 
         const media = await restoreBySession(req);

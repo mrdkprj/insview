@@ -58,6 +58,7 @@ const getSession = (headers:any) :ISession => {
                     cookie.expires = expires
                 }
 
+
                 if(cookie.expires !== "Infinity"){
                     session.expires = cookie.expires;
                 }
