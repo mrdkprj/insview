@@ -18,19 +18,11 @@ let swipeState = {
     direction: "",
 }
 
-const imagePosition = {
-    x:0,
-    y:0,
-    moveX:0,
-    moveY:0,
-}
-
 const SCALE = 3;
 let tapped :boolean = false;
 let zoomed = false;
-let rect :any = null;
-let containerRect :any = null
 let timer :any = null;
+let imageRect :any = null;
 
 const isHorizontalAction = () => {
     if(swipeState.direction === direction.right || swipeState.direction === direction.left){
@@ -89,11 +81,6 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
             direction:"",
         }
 
-        imagePosition.x = 0;
-        imagePosition.y = 0;
-        imagePosition.moveX = 0
-        imagePosition.moveY = 0
-
     },[]);
 
     const closeDialog = useCallback(() => {
@@ -132,36 +119,6 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
         const xDiff = swipeState.startX - e.touches[0].clientX;
         const yDiff = swipeState.startY - e.touches[0].clientY;
 
-        if(zoomed && imageRef.current){
-
-            const imgBoundRecttop = Math.max((rect.height * SCALE - containerRect.height),0) / 3;
-            const imgBoundRectleft = Math.max((rect.width * SCALE - containerRect.width),0) / 3;
-
-            const dx = e.touches[0].clientX - swipeState.startX
-            const dy = e.touches[0].clientY - swipeState.startY
-
-            swipeState.startX = e.touches[0].clientX;
-            swipeState.startY = e.touches[0].clientY;
-
-            if(imagePosition.y + dy > 0 || imagePosition.y + dy < imgBoundRecttop * -1){
-
-            }else{
-                imagePosition.y += dy;
-                imagePosition.moveY += dy;
-            }
-
-            if(imagePosition.x + dx > 0 || imagePosition.x + dx < imgBoundRectleft * -1){
-
-            }else{
-                imagePosition.x += dx;
-                imagePosition.moveX += dx;
-            }
-
-            imageRef.current.style["transform"] = `scale(${SCALE}) translate(${imagePosition.moveX}px, ${imagePosition.moveY}px`
-
-            return;
-        }
-
         if(!swipeState.direction){
             swipeState.direction = getDirection(xDiff,yDiff);
         }
@@ -190,29 +147,24 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
         if(zoomed){
             cleanupSwipe();
-            imageRef.current.style["transform"] = "scale(1) translate(0px, 0px)"
+            imageRef.current.style["transform"] = "scale(1)"
             zoomed = false
         }else{
 
-            let x = e.pageX - rect.left;
-            let y = e.pageY - rect.top;
+            let x = e.pageX - imageRect.left;
+            let y = e.pageY - imageRect.top;
 
-            const nextTop = rect.top - y * 2
-            const nextBottom = (rect.top + rect.height * SCALE) - y * 2
-            imagePosition.x = (rect.left - x * 2) / 3
+            const nextTop = imageRect.top - y * 2
+            const nextBottom = (imageRect.top + imageRect.height * SCALE) - y * 2
 
             if(nextTop > 0){
-                imagePosition.y = 0;
-                y = rect.top / 2;
+                y = imageRect.top / 2;
             }else if(nextBottom < window.screen.height){
-                imagePosition.y = window.screen.height - rect.height * SCALE
-                y = rect.height - rect.top / 2
-            }else{
-                imagePosition.y = (rect.top - y * 2) / 3
+                y = imageRect.height - imageRect.top / 2
             }
 
             imageRef.current.style["transform-origin" as any] = `${x}px ${y}px`
-            imageRef.current.style["transform"] = `scale(${SCALE}) translate(0px, 0px)`
+            imageRef.current.style["transform"] = `scale(${SCALE})`
 
             zoomed = true;
 
@@ -258,8 +210,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
         imageRef.current?.addEventListener("click", onImageClick, { passive: false });
         document.addEventListener("keydown", handleKeydown, { passive: false });
 
-        rect = imageRef.current?.getBoundingClientRect();
-        containerRect = ref.current?.getBoundingClientRect();
+        imageRect = imageRef.current?.getBoundingClientRect();
 
         return (() => {
             document.removeEventListener("keydown", handleKeydown);

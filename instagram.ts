@@ -289,7 +289,7 @@ const formatMedia = (data:any) :IMediaResponse =>{
         biography: root.biography,
     }
 
-    const history = {username: user}
+    const history = {[username]: user}
 
     return {username, media, user, rowIndex, next, history, isAuthenticated:true};
 }
@@ -445,7 +445,7 @@ const formatGraph = (data:any, session:ISession, user:IUser) : IMediaResponse =>
 
     const username = user.username;
 
-    const history = {}
+    const history = {[username]: user}
 
     return {username, media, user, rowIndex, next, history, isAuthenticated: session.isAuthenticated};
 

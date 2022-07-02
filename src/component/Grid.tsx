@@ -83,7 +83,7 @@ export const scrollTo = (scrollTop:number) => {
 export const Grid = memo<IGridContext>( (propContext) => {
 
     useEffect(() => {
-        const id = setInterval(checkScrollTop, 60000);
+        const id = setInterval(checkScrollTop, 10000);
         return () => clearInterval(id)
     },[])
 

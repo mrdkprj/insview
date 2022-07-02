@@ -36,6 +36,7 @@ export const MediaAction = {
     history: "history",
     followings: "followings",
     toggleLock: "toggleLock",
+    updateRowIndex : "updateRowIndex",
 }
 
 export const mediaStateReducer = (state: IMediaState, action: IMediaAction): IMediaState => {
@@ -64,6 +65,9 @@ export const mediaStateReducer = (state: IMediaState, action: IMediaAction): IMe
 
         case MediaAction.history:
             return {...state, history:action.value};
+
+        case MediaAction.updateRowIndex:
+            return {...state, rowIndex: action.value}
 
         case MediaAction.toggleLock:
             return {...state, locked:action.value};
