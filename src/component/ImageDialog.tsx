@@ -273,6 +273,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
         maxHeight: "100%",
         maxWidth: "100%",
         transition: "transform 0.7s",
+        willChange: "transform"
     });
 
     const Backdrop = styled("div")({
