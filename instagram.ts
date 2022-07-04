@@ -742,7 +742,69 @@ const logout = async (req:IgRequest) => {
     await axios.request(options);
 }
 
-export {login, challenge, logout, requestMore, requestMedia, requestImage, requestFollowings, getSession}
+const follow = async (req:IgRequest) => {
+
+    const currentSession = getSession(req.headers);
+
+    if(!currentSession.isAuthenticated){
+        throw new AuthError("")
+    }
+
+    const url = `${baseUrl}/web/friendships/${req.data.user.id}/follow/`
+
+    const headers = createHeaders(baseUrl, currentSession);
+    headers.Cookie = req.headers.cookie ?? "";
+
+    const options :AxiosRequestConfig = {
+        url,
+        method: "POST",
+        headers,
+        withCredentials:true
+    }
+
+    const response = await axios.request(options);
+
+    const data = response.data;
+    const session = updateSession(currentSession, response.headers);
+
+    return {
+        data,
+        session
+    }
+}
+
+const unfollow = async (req:IgRequest) => {
+
+    const currentSession = getSession(req.headers);
+
+    if(!currentSession.isAuthenticated){
+        throw new AuthError("")
+    }
+
+    const url = `${baseUrl}/web/friendships/${req.data.user.id}/unfollow/`
+
+    const headers = createHeaders(baseUrl, currentSession);
+    headers.Cookie = req.headers.cookie ?? "";
+
+    const options :AxiosRequestConfig = {
+        url,
+        method: "POST",
+        headers,
+        withCredentials:true
+    }
+
+    const response = await axios.request(options);
+
+    const data = response.data;
+    const session = updateSession(currentSession, response.headers);
+
+    return {
+        data,
+        session
+    }
+}
+
+export {login, challenge, logout, requestMore, requestMedia, requestImage, requestFollowings, getSession, follow, unfollow}
 
 /*
   async _getFollowData({ fieldName, queryHash, variables }) {

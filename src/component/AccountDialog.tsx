@@ -1,6 +1,6 @@
 import { FixedSizeList } from "react-window";
 import { styled } from "@mui/system";
-import { memo } from "react";
+import { memo, useCallback } from "react";
 import { IFollowing, IUser} from "../response";
 import Dialog from "@mui/material/Dialog";
 import AppBar from "@mui/material/AppBar";
@@ -20,6 +20,7 @@ export interface IAccountContext{
     onLogout: () => void,
     onClose: () => void,
     onUserSelect: (username:string) => void,
+    toggleFollow: (follow:boolean, user:IUser) => Promise<boolean>,
 }
 
 let rowCount = 0;
@@ -39,7 +40,7 @@ const AccountDialog = memo<IAccountContext>( (props) => {
     const User = styled("div")({
         display:"flex",
         flexDirection: "column",
-        marginRight: "24px"
+        flex: "1 1 auto"
     });
 
     const Names = styled("div")({
@@ -47,8 +48,44 @@ const AccountDialog = memo<IAccountContext>( (props) => {
         textOverflow: "ellipsis",
         whiteSpace: "nowrap",
         fontSize: "14px",
-        width: 300
+        width: "200px"
     });
+
+    const Action = styled("button")({
+        padding: "5px 9px",
+        borderRadius: "4px",
+        fontSize: "14px",
+        backgroundColor: "rgb(255, 255, 255)",
+        color: "rgb(0, 0, 0)",
+        border: "1px solid #ccc",
+        marginRight: "20px"
+    })
+
+    const toggleFollow = useCallback( async (e: React.MouseEvent<HTMLButtonElement>, user:IUser) => {
+
+        const target :HTMLButtonElement = (e.target as HTMLButtonElement);
+
+        const follow = target.classList.contains("following") ? false : true
+
+        const result = await props.toggleFollow(follow, user);
+
+        if(!result) return;
+
+        if(target.classList.contains("following")){
+            target.style["background-color" as any] = "rgb(25, 118, 210)"
+            target.style["color"] = "rgb(255, 255, 255)"
+            target.classList.remove("following");
+            target.classList.add("unfollow");
+            target.textContent = "Follow"
+        }else{
+            target.style["background-color" as any] = "rgb(255, 255, 255)"
+            target.style["color"] = "rgb(0, 0, 0)"
+            target.classList.remove("unfollow");
+            target.classList.add("following");
+            target.textContent = "Unfollow"
+        }
+
+    },[props])
 
     const onItemsRendered = ({visibleStopIndex}:{visibleStopIndex:number}) => {
         if(visibleStopIndex === rowCount - 1 && props.data.next){
@@ -65,6 +102,7 @@ const AccountDialog = memo<IAccountContext>( (props) => {
                     <Names>{data[index].name}</Names>
                     <Names>{data[index].username}</Names>
                 </User>
+                <Action onClick={(e) => toggleFollow(e, data[index])} className="following">Unfollow</Action>
             </Container>
         )
     }

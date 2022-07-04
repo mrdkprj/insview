@@ -8,7 +8,7 @@ import type { Cookie } from "tough-cookie";
 import db from "./db/db"
 import { AuthError, emptyResponse, IAuthResponse, IHistory, IMediaResponse, ISession, IUser } from "./src/response";
 import { IMediaTable } from "./db/IDatabase";
-import {login, challenge, requestMedia, requestMore, requestImage, logout, requestFollowings, getSession} from "./instagram"
+import * as api from "./instagram"
 
 declare module "express-session" {
     interface SessionData {
@@ -144,6 +144,12 @@ app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "build", "index.html"));
 });
 
+app.get("/media", async (req,res) => {
+
+    await retrieveImage(req, res)
+
+})
+
 app.post("/query", async (req, res) => {
 
     const username = req.body.username;
@@ -151,13 +157,13 @@ app.post("/query", async (req, res) => {
     const forceRequest = req.body.refresh;
 
     if(forceRequest){
-        return await refresh(req, res, username, history);
+        return await tryRefresh(req, res, username, history);
     }
 
     if(!username){
         await tryRestore(req, res);
     }else{
-        await getMedia(req, res, username, history);
+        await tryQuery(req, res, username, history);
     }
 
 });
@@ -167,7 +173,7 @@ app.post("/querymore", async (req, res) => {
     const user = req.body.user;
     const next = req.body.next;
 
-    await queryMore(req, res, user, next);
+    await tryQueryMore(req, res, user, next);
 
 });
 
@@ -195,9 +201,19 @@ app.post("/logout", async (req:any, res:any) => {
     await tryLogout(req, res);
 })
 
-app.get("/media", async (req,res) => {
+app.post("/follow", async (req, res) => {
 
-    await retrieveImage(req, res)
+    const user = req.body.user;
+
+    await tryFollow(req, res, user);
+
+})
+
+app.post("/unfollow", async (req, res) => {
+
+    const user = req.body.user;
+
+    await tryUnfollow(req, res, user);
 
 })
 
@@ -235,14 +251,14 @@ app.post("/following", async (req, res) => {
 
     const next = req.body.next;
 
-    await getFollowings(req, res, next)
+    await tryGetFollowings(req, res, next)
 })
 
 const tryRestore = async (req:any, res:any) => {
 
     try{
 
-        const session = getSession(req.headers);
+        const session = api.getSession(req.headers);
 
         const result = await db.restore(req.session.account);
 
@@ -289,7 +305,7 @@ const tryLogin = async (req:any, res:any, account:string, password:string) => {
 
     try{
 
-        const result = await login({data:{account, password}, headers:req.headers})
+        const result = await api.login({data:{account, password}, headers:req.headers})
 
         if(result.data.success){
             saveSession(req, account, result.session);
@@ -315,7 +331,7 @@ const tryChallenge = async (req:any, res:any, account:string, code:string, endpo
 
     try{
 
-        const result = await challenge({data:{account, code, endpoint}, headers:req.headers})
+        const result = await api.challenge({data:{account, code, endpoint}, headers:req.headers})
 
         if(result.data.success){
             saveSession(req, account, result.session);
@@ -342,7 +358,7 @@ const tryLogout = async (req:any, res:any) => {
 
     try{
 
-        await logout({data:{}, headers:req.headers});
+        await api.logout({data:{}, headers:req.headers});
 
         req.session.destroy();
 
@@ -355,7 +371,7 @@ const tryLogout = async (req:any, res:any) => {
     }
 }
 
-const getMedia = async (req:any, res:any, username:string, history:IHistory) => {
+const tryQuery = async (req:any, res:any, username:string, history:IHistory) => {
 
     let newHistory :IHistory = history;
 
@@ -365,7 +381,7 @@ const getMedia = async (req:any, res:any, username:string, history:IHistory) => 
 
         if(mediaData.username){
 
-            const session = getSession(req.headers);
+            const session = api.getSession(req.headers);
 
             newHistory[mediaData.username] = mediaData.user
 
@@ -385,7 +401,7 @@ const getMedia = async (req:any, res:any, username:string, history:IHistory) => 
 
         }
 
-        const igResponse = await requestMedia({data:{username}, headers: req.headers});
+        const igResponse = await api.requestMedia({data:{username}, headers: req.headers});
 
         newHistory[igResponse.data.username] = igResponse.data.user;
 
@@ -403,13 +419,13 @@ const getMedia = async (req:any, res:any, username:string, history:IHistory) => 
     }
 }
 
-const queryMore = async (req:any, res:any, user:IUser, next:string) => {
+const tryQueryMore = async (req:any, res:any, user:IUser, next:string) => {
 
     try{
 
         const historyData = await db.queryHistory(req.session.account);
 
-        const igResponse = await requestMore({data:{user, next}, headers:req.headers});
+        const igResponse = await api.requestMore({data:{user, next}, headers:req.headers});
 
         igResponse.data.history = historyData.history;
 
@@ -425,11 +441,11 @@ const queryMore = async (req:any, res:any, user:IUser, next:string) => {
 
 }
 
-const refresh = async  (req:any, res:any, username:string, history:IHistory) => {
+const tryRefresh = async  (req:any, res:any, username:string, history:IHistory) => {
 
     try{
 
-        const igResponse = await requestMedia({data:{username},headers:req.headers});
+        const igResponse = await api.requestMedia({data:{username},headers:req.headers});
 
         history[username] = igResponse.data.history[username];
 
@@ -447,11 +463,43 @@ const refresh = async  (req:any, res:any, username:string, history:IHistory) => 
 
 }
 
-const getFollowings = async (req:any, res:any, next:string) => {
+const tryGetFollowings = async (req:any, res:any, next:string) => {
 
     try{
 
-        const result = await requestFollowings({data:{next},headers:req.headers});
+        const result = await api.requestFollowings({data:{next},headers:req.headers});
+
+        await sendResponse(req, res, result.data, result.session);
+
+    }catch(ex:any){
+
+        return sendErrorResponse(res, ex);
+
+    }
+
+}
+
+const tryFollow = async (req:any, res:any, user:any) => {
+
+    try{
+
+        const result = await api.follow({data:{user},headers:req.headers});
+
+        await sendResponse(req, res, result.data, result.session);
+
+    }catch(ex:any){
+
+        return sendErrorResponse(res, ex);
+
+    }
+
+}
+
+const tryUnfollow = async (req:any, res:any, user:any) => {
+
+    try{
+
+        const result = await api.unfollow({data:{user},headers:req.headers});
 
         await sendResponse(req, res, result.data, result.session);
 
@@ -475,7 +523,7 @@ const retrieveImage = async (req:any, res:any) => {
             }
         })
 
-        const result = await requestImage(url.join(""));
+        const result = await api.requestImage(url.join(""));
 
         Object.entries(result.headers).forEach(([key, value]) => res.setHeader(key, value));
 

@@ -1,28 +1,18 @@
 import React, { useEffect, useCallback, useReducer } from "react";
-import Box from "@mui/material/Box";
-import AppBar from "@mui/material/AppBar";
-import Typography from "@mui/material/Typography";
-import Link from "@mui/material/Link";
-import RefreshIcon from '@mui/icons-material/Refresh';
-import InstagramIcon from '@mui/icons-material/Instagram';
-import LoginIcon from '@mui/icons-material/Login';
-import AccountCircle from "@mui/icons-material/AccountCircle";
-import Backdrop from "@mui/material/Backdrop";
-import CircularProgress from "@mui/material/CircularProgress";
-import Snackbar from "@mui/material/Snackbar";
-import MuiAlert from "@mui/material/Alert";
+import {Box, AppBar, Typography, Link, Backdrop, CircularProgress, Snackbar, Alert} from "@mui/material";
+import {Refresh, Instagram, Login, AccountCircle} from "@mui/icons-material"
 import UsernameDialog from "./component/UsernameDialog"
 import ImageDialog from "./component/ImageDialog";
 import LoginDialog from "./component/LoginDialog"
 import AccountDialog from "./component/AccountDialog";
 import IconButton from "@mui/material/IconButton";
 import {Grid, scrollTo} from "./component/Grid"
-import {query, save, queryMore, login, challenge, logout, getFollowings, deleteHistory} from "./request";
+import {query, save, queryMore, login, challenge, logout, getFollowings, deleteHistory, follow, unfollow} from "./request";
 import useWindowDimensions from "./dimensions";
 import {appStateReducer, initialAppState, AppAction} from "./state/appStateReducer";
 import {mediaStateReducer, initialMediaState, MediaAction} from "./state/mediaStateReducer";
 import {authStateReducer, initialAuthState, AuthAction} from "./state/authStateReducer";
-import { IHistory, emptyResponse } from "./response";
+import { IHistory, emptyResponse, IUser } from "./response";
 
 function App(){
 
@@ -216,9 +206,9 @@ function App(){
 
     }
 
-    const closeAccountDialog = () => {
+    const closeAccountDialog = useCallback(() => {
         dispatchAppState({type:AppAction.toggleAccountModal, value:false})
-    }
+    },[])
 
     const requestFollowing = useCallback( async () => {
 
@@ -252,10 +242,10 @@ function App(){
 
     },[mediaState.locked, mediaState.followings.hasNext, requestFollowing]);
 
-    const onUserSelect = (username:string) => {
+    const onUserSelect = useCallback((username:string) => {
         closeAccountDialog();
         getInsImages(username, mediaState.history, false);
-    }
+    },[closeAccountDialog, getInsImages, mediaState.history]);
 
     const requestLogout = useCallback( async () => {
 
@@ -275,7 +265,7 @@ function App(){
             dispatchAppState({type:AppAction.end})
         }
 
-    },[handleError])
+    },[handleError, closeAccountDialog])
 
     const requestRefresh = useCallback( () => {
 
@@ -286,6 +276,29 @@ function App(){
         getInsImages(mediaState.user.username, mediaState.history, true);
 
     },[getInsImages, mediaState])
+
+    const toggleFollow = useCallback( async (doFollow:boolean, user:IUser) => {
+
+        dispatchAppState({type:AppAction.start})
+
+        try{
+
+            if(doFollow){
+                await follow(user);
+            }else{
+                await unfollow(user);
+            }
+
+            return true;
+
+        }catch(ex:any){
+            handleError(ex, "Follow/Unfollow failed")
+            return false;
+        }finally{
+            dispatchAppState({type:AppAction.end})
+        }
+
+    },[handleError])
 
     useEffect(()=>{
 
@@ -315,28 +328,38 @@ function App(){
             }
 
             {appState.openAccountModal &&
-                <AccountDialog data={mediaState.followings} onUserSelect={onUserSelect} onClose={closeAccountDialog} height={height} width={width} onRequest={requestMoreFollowing} onLogout={requestLogout} open={appState.openAccountModal}/>
+                <AccountDialog
+                    data={mediaState.followings}
+                    onUserSelect={onUserSelect}
+                    onClose={closeAccountDialog}
+                    height={height}
+                    width={width}
+                    onRequest={requestMoreFollowing}
+                    onLogout={requestLogout}
+                    toggleFollow={toggleFollow}
+                    open={appState.openAccountModal}
+                />
             }
 
             {appState.hasError &&
                 <Snackbar sx={{zIndex:9000}} open={appState.hasError} autoHideDuration={3000} onClose={() => dispatchAppState({type:AppAction.hideError})} anchorOrigin={{ vertical:"top", horizontal:"center" }}>
-                    <MuiAlert onClose={() => dispatchAppState({type:AppAction.hideError})} severity="error" sx={{ width: "100%" }} elevation={6} variant="filled">
+                    <Alert onClose={() => dispatchAppState({type:AppAction.hideError})} severity="error" sx={{ width: "100%" }} elevation={6} variant="filled">
                         {appState.errorMessage}
-                    </MuiAlert>
+                    </Alert>
                 </Snackbar>
             }
 
             <AppBar position="fixed" style={{height: barHeight, display:"flex", justifyContent: "center", alignItems:"center"}} sx={{ bgcolor:"#fff"}}>
                 {authState.success ?
                     <IconButton size="small" style={{position:"absolute", left:"5px"}} onClick={openAccountDialog}>
-                        <InstagramIcon/>
+                        <Instagram/>
                     </IconButton>
                     : <IconButton size="small" style={{position:"absolute", left:"5px"}} onClick={openLoginDialog}>
-                        <LoginIcon/>
+                        <Login/>
                     </IconButton>
                 }
                 <IconButton size="small" style={{position:"absolute", right:"5px"}} onClick={requestRefresh}>
-                    <RefreshIcon/>
+                    <Refresh/>
                 </IconButton>
                 <Link component="button" underline="none" onClick={openUsernameDialog}>
                     <Box style={{flex:1,display:"flex", justifyContent:"center", alignItems:"center"}}>
