@@ -2,7 +2,7 @@ import path from "path";
 import express from "express";
 import session from "express-session";
 import cors from "cors";
-//import { Sequelize, DataTypes, Options } from "sequelize";
+import { Sequelize, DataTypes, Options } from "sequelize";
 import {sessionStoreFactory, StoreType} from "./store/storeFactory"
 import type { Cookie } from "tough-cookie";
 
@@ -25,10 +25,8 @@ if (!isProduction) {
     require("dotenv").config();
 }
 
-require("dotenv").config();
-
 const app = express();
-/*
+
 const postgreOptions :Options = {
     dialect: "postgres",
     dialectOptions: {
@@ -63,9 +61,9 @@ const sessionStore = new SequelizeStore({
     table: "Session",
     extendDefaultFields: extendDefaultFields,
 });
-*/
 
-const store = sessionStoreFactory(session, isProduction ? StoreType.azure : StoreType.sqlite)
+
+//const store = sessionStoreFactory(session, isProduction ? StoreType.azure : StoreType.sqlite)
 
 app.enable('trust proxy')
 app.use(express.json());
@@ -74,7 +72,7 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, "build")));
 app.use(session({
     secret: process.env.SECRET ?? "",
-    store: store,
+    store: sessionStore,
     resave: false,
     saveUninitialized: true,
     cookie: {
@@ -87,7 +85,7 @@ app.use(session({
 
 db.create();
 
-//sessionStore.sync();
+sessionStore.sync();
 
 const sendResponse = async (req:any, res:any, data:any, session:ISession) => {
 
