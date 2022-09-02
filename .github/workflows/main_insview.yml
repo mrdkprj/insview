@@ -48,8 +48,8 @@ jobs:
         with:
           name: node-app
 
-      #- name: unzip artifact for deployment
-      #  run: 7z x release.zip
+      - name: unzip artifact for deployment
+        run: 7z x release.zip
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v2
@@ -58,4 +58,4 @@ jobs:
           app-name: 'insview'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_E6933DAEA3A6474C93B0595176EC452B }}
-          package: release.zip
+          package: .
