@@ -246,9 +246,7 @@ class postgre implements IDatabase{
 
         try{
 
-            const queryString = "select media from media where username = $1 and account = $2";
-
-            const data = await this.query(queryString, [result.username, account]);
+            const data = await this.queryMedia(account, result.username)
 
             const arr = data.media
 
