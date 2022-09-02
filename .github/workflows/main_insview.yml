@@ -59,6 +59,4 @@ jobs:
         id: deploy-to-webapp
         with:
           app-name: 'insview'
-          slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_B089CFDB809848C1AB300D8315F13797 }}
-          package: .
