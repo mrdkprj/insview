@@ -27,6 +27,12 @@ jobs:
           npm install --omit=dev
           npm run build
 
+      - name: Remove previous zip
+        run: rm release.zip
+
+      - name: Release zip
+        run:  zip release.zip ./* -r
+
       - name: 'Run Azure webapp deploy action using publish profile credentials'
         uses: azure/webapps-deploy@v2
         with:
