@@ -26,42 +26,6 @@ if (!isProduction) {
 }
 
 const app = express();
-/*
-const postgreOptions :Options = {
-    dialect: "postgres",
-    dialectOptions: {
-        ssl: {
-            require: true,
-            rejectUnauthorized: false
-        }
-    }
-}
-const sqliteOptions :Options = {dialect: "sqlite", storage: "./media.db"}
-
-const sequelize = isProduction ? new Sequelize(process.env.DATABASE_URL ?? "", postgreOptions) : new Sequelize(sqliteOptions);
-const SequelizeStore = require("connect-session-sequelize")(session.Store);
-sequelize.define("Session", {
-    sid: {type: DataTypes.STRING, primaryKey: true},
-    account: {type: DataTypes.STRING},
-    expires: {type: DataTypes.DATE},
-    data: {type: DataTypes.TEXT},
-});
-
-const extendDefaultFields = (defaults:any, session:any) => {
-
-    return {
-      data: defaults.data,
-      expires: defaults.expires,
-      account: session.account,
-    };
-}
-
-const sessionStore = new SequelizeStore({
-    db: sequelize,
-    table: "Session",
-    extendDefaultFields: extendDefaultFields,
-});
-*/
 
 const store = sessionStoreFactory(session, isProduction ? StoreType.azure : StoreType.sqlite)
 
