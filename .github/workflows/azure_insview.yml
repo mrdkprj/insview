@@ -16,7 +16,7 @@ env:
   ARCHIVE_NAME: release.zip
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
 
     defaults:
