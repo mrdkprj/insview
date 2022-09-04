@@ -62,7 +62,8 @@ jobs:
         with:
           name: ${{ env.PACKAGE_NAME }}
 
-      - name: 'Run Azure webapp deploy action using publish profile credentials'
+      - name: 'Deploy to Azure Web App'
+        id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'insview'
