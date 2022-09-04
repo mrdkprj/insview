@@ -19,10 +19,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-
     steps:
 
       - name: 'Checkout Github Action'
@@ -43,13 +39,12 @@ jobs:
 
       - name: Zip output
         run: zip -qq -r ${{ env.ARCHIVE_NAME }} .
-        working-directory: ${{ env.WORKING_DIRECTORY }}
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v2
         with:
           name: ${{ env.PACKAGE_NAME }}
-          path: ${{ env.WORKING_DIRECTORY }}/${{ env.ARCHIVE_NAME }}
+          path: ${{ env.ARCHIVE_NAME }}
 
   deploy:
     runs-on: ubuntu-latest
