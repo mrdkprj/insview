@@ -31,7 +31,7 @@
     "tough-cookie": "^4.0.0"
   },
   "scripts": {
-    "start": "node ./dist/server.js",
+    "start": "node server.js",
     "start:dev": "ts-node ./src/server.ts",
     "build": "webpack --config webpack.config.client.js && webpack --config webpack.config.server.js",
     "build:c": "webpack --config webpack.config.client.js",

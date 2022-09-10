@@ -24,7 +24,8 @@ const isProduction = process.env.NODE_ENV === "production";
 if (!isProduction) {
     require("dotenv").config();
 }
-console.log(process.env.NODE_ENV)
+
+const publicDir = isProduction ? "/public" : "../public"
 
 const app = express();
 
@@ -35,7 +36,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-app.use(express.static(path.resolve(__dirname, "../dist/public")));
+app.use(express.static(path.resolve(__dirname, publicDir)));
 app.use(session({
     secret: process.env.SECRET ?? "",
     store: store,
@@ -109,7 +110,7 @@ app.use((req, res, next) => {
 })
 
 app.get("/", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "../dist/public", "index.html"));
+    res.sendFile(path.resolve(__dirname, publicDir, "index.html"));
 });
 
 app.get("/media", async (req,res) => {

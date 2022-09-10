@@ -34,7 +34,7 @@ module.exports = {
     },
     output: {
         filename: 'static/js/[name].bundle.js',
-        path: path.resolve(__dirname, 'dist/public')
+        path: path.resolve(__dirname, 'public')
     },
     optimization:{
         splitChunks: {

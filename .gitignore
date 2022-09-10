@@ -10,10 +10,11 @@
 /src/test
 
 # production
-/dist
+/public
 \.env
 media.db
 release.zip
+server.js
 
 # misc
 .DS_Store
