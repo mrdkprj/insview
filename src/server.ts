@@ -2,14 +2,14 @@ import path from "path";
 import express from "express";
 import session from "express-session";
 import cors from "cors";
-//import { Sequelize, DataTypes, Options } from "sequelize";
-import {sessionStoreFactory, StoreType} from "./store/storeFactory"
 import type { Cookie } from "tough-cookie";
 
-import db from "./db/db"
-import { AuthError, emptyResponse, IAuthResponse, IHistory, IMediaResponse, ISession, IUser } from "./src/response";
+import { IAuthResponse, IHistory, IMediaResponse, ISession, IUser } from "./types/type";
+import { emptyResponse, AuthError } from "./types"
 import { IMediaTable } from "./db/IDatabase";
-import * as api from "./instagram"
+import db from "./db/db"
+import {sessionStoreFactory, StoreType} from "./store/storeFactory"
+import * as api from "./api/instagram"
 
 declare module "express-session" {
     interface SessionData {
@@ -24,6 +24,7 @@ const isProduction = process.env.NODE_ENV === "production";
 if (!isProduction) {
     require("dotenv").config();
 }
+console.log(process.env.NODE_ENV)
 
 const app = express();
 
@@ -33,7 +34,8 @@ app.enable('trust proxy')
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
-app.use(express.static(path.join(__dirname, "build")));
+
+app.use(express.static(path.resolve(__dirname, "../dist/public")));
 app.use(session({
     secret: process.env.SECRET ?? "",
     store: store,
@@ -48,8 +50,6 @@ app.use(session({
 }))
 
 db.create();
-
-//sessionStore.sync();
 
 const sendResponse = async (req:any, res:any, data:any, session:ISession) => {
 
@@ -109,7 +109,7 @@ app.use((req, res, next) => {
 })
 
 app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "build", "index.html"));
+    res.sendFile(path.resolve(__dirname, "../dist/public", "index.html"));
 });
 
 app.get("/media", async (req,res) => {

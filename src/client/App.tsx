@@ -12,7 +12,7 @@ import useWindowDimensions from "./dimensions";
 import {appStateReducer, initialAppState, AppAction} from "./state/appStateReducer";
 import {mediaStateReducer, initialMediaState, MediaAction} from "./state/mediaStateReducer";
 import {authStateReducer, initialAuthState, AuthAction} from "./state/authStateReducer";
-import { IHistory, emptyResponse, IUser } from "./response";
+import { IHistory, emptyResponse, IUser } from "../types";
 
 function App(){
 

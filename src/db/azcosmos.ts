@@ -1,10 +1,9 @@
-import {emptyResponse, IHistory, IMediaResponse} from "../src/response";
+import {emptyResponse, IHistory, IMediaResponse} from "../types";
 import {IDatabase, IMediaTable} from "./IDatabase";
 import {CosmosClient, Database} from "@azure/cosmos";
 import {create, IContainerConfig} from "../db/azureContext"
 
 const MEDIA_CONTAINER = "Media"
-const HISTORY_CONTAINER = "History"
 
 class azcosmos implements IDatabase{
 
@@ -24,11 +23,7 @@ class azcosmos implements IDatabase{
             {
                 ContainerId: MEDIA_CONTAINER,
                 PartitionKey: { kind: "Hash", paths: ["/username"] }
-            },
-            {
-                ContainerId: HISTORY_CONTAINER,
-                PartitionKey: { kind: "Hash", paths: ["/id"] }
-            },
+            }
         ]
 
         await create(this.client, process.env.AZ_DB_ID ?? "", containerConfigs);
@@ -67,7 +62,7 @@ class azcosmos implements IDatabase{
         try{
 
             const querySpec = {
-                query: `SELECT * FROM ${HISTORY_CONTAINER} h WHERE h.account = @account`,
+                query: `SELECT h.history FROM ${MEDIA_CONTAINER} h WHERE h.id = @account and h.username = @account`,
                 parameters: [
                   {
                     name: "@account",
@@ -77,6 +72,10 @@ class azcosmos implements IDatabase{
             };
 
             const { resources: items } = await this.database.container(MEDIA_CONTAINER).items.query(querySpec).fetchAll();
+
+            if(items.length <= 0){
+                throw new Error("No history found")
+            }
 
             const row = items[0];
 
@@ -102,7 +101,7 @@ class azcosmos implements IDatabase{
         try{
 
             const querySpec = {
-                query: `SELECT * FROM ${MEDIA_CONTAINER} m WHERE m.account = @account and m.username = @username`,
+                query: `SELECT * FROM ${MEDIA_CONTAINER} m WHERE m.id = @account and m.username = @username`,
                 parameters: [
                   {
                     name: "@account",
@@ -116,6 +115,10 @@ class azcosmos implements IDatabase{
             };
 
             const { resources: items } = await this.database.container(MEDIA_CONTAINER).items.query(querySpec).fetchAll();
+
+            if(items.length <= 0){
+                throw new Error("No media found")
+            }
 
             const row = items[0];
 
@@ -144,10 +147,13 @@ class azcosmos implements IDatabase{
 
         try{
 
-            await this.database.container(HISTORY_CONTAINER).items.upsert({
+            await this.database.container(MEDIA_CONTAINER).items.upsert({
                 id: account,
-                username: username,
-                history: history,
+                username: account,
+                history: {
+                    username,
+                    history
+                }
             });
 
             return true;
@@ -171,7 +177,8 @@ class azcosmos implements IDatabase{
                 media: result.media,
                 userinfo: result.user,
                 rowIndex: 0,
-                next: result.next
+                next: result.next,
+                history: "",
             });
 
             return true;

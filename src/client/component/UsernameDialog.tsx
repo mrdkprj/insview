@@ -13,7 +13,7 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ClearIcon from '@mui/icons-material/Clear';
 import DeleteIcon from '@mui/icons-material/Delete';
-import {IHistory} from "../response";
+import {IHistory} from "../../types";
 import Avatar from "@mui/material/Avatar";
 
 export interface IUsernameDialogProps {

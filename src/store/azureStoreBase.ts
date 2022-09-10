@@ -37,19 +37,29 @@ export default class AzureStoreBase{
 
     async get (sid: string): Promise<session.SessionData | null> {
 
-        console.log(`Getting session: ${sid}`)
+        //console.log(`Getting session: ${sid}`)
 
         await this.init()
-        const querySpec = `SELECT * FROM ${CONTAINER_NAME} s WHERE s.id = ${sid}`
+
+        const querySpec = {
+            query:  `SELECT * FROM ${CONTAINER_NAME} s WHERE s.id = @sid`,
+            parameters: [
+              {
+                name: "@sid",
+                value: sid
+              }
+            ]
+        };
         const { resources: items } = await this.database.container(CONTAINER_NAME).items.query(querySpec).fetchAll();
 
-        if (!items || items.length > 1) {
+        if (items.length <= 0) {
+            //console.log(`Session NOT found`)
             return null
         }
 
-        console.log(`Session found: ${sid}`)
+        //console.log(`Session found: ${sid}`)
 
-        return JSON.parse(items[0]);
+        return items[0].data;
 
     }
 
@@ -57,14 +67,12 @@ export default class AzureStoreBase{
 
         await this.init()
 
-        const msTtl = new Date().getTime() + this.ttl
-
-        console.log(`Setting session: ${sid}`)
+        //console.log(`Setting session: ${sid}`)
 
         await this.database.container(CONTAINER_NAME).items.upsert({
             id: sid,
             data: session,
-            ttl:msTtl,
+            ttl:this.ttl,
         });
 
     }
@@ -72,11 +80,20 @@ export default class AzureStoreBase{
     async destroy (sid: string): Promise<void> {
         await this.init()
 
-        console.log(`Destroying session: ${sid}`)
+        //console.log(`Destroying session: ${sid}`)
 
         const { resource: result } = await this.database.container(CONTAINER_NAME).item(sid, sid).delete();
 
-        console.log(result)
+        //console.log(result)
 
+    }
+
+    async touch (sid: string, session: session.SessionData): Promise<void> {
+        //console.log(`Refreshing session: ${sid}`)
+
+        await this.init()
+        await this.set(sid, session)
+
+        //console.log(`Refresh session complete: ${sid}`)
     }
 }

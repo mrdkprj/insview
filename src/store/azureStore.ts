@@ -40,6 +40,17 @@ export default function azureStoreFactory(Store:typeof session.Store){
               .then(callback)
               .catch(callback)
           }
+
+          touch (
+            sid: string,
+            session: session.SessionData,
+            callback?: (err?: any) => void
+          ) {
+            this.azureStoreBase
+              .touch(sid, session)
+              .then(callback)
+              .catch(callback)
+          }
     }
 
     return AzureStore;

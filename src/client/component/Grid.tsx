@@ -1,7 +1,7 @@
 import { FixedSizeGrid } from "react-window";
 import { styled } from "@mui/system";
 import { memo, createRef, useEffect } from "react";
-import {IMedia} from "../response";
+import {IMedia} from "../../types";
 
 export interface IGridContext{
     data: IMedia[],

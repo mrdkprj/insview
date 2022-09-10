@@ -1,5 +1,5 @@
 import sqlite3 from "sqlite3";
-import {emptyResponse, IHistory, IMediaResponse} from "../src/response";
+import {emptyResponse, IHistory, IMediaResponse} from "../types";
 import {IDatabase, IMediaTable} from "./IDatabase";
 
 class sqlite implements IDatabase{

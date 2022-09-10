@@ -1,5 +1,7 @@
 import axios, { AxiosRequestConfig, AxiosRequestHeaders, AxiosResponse, AxiosResponseHeaders } from "axios";
-import { IMedia, IMediaResponse, IUser, AuthError, ILoginResponse, IFollowing, IgRequest, IgResponse, ISession} from "./src/response";
+import { IMedia, IMediaResponse, IUser, ILoginResponse, IFollowing, IgRequest, IgResponse, ISession} from "../types/type";
+import { AuthError } from "../types"
+
 import tough from "tough-cookie";
 
 const GRAPH_QL = "#GRAPH_QL";
@@ -33,7 +35,7 @@ const getSession = (headers:any) :ISession => {
             return session;
         }
 
-        let cookies = [];
+        let cookies:any = [];
         if(headers.cookie){
             cookies = headers.cookie.split(";")
         }else{
@@ -273,7 +275,7 @@ const formatMedia = (data:any) :IMediaResponse =>{
 
     const rowIndex = 0;
 
-    let next = null;
+    let next = "";
     if(root.media.paging){
         next = root.media.paging.cursors.after;
     }

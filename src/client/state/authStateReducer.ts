@@ -1,4 +1,4 @@
-import { ILoginResponse } from "../response";
+import { ILoginResponse } from "../../types";
 
 export const initialAuthState : ILoginResponse = {
     account:"",

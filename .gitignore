@@ -10,7 +10,7 @@
 /src/test
 
 # production
-/build
+/dist
 \.env
 media.db
 release.zip

@@ -1,4 +1,4 @@
-import {IMediaResponse, IHistory, IMedia, IUser} from "../src/response"
+import {IMediaResponse, IHistory, IMedia, IUser} from "../types"
 
 export interface IDatabase{
 

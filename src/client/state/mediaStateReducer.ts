@@ -1,5 +1,5 @@
 
-import {emptyUser, IFollowing, IHistory, IMedia, IUser} from "../response";
+import {emptyUser, IFollowing, IHistory, IMedia, IUser} from "../../types";
 
 export interface IMediaState {
     locked: boolean,

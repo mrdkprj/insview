@@ -1,7 +1,7 @@
 import { FixedSizeList } from "react-window";
 import { styled } from "@mui/system";
 import { memo, useCallback } from "react";
-import { IFollowing, IUser} from "../response";
+import { IFollowing, IUser} from "../../types";
 import Dialog from "@mui/material/Dialog";
 import AppBar from "@mui/material/AppBar";
 import IconButton from "@mui/material/IconButton";
