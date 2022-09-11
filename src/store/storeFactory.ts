@@ -8,23 +8,19 @@ export const StoreType = {
     azure:1,
 }
 
-export function sessionStoreFactory(session:any, storeType:number){
+export async function sessionStoreFactory(session:any, storeType:number){
 
-        let store:Store = session.Store;
 
-        if(storeType === StoreType.sqlite){
+        if(process.env.NODE_ENV === "production"){
+            const AzureStore = azureStoreFactory(session.Store);
+            return new AzureStore({ttl: 60 * 60 * 24})
+        }else{
             const SqliteStore = sqliteStoreFactory(session);
-            store = new SqliteStore({
+            return new SqliteStore({
                 driver: sqlite3.Database,
                 path: "../media.db",
                 ttl: 60000 * 60 * 24,
             })
         }
 
-        if(storeType === StoreType.azure){
-            const AzureStore = azureStoreFactory(session.Store);
-            store = new AzureStore({ttl: 60 * 60 * 24})
-        }
-
-        return store;
 }

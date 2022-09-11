@@ -7,8 +7,7 @@ import type { Cookie } from "tough-cookie";
 import { IAuthResponse, IHistory, IMediaResponse, ISession, IUser } from "./types/type";
 import { emptyResponse, AuthError } from "./types"
 import { IMediaTable } from "./db/IDatabase";
-import db from "./db/db"
-import {sessionStoreFactory, StoreType} from "./store/storeFactory"
+import dbprovider from "./db/db"
 import * as api from "./api/instagram"
 
 declare module "express-session" {
@@ -29,7 +28,7 @@ const publicDir = isProduction ? "/public" : "../public"
 
 const app = express();
 
-const store = sessionStoreFactory(session, isProduction ? StoreType.azure : StoreType.sqlite)
+const store = dbprovider.store(session);
 
 app.enable('trust proxy')
 app.use(express.json());
@@ -50,6 +49,7 @@ app.use(session({
     }
 }))
 
+const db = dbprovider.db;
 db.create();
 
 const sendResponse = async (req:any, res:any, data:any, session:ISession) => {

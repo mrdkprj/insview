@@ -1,11 +1,11 @@
 import {emptyResponse, IHistory, IMediaResponse} from "../types";
 import {IDatabase, IMediaTable} from "./IDatabase";
 import {CosmosClient, Database} from "@azure/cosmos";
-import {create, IContainerConfig} from "../db/azureContext"
+import {create, IContainerConfig} from "./azureContext"
 
 const MEDIA_CONTAINER = "Media"
 
-class azcosmos implements IDatabase{
+class azcosmosdb implements IDatabase{
 
     database:Database;
     client:CosmosClient;
@@ -255,4 +255,4 @@ class azcosmos implements IDatabase{
 
 }
 
-export default azcosmos;
+export default azcosmosdb;
