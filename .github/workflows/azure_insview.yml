@@ -39,7 +39,7 @@ jobs:
 
       - name: Zip output
         #run: zip -qq -r ${{ env.ARCHIVE_NAME }} .
-        run: Compress-Archive -Path . -DestinationPath ${{'../'}}${{ env.ARCHIVE_NAME }}
+        run: Compress-Archive -Path . -DestinationPath ${{ env.ARCHIVE_NAME }}
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v2
