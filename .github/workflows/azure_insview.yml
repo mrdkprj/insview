@@ -17,7 +17,7 @@ env:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
 
@@ -32,6 +32,7 @@ jobs:
       - name: 'npm install, build, and test'
         run: |
           npm install
+          npm install sqlite3 --build-from-source --target_arch=x64
           npm run build
 
       - name: Install zip
@@ -39,6 +40,7 @@ jobs:
 
       - name: Zip output
         run: zip -qq -r ${{ env.ARCHIVE_NAME }} .
+#        run: Compress-Archive -Path . -DestinationPath ${{ env.ARCHIVE_NAME }}
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v2
