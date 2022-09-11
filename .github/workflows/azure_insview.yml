@@ -17,7 +17,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
 
@@ -32,15 +32,14 @@ jobs:
       - name: 'npm install, build, and test'
         run: |
           npm install
-          npm install sqlite3 --build-from-source --target_arch=ia32 --target_platform=win32
           npm run build
 
-      - name: Install zip
-        uses: montudor/action-zip@v1
+      #- name: Install zip
+      #  uses: montudor/action-zip@v1
 
       - name: Zip output
-        run: zip -qq -r ${{ env.ARCHIVE_NAME }} .
-#        run: Compress-Archive -Path . -DestinationPath ${{ env.ARCHIVE_NAME }}
+        #run: zip -qq -r ${{ env.ARCHIVE_NAME }} .
+        run: Compress-Archive -Path . -DestinationPath ${{ ../env.ARCHIVE_NAME }}
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v2
