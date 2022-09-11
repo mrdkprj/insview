@@ -32,7 +32,7 @@ jobs:
       - name: 'npm install, build, and test'
         run: |
           npm install
-          npm install sqlite3 --build-from-source --target_arch=x64
+          npm install sqlite3 --build-from-source --target_arch=ia32 --target=napi-v6-win32-unknown-ia32
           npm run build
 
       - name: Install zip
