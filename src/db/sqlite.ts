@@ -22,4 +22,4 @@ class sqlite implements IDatabaseProvider{
     }
 }
 
-export default sqlite;
+module.exports = { sqlite: new sqlite() }
