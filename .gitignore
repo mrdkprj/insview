@@ -11,9 +11,9 @@
 
 # production
 /public
+/dist
 \.env
 media.db
-release.zip
 server.js
 
 # misc
