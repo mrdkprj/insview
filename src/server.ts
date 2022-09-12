@@ -24,7 +24,7 @@ if (!isProduction) {
     require("dotenv").config();
 }
 
-const publicDir = isProduction ? "/public" : "../public"
+const publicDir = isProduction ? "./public" : "../public"
 
 const app = express();
 
