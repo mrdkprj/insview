@@ -7,7 +7,7 @@ import type { Cookie } from "tough-cookie";
 import { IAuthResponse, IHistory, IMediaResponse, ISession, IUser } from "./types/type";
 import { emptyResponse, AuthError } from "./types"
 import { IMediaTable } from "./db/IDatabase";
-import model from "./model"
+import model from "./db/model"
 import * as api from "./api/instagram"
 
 declare module "express-session" {
@@ -29,6 +29,7 @@ const publicDir = isProduction ? "./public" : "../public"
 const app = express();
 
 const store = model.store(session);
+const db = model.db;
 
 app.enable('trust proxy')
 app.use(express.json());
@@ -49,7 +50,6 @@ app.use(session({
     }
 }))
 
-const db = model.db;
 db.create();
 
 const sendResponse = async (req:any, res:any, data:any, session:ISession) => {
