@@ -17,8 +17,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
-    "outDir": "dist",
-    "module": "esnext"
+    "outDir": "dist"
   },
   "exclude": [
     "node_modules"

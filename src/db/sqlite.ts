@@ -4,7 +4,7 @@ import sqliteStoreFactory from "express-session-sqlite"
 import sqlitedb from "./sqlitedb"
 import * as sqlite3 from "sqlite3"
 
-export class sqlite implements IDatabaseProvider{
+class sqlite implements IDatabaseProvider{
 
     db:IDatabase;
 
@@ -21,3 +21,5 @@ export class sqlite implements IDatabaseProvider{
         })
     }
 }
+
+export default sqlite;

@@ -3,7 +3,7 @@ import { IDatabaseProvider } from "./IDatabaseProvider";
 import azcosmos from "./azcosmosdb";
 import azureStoreFactory from "../store/azureStore";
 
-export class azure implements IDatabaseProvider{
+class azure implements IDatabaseProvider{
 
     db:IDatabase;
 
@@ -16,3 +16,5 @@ export class azure implements IDatabaseProvider{
         return new AzureStore({ttl: 60 * 60 * 24})
     }
 }
+
+export default azure;

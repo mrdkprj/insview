@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 const nodeExternals = require("webpack-node-externals")
 
 module.exports = {
@@ -6,17 +7,18 @@ module.exports = {
     entry: './src/server.ts',
     target: 'node',
     externals: [
-        nodeExternals(),
-        //{ 'sqlite3':'commonjs sqlite3', }
+        nodeExternals()
+    ],
+    plugins:[
+        new webpack.IgnorePlugin({
+            resourceRegExp: /^\.\/db\/sqlite$/,
+        })
     ],
     module: {
         rules: [
             {
                 test: /\.tsx?$/,
-                use: "ts-loader",
-                exclude: [
-                    /client/
-                ]
+                use: "ts-loader"
             }
         ]
     },
@@ -30,8 +32,5 @@ module.exports = {
     },
     optimization:{
         minimize: false
-    },
-    experiments: {
-        topLevelAwait: true
     }
 };
