@@ -78,7 +78,7 @@ class azcosmosdb implements IDatabase{
             }
 
             const row = items[0].history;
-
+console.log(row)
             return {
                 username: row.username,
                 history: row.history
@@ -175,10 +175,10 @@ class azcosmosdb implements IDatabase{
                 id: account,
                 username: result.username,
                 media: result.media,
-                userinfo: result.user,
+                user: result.user,
                 rowIndex: 0,
                 next: result.next,
-                history: "",
+                history: {},
             });
 
             return true;
@@ -196,11 +196,11 @@ class azcosmosdb implements IDatabase{
 
         try{
 
-            await this.database.container(MEDIA_CONTAINER).items.upsert({
-                id: account,
-                username: username,
-                rowIndex: rowIndex,
-            });
+            const media = await this.queryMedia(account, username)
+            media.rowIndex = rowIndex;
+            const newMedia = {id:account, ...media}
+
+            await this.database.container(MEDIA_CONTAINER).items.upsert(newMedia);
 
             return true;
 
@@ -223,11 +223,11 @@ class azcosmosdb implements IDatabase{
 
             const newArr = arr.concat(result.media);
 
-            await this.database.container(MEDIA_CONTAINER).items.upsert({
-                id: account,
-                username: result.username,
-                media: newArr,
-            });
+            data.media = newArr;
+
+            const newMedia = {id:account, ...data};
+
+            await this.database.container(MEDIA_CONTAINER).items.upsert(newMedia);
 
             return true;
 
