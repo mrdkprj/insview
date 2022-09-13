@@ -78,7 +78,7 @@ class azcosmosdb implements IDatabase{
             }
 
             const row = items[0];
-
+console.log(row)
             return {
                 username: row.username,
                 history: row.history
