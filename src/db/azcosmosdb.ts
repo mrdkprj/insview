@@ -125,7 +125,7 @@ console.log(row)
             return {
                 username: row.username,
                 media:row.media,
-                user:row.userinfo,
+                user:row.user,
                 rowIndex:row.rowIndex,
                 next:row.next
             }
