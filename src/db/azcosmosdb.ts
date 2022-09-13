@@ -77,8 +77,8 @@ class azcosmosdb implements IDatabase{
                 throw new Error("No history found")
             }
 
-            const row = items[0];
-console.log(row)
+            const row = items[0].history;
+
             return {
                 username: row.username,
                 history: row.history
