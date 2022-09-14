@@ -2,14 +2,8 @@ import { FixedSizeList } from "react-window";
 import { styled } from "@mui/system";
 import { memo, useCallback } from "react";
 import { IFollowing, IUser} from "../../types";
-import Dialog from "@mui/material/Dialog";
-import AppBar from "@mui/material/AppBar";
-import IconButton from "@mui/material/IconButton";
-import Typography from "@mui/material/Typography";
-import CloseIcon from "@mui/icons-material/Close";
-import DialogContent from "@mui/material/DialogContent";
-import Avatar from "@mui/material/Avatar";
-import LogoutIcon from '@mui/icons-material/Logout';
+import { Dialog, AppBar, IconButton, Typography, DialogContent, Avatar} from "@mui/material";
+import { Close, Logout} from "@mui/icons-material";
 
 export interface IAccountContext{
     open:boolean,
@@ -118,11 +112,11 @@ const AccountDialog = memo<IAccountContext>( (props) => {
         >
             <AppBar style={{height: barHeight, display:"flex", justifyContent: "center", alignItems:"center"}} sx={{ bgcolor:"#fff"}}>
                 <IconButton size="small" style={{position:"absolute", left:"5px"}} onClick={props.onClose}>
-                        <CloseIcon />
+                        <Close />
                 </IconButton>
                 <Typography sx={{ color:"#888" }} variant="h6" component="div">Followings</Typography>
                 <IconButton size="small" style={{position:"absolute", right:"5px"}} onClick={props.onLogout}>
-                    <LogoutIcon />
+                    <Logout />
                 </IconButton>
             </AppBar>
             <DialogContent sx={{overflow:"hidden", padding:0, marginTop:barHeight + "px"}}>

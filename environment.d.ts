@@ -12,6 +12,7 @@ declare global {
             AZ_ENDPOINT: string;
             AZ_KEY:string;
             AZ_DB_ID:string;
+            ACCOUNT:string;
         }
     }
   }

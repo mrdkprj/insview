@@ -272,6 +272,10 @@ const tryLogin = async (req:any, res:any, account:string, password:string) => {
         return sendErrorResponse(res, {message:"Username/password required"});
     }
 
+    if(account !== process.env.ACCOUNT){
+        return sendErrorResponse(res, {message:"Unauthorized account"});
+    }
+
     try{
 
         const result = await api.login({data:{account, password}, headers:req.headers})

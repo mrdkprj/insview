@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useReducer } from "react";
+import {Fragment, useEffect, useCallback, useReducer } from "react";
 import {Box, AppBar, Typography, Link, Backdrop, CircularProgress, Snackbar, Alert} from "@mui/material";
 import {Refresh, Instagram, Login, AccountCircle} from "@mui/icons-material"
 import UsernameDialog from "./component/UsernameDialog"
@@ -307,7 +307,7 @@ function App(){
     },[getInsImages])
 
     return (
-        <React.Fragment>
+        <Fragment>
 
             {appState.isLoading &&
                 <Backdrop sx={{ color: "#fff", zIndex: 9000 }} open={appState.isLoading}>
@@ -371,7 +371,7 @@ function App(){
 
             <Grid data={mediaState.data} onImageClick={onImageClick} onIdle={onIdle} onLastItemRenrered={loadMoreImages} height={height - barHeight} width={width} />
 
-        </React.Fragment>
+        </Fragment>
   );
 }
 

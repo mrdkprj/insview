@@ -1,20 +1,7 @@
-import React, {useState, createRef,useEffect} from "react";
-import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
-import AppBar from "@mui/material/AppBar";
-import Toolbar from "@mui/material/Toolbar";
-import InputAdornment from '@mui/material/InputAdornment';
-import IconButton from "@mui/material/IconButton";
-import Typography from "@mui/material/Typography";
-import CloseIcon from "@mui/icons-material/Close";
-import TextField from "@mui/material/TextField";
-import DialogContent from "@mui/material/DialogContent";
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ClearIcon from '@mui/icons-material/Clear';
-import DeleteIcon from '@mui/icons-material/Delete';
+import {RefObject, ChangeEvent, MouseEvent, useState, createRef,useEffect} from "react";
+import { Button, Dialog, AppBar, Toolbar, InputAdornment, IconButton, Typography, TextField, DialogContent, List, ListItem, Avatar } from "@mui/material";
+import {Close, Clear, Delete } from "@mui/icons-material";
 import {IHistory} from "../../types";
-import Avatar from "@mui/material/Avatar";
 
 export interface IUsernameDialogProps {
     open: boolean,
@@ -27,8 +14,8 @@ export interface IUsernameDialogProps {
 
 const UsernameDialog = (props:IUsernameDialogProps) => {
 
-    const contentRef :React.RefObject<HTMLDivElement> = createRef();
-    const inputRef :React.RefObject<HTMLInputElement> = createRef();
+    const contentRef :RefObject<HTMLDivElement> = createRef();
+    const inputRef :RefObject<HTMLInputElement> = createRef();
 
     const [hasError, setHasError] = useState(false);
     const [username, setUsername] = useState(props.username);
@@ -51,7 +38,7 @@ const UsernameDialog = (props:IUsernameDialogProps) => {
         inputRef.current?.focus();
     }
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         setUsername(e.target.value);
     };
 
@@ -60,7 +47,7 @@ const UsernameDialog = (props:IUsernameDialogProps) => {
         if(contentRef.current) contentRef.current.scrollTop = 0;
     }
 
-    const deleteHistory = async (e: React.MouseEvent, username:string) => {
+    const deleteHistory = async (e: MouseEvent, username:string) => {
 
         e.stopPropagation();
 
@@ -85,7 +72,7 @@ const UsernameDialog = (props:IUsernameDialogProps) => {
                 sx={{fontSize:14}}
                 secondaryAction={
                     <IconButton size="small" edge="end" aria-label="delete" onClick={(e) => deleteHistory(e,key)}>
-                        <DeleteIcon />
+                        <Delete />
                     </IconButton>
                 }
             >
@@ -121,7 +108,7 @@ const UsernameDialog = (props:IUsernameDialogProps) => {
                         onClick={closeDialog}
                         aria-label="close"
                     >
-                        <CloseIcon />
+                        <Close />
                     </IconButton>
                     <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">Input username</Typography>
                 </Toolbar>
@@ -141,7 +128,7 @@ const UsernameDialog = (props:IUsernameDialogProps) => {
                     InputProps={{
                         endAdornment: (
                           <InputAdornment position="end">
-                                <ClearIcon fontSize="small" onClick={clearText}/>
+                                <Clear fontSize="small" onClick={clearText}/>
                           </InputAdornment>
                         ),
                       }}

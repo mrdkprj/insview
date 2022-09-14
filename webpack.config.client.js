@@ -13,7 +13,7 @@ module.exports = {
             patterns: [
                 { from: 'resource/static' }
             ]
-        })
+        }),
     ],
     module: {
         rules: [
