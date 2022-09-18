@@ -78,7 +78,7 @@ class azcosmosdb implements IDatabase{
             }
 
             const row = items[0].history;
-console.log(row)
+
             return {
                 username: row.username,
                 history: row.history
@@ -96,7 +96,7 @@ console.log(row)
 
     }
 
-    async queryMedia(account:string, username:string){
+    async queryMedia(account:string, username:string):Promise<IMediaTable>{
 
         try{
 
@@ -223,9 +223,15 @@ console.log(row)
 
             const newArr = arr.concat(result.media);
 
-            data.media = newArr;
-
-            const newMedia = {id:account, ...data};
+            const newMedia = {
+                id: account,
+                username: result.username,
+                media: newArr,
+                user: data.user,
+                rowIndex: data.rowIndex,
+                next: result.next,
+                history: {},
+            }
 
             await this.database.container(MEDIA_CONTAINER).items.upsert(newMedia);
 
