@@ -1,5 +1,5 @@
 import axios, {AxiosRequestConfig, AxiosResponse, AxiosResponseHeaders, Method} from "axios";
-import {IMediaResponse, IHistory, IUser, IAuthResponse, IFollowing, RequestError, IResponse} from "../types"
+import {IMediaResponse, IHistory, IUser, IAuthResponse, IFollowing, RequestError, IResponse, IFollowingUser} from "../types"
 
 const createOptions = (url:string, method:Method, data:any) :AxiosRequestConfig => {
 
@@ -179,7 +179,7 @@ const deleteHistory = async (history:IHistory, current:string, target:string) =>
 
 }
 
-const follow = async (user:IUser) => {
+const follow = async (user:IFollowingUser) => {
 
     const url = "/follow";
     const method = "POST";
@@ -195,7 +195,7 @@ const follow = async (user:IUser) => {
 
 }
 
-const unfollow = async (user:IUser) => {
+const unfollow = async (user:IFollowingUser) => {
 
     const url = "/unfollow";
     const method = "POST";

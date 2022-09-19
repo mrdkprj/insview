@@ -35,6 +35,7 @@ export const MediaAction = {
     select: "select",
     history: "history",
     followings: "followings",
+    updateFollowStatus: "updateFollowStatus",
     toggleLock: "toggleLock",
     updateRowIndex : "updateRowIndex",
 }
@@ -81,6 +82,17 @@ export const mediaStateReducer = (state: IMediaState, action: IMediaAction): IMe
             }
             const newFollowings = {users, hasNext:action.value.hasNext, next:action.value.next};
             return {...state, followings:newFollowings};
+
+        case MediaAction.updateFollowStatus:
+
+            const newusers = state.followings.users.map(user => {
+                if(user.username === action.value.user.username){
+                    user.following = action.value.doFollow
+                }
+
+                return user;
+            })
+            return {...state, followings:{...state.followings, users:newusers}};
 
         default:
             return state;

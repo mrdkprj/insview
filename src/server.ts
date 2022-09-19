@@ -4,7 +4,7 @@ import session from "express-session";
 import cors from "cors";
 import type { Cookie } from "tough-cookie";
 
-import { IAuthResponse, IHistory, IMediaResponse, ISession, IUser } from "./types/type";
+import { IAuthResponse, IHistory, IMediaResponse, ISession, IUser } from "./types";
 import { emptyResponse, AuthError } from "./types"
 import { IMediaTable } from "./db/IDatabase";
 import model from "./db/model"

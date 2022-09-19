@@ -66,13 +66,17 @@ export interface IUser{
     biography:string,
 }
 
+export interface IFollowingUser extends IUser{
+    following:boolean;
+}
+
 export interface IHistory{
     [key: string]:IUser
 }
 
 export interface IFollowing{
-    users: IUser[],
-    hasNext:boolean,
+    users: IFollowingUser[];
+    hasNext:boolean;
     next:string
 }
 

@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosRequestHeaders, AxiosResponse, AxiosResponseHeaders } from "axios";
-import { IMedia, IMediaResponse, IUser, ILoginResponse, IFollowing, IgRequest, IgResponse, ISession} from "../types/type";
+import { IMedia, IMediaResponse, IUser, IFollowingUser, ILoginResponse, IFollowing, IgRequest, IgResponse, ISession} from "../types";
 import { AuthError } from "../types"
 
 import tough from "tough-cookie";
@@ -497,13 +497,15 @@ const formatFollowings = (data:any) :IFollowing => {
 
     const dataNode = data.data.user.edge_follow;
 
-    const users :IUser[] = dataNode.edges.map((user:any) => {
+    const users :IFollowingUser[] = dataNode.edges.map((user:any) :IFollowingUser => {
         return {
             id:user.node.id,
             igId:user.node.id,
             username:user.node.username,
             name:user.node.full_name,
-            profileImage: "/media?url=" + user.node.profile_pic_url
+            biography:"",
+            profileImage: "/media?url=" + user.node.profile_pic_url,
+            following: true,
         }
     })
 

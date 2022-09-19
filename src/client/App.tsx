@@ -12,7 +12,7 @@ import useWindowDimensions from "./dimensions";
 import {appStateReducer, initialAppState, AppAction} from "./state/appStateReducer";
 import {mediaStateReducer, initialMediaState, MediaAction} from "./state/mediaStateReducer";
 import {authStateReducer, initialAuthState, AuthAction} from "./state/authStateReducer";
-import { IHistory, emptyResponse, IUser } from "../types";
+import { IHistory, emptyResponse, IFollowingUser } from "../types";
 
 function App(){
 
@@ -174,6 +174,8 @@ function App(){
 
     const verifyCode = useCallback( async (code:string) => {
 
+        dispatchAppState({type:AppAction.start})
+
         try{
 
             const result = await challenge(authState.account, code, authState.endpoint);
@@ -277,7 +279,7 @@ function App(){
 
     },[getInsImages, mediaState])
 
-    const toggleFollow = useCallback( async (doFollow:boolean, user:IUser) => {
+    const toggleFollow = useCallback( async (doFollow:boolean, user:IFollowingUser) => {
 
         dispatchAppState({type:AppAction.start})
 
@@ -288,6 +290,8 @@ function App(){
             }else{
                 await unfollow(user);
             }
+
+            dispatchMediaState({type:MediaAction.updateFollowStatus, value: {doFollow, user}})
 
             return true;
 
