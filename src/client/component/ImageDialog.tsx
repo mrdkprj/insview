@@ -1,5 +1,5 @@
 import { memo, useEffect,useCallback, useRef } from "react"
-import { styled } from "@mui/system";
+import { css } from "@emotion/react";
 
 const direction = {
     right:"right",
@@ -220,14 +220,14 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     useEffect( () => () =>  {document.body.style.overflow = ""}, [] );
 
-    const ImageViewer = styled("img")({
+    const ImageViewer = css({
         maxHeight: "100%",
         maxWidth: "100%",
         transition: "transform 0.7s",
         willChange: "transform"
     });
 
-    const Backdrop = styled("div")({
+    const Backdrop = css({
         position: "fixed",
         top:0,
         left: 0,
@@ -238,7 +238,7 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
         width: "100%",
     });
 
-    const Contaner = styled("div")({
+    const Contaner = css({
         display:"flex",
         justifyContent: "center",
         alignItems:"center",
@@ -255,11 +255,11 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
 
     return (
-        <Backdrop>
-            <Contaner ref={ref}>
-                <ImageViewer ref={imageRef} alt={mediaId} src={mediaUrl}/>
-            </Contaner>
-        </Backdrop>
+        <div css={Backdrop}>
+            <div css={Contaner} ref={ref}>
+                <img css={ImageViewer} ref={imageRef} alt={mediaId} src={mediaUrl}/>
+            </div>
+        </div>
     )
 
 }

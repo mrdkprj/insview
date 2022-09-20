@@ -1,9 +1,15 @@
 import { FixedSizeList } from "react-window";
-import { styled } from "@mui/system";
+import { css } from "@emotion/react";
 import { memo, useCallback } from "react";
 import { IFollowing, IFollowingUser} from "../../types";
-import { Dialog, AppBar, IconButton, Typography, DialogContent, Avatar} from "@mui/material";
-import { Close, Logout} from "@mui/icons-material";
+import Dialog from "@mui/material/Dialog"
+import AppBar from "@mui/material/AppBar"
+import IconButton from "@mui/material/IconButton"
+import Typography from "@mui/material/Typography"
+import DialogContent from "@mui/material/DialogContent"
+import Avatar from "@mui/material/Avatar"
+import CloseIcon from "@mui/icons-material/Close";
+import LogoutIcon from "@mui/icons-material/Logout";
 
 export interface IAccountContext{
     open:boolean,
@@ -25,19 +31,19 @@ const AccountDialog = memo<IAccountContext>( (props) => {
 
     rowCount = props.data.users.length - 1;
 
-    const Container = styled("div")({
+    const Container = css({
         display:"flex",
         alignItems:"center",
         flex: 1,
     });
 
-    const User = styled("div")({
+    const User = css({
         display:"flex",
         flexDirection: "column",
         flex: "1 1 auto"
     });
 
-    const Names = styled("div")({
+    const Names = css({
         overflow: "hidden",
         textOverflow: "ellipsis",
         whiteSpace: "nowrap",
@@ -45,7 +51,7 @@ const AccountDialog = memo<IAccountContext>( (props) => {
         width: "200px"
     });
 
-    const UnfollowAction = styled("button")({
+    const UnfollowAction = css({
         padding: "5px 9px",
         borderRadius: "4px",
         fontSize: "14px",
@@ -55,7 +61,7 @@ const AccountDialog = memo<IAccountContext>( (props) => {
         marginRight: "20px"
     })
 
-    const FollowAction = styled("button")({
+    const FollowAction = css({
         padding: "5px 9px",
         borderRadius: "4px",
         fontSize: "14px",
@@ -80,18 +86,18 @@ const AccountDialog = memo<IAccountContext>( (props) => {
     const renderRow = ({ index, data, style } : { index:number, data:IFollowingUser[], style:any }) => {
 
         return (
-            <Container style={style}>
+            <div css={Container} style={style}>
                 <Avatar alt={data[index].profileImage} src={data[index].profileImage} style={{marginRight:"15px", marginLeft:"24px"}}/>
-                <User onClick={() => props.onUserSelect(data[index].username)}>
-                    <Names>{data[index].name}</Names>
-                    <Names>{data[index].username}</Names>
-                </User>
+                <div css={User} onClick={() => props.onUserSelect(data[index].username)}>
+                    <div css={Names}>{data[index].name}</div>
+                    <div css={Names}>{data[index].username}</div>
+                </div>
                 {data[index].following ?
-                    <UnfollowAction onClick={(e) => toggleFollow(e, data[index])}>Unfollow</UnfollowAction>
+                    <button css={UnfollowAction} onClick={(e) => toggleFollow(e, data[index])}>Unfollow</button>
                     :
-                    <FollowAction onClick={(e) => toggleFollow(e, data[index])}>Follow</FollowAction>
+                    <button css={FollowAction} onClick={(e) => toggleFollow(e, data[index])}>Follow</button>
                 }
-            </Container>
+            </div>
         )
     }
 
@@ -106,11 +112,11 @@ const AccountDialog = memo<IAccountContext>( (props) => {
         >
             <AppBar style={{height: barHeight, display:"flex", justifyContent: "center", alignItems:"center"}} sx={{ bgcolor:"#fff"}}>
                 <IconButton size="small" style={{position:"absolute", left:"5px"}} onClick={props.onClose}>
-                        <Close />
+                        <CloseIcon />
                 </IconButton>
                 <Typography sx={{ color:"#888" }} variant="h6" component="div">Followings</Typography>
                 <IconButton size="small" style={{position:"absolute", right:"5px"}} onClick={props.onLogout}>
-                    <Logout />
+                    <LogoutIcon />
                 </IconButton>
             </AppBar>
             <DialogContent sx={{overflow:"hidden", padding:0, marginTop:barHeight + "px"}}>

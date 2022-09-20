@@ -1,6 +1,16 @@
 import {Fragment, useEffect, useCallback, useReducer } from "react";
-import {Box, AppBar, Typography, Link, Backdrop, CircularProgress, Snackbar, Alert} from "@mui/material";
-import {Refresh, Instagram, Login, AccountCircle} from "@mui/icons-material"
+import Box from "@mui/material/Box"
+import AppBar from "@mui/material/AppBar"
+import Typography from "@mui/material/Typography"
+import Link from "@mui/material/Link"
+import Backdrop from "@mui/material/Backdrop"
+import CircularProgress from "@mui/material/CircularProgress"
+import Snackbar from "@mui/material/Snackbar"
+import Alert from "@mui/material/Alert"
+import RefreshIcon from "@mui/icons-material/Refresh";
+import InstagramIcon from "@mui/icons-material/Instagram";
+import LoginIcon from "@mui/icons-material/Login";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import UsernameDialog from "./component/UsernameDialog"
 import ImageDialog from "./component/ImageDialog";
 import LoginDialog from "./component/LoginDialog"
@@ -356,18 +366,18 @@ function App(){
             <AppBar position="fixed" style={{height: barHeight, display:"flex", justifyContent: "center", alignItems:"center"}} sx={{ bgcolor:"#fff"}}>
                 {authState.success ?
                     <IconButton size="small" style={{position:"absolute", left:"5px"}} onClick={openAccountDialog}>
-                        <Instagram/>
+                        <InstagramIcon/>
                     </IconButton>
                     : <IconButton size="small" style={{position:"absolute", left:"5px"}} onClick={openLoginDialog}>
-                        <Login/>
+                        <LoginIcon/>
                     </IconButton>
                 }
                 <IconButton size="small" style={{position:"absolute", right:"5px"}} onClick={requestRefresh}>
-                    <Refresh/>
+                    <RefreshIcon/>
                 </IconButton>
                 <Link component="button" underline="none" onClick={openUsernameDialog}>
                     <Box style={{flex:1,display:"flex", justifyContent:"center", alignItems:"center"}}>
-                        <AccountCircle sx={{ color: 'action.active', mr: 1, my: 0.5 }} />
+                        <AccountCircleIcon sx={{ color: 'action.active', mr: 1, my: 0.5 }} />
                         <Typography variant="subtitle1" component="div" sx={{ flexGrow: 1, color:"#888" }}>{mediaState.user.username ? mediaState.user.username : "User not found"}</Typography>
                     </Box>
                 </Link>

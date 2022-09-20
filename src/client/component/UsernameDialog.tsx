@@ -1,6 +1,19 @@
 import {RefObject, ChangeEvent, MouseEvent, useState, createRef,useEffect} from "react";
-import { Button, Dialog, AppBar, Toolbar, InputAdornment, IconButton, Typography, TextField, DialogContent, List, ListItem, Avatar } from "@mui/material";
-import {Close, Clear, Delete } from "@mui/icons-material";
+import Dialog from "@mui/material/Dialog"
+import AppBar from "@mui/material/AppBar"
+import Toolbar from "@mui/material/Toolbar"
+import InputAdornment from "@mui/material/InputAdornment"
+import IconButton from "@mui/material/IconButton"
+import Typography from "@mui/material/Typography"
+import DialogContent from "@mui/material/DialogContent"
+import List from "@mui/material/List"
+import ListItem from "@mui/material/ListItem"
+import Avatar from "@mui/material/Avatar"
+import TextField from "@mui/material/TextField"
+import CloseIcon from "@mui/icons-material/Close";
+import ClearIcon from "@mui/icons-material/Clear";
+import DeleteIcon from "@mui/icons-material/Delete";
+import Button from "./Button"
 import {IHistory} from "../../types";
 
 export interface IUsernameDialogProps {
@@ -72,7 +85,7 @@ const UsernameDialog = (props:IUsernameDialogProps) => {
                 sx={{fontSize:14}}
                 secondaryAction={
                     <IconButton size="small" edge="end" aria-label="delete" onClick={(e) => deleteHistory(e,key)}>
-                        <Delete />
+                        <DeleteIcon />
                     </IconButton>
                 }
             >
@@ -108,7 +121,7 @@ const UsernameDialog = (props:IUsernameDialogProps) => {
                         onClick={closeDialog}
                         aria-label="close"
                     >
-                        <Close />
+                        <CloseIcon />
                     </IconButton>
                     <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">Input username</Typography>
                 </Toolbar>
@@ -128,7 +141,7 @@ const UsernameDialog = (props:IUsernameDialogProps) => {
                     InputProps={{
                         endAdornment: (
                           <InputAdornment position="end">
-                                <Clear fontSize="small" onClick={clearText}/>
+                                <ClearIcon fontSize="small" onClick={clearText}/>
                           </InputAdornment>
                         ),
                       }}

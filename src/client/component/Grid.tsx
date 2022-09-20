@@ -1,5 +1,5 @@
 import { FixedSizeGrid } from "react-window";
-import { styled } from "@mui/system";
+import { css } from "@emotion/react";
 import { memo, createRef, useEffect } from "react";
 import {IMedia} from "../../types";
 
@@ -21,7 +21,7 @@ const columnCount : number = 3;
 const barHeight = 45;
 const gridRef :React.RefObject<FixedSizeGrid> = createRef();
 
-const Container = styled("div")({
+const Container = css({
     display:"flex",
     justifyContent: "center",
     alignItems:"center",
@@ -31,7 +31,7 @@ const Container = styled("div")({
     overflowX:"hidden"
 });
 
-const Image = styled("img")({
+const Image = css({
     height: "100%",
     left: 0,
     position: "absolute",
@@ -69,7 +69,7 @@ const renderRow = ({ columnIndex, data, rowIndex, style } : { columnIndex:number
     return (
         <div style={style}>
             {data[index]
-                ? <Image alt={data[index].id} src={data[index].media_url} onClick={() => context.onImageClick(index)}/>
+                ? <img css={Image} alt={data[index].id} src={data[index].media_url} onClick={() => context.onImageClick(index)}/>
                 : <div></div>
             }
         </div>
@@ -93,7 +93,7 @@ export const Grid = memo<IGridContext>( (propContext) => {
     rowCount = Math.ceil((context.data.length  / columnCount));
 
     return(
-        <Container >
+        <div css={Container}>
             <FixedSizeGrid
                 ref={gridRef}
                 columnCount={columnCount}
@@ -109,6 +109,6 @@ export const Grid = memo<IGridContext>( (propContext) => {
             >
                 {renderRow}
             </FixedSizeGrid>
-        </Container>
+        </div>
     )
 })

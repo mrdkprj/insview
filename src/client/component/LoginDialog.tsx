@@ -1,6 +1,15 @@
 import {ChangeEvent, useState, useEffect} from "react";
-import {Button, Dialog, AppBar, Toolbar, IconButton, Typography, TextField, DialogContent, } from "@mui/material";
-import {Close, Password, Pin} from "@mui/icons-material";
+import Dialog from "@mui/material/Dialog"
+import AppBar from "@mui/material/AppBar"
+import Toolbar from "@mui/material/Toolbar"
+import IconButton from "@mui/material/IconButton"
+import Typography from "@mui/material/Typography"
+import DialogContent from "@mui/material/DialogContent"
+import TextField from "@mui/material/TextField"
+import CloseIcon from "@mui/icons-material/Close";
+import PasswordIcon from "@mui/icons-material/Password";
+import PinIcon from "@mui/icons-material/Pin";
+import Button from "./Button"
 
 export interface IUsernameDialogProps {
     open:boolean,
@@ -73,11 +82,11 @@ const LoginDialog = (props:IUsernameDialogProps) => {
 
                 <Toolbar>
                 <IconButton edge="start" color="inherit" onClick={props.onClose}>
-                        <Close />
+                        <CloseIcon />
                 </IconButton>
                     <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">Authenticate</Typography>
                     <IconButton edge="end" color="inherit" onClick={toggleDisplay}>
-                        {isChallenge ? <Password /> : <Pin />}
+                        {isChallenge ? <PasswordIcon /> : <PinIcon />}
                     </IconButton>
                 </Toolbar>
             </AppBar>
@@ -121,7 +130,7 @@ const LoginDialog = (props:IUsernameDialogProps) => {
                             inputProps={{ spellCheck: "false" }}
                             autoComplete="off"
                             margin="dense"
-                            label="Password"
+                            label="PasswordIcon"
                             fullWidth
                             variant="standard"
                             value={password}
