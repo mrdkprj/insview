@@ -13,7 +13,7 @@ import TextField from "@mui/material/TextField"
 import CloseIcon from "@mui/icons-material/Close";
 import ClearIcon from "@mui/icons-material/Clear";
 import DeleteIcon from "@mui/icons-material/Delete";
-import Button from "./Button"
+import Button from "@mui/material/Button"
 import {IHistory} from "../../types";
 
 export interface IUsernameDialogProps {
