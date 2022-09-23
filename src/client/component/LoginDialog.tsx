@@ -9,7 +9,7 @@ import TextField from "@mui/material/TextField"
 import CloseIcon from "@mui/icons-material/Close";
 import PasswordIcon from "@mui/icons-material/Password";
 import PinIcon from "@mui/icons-material/Pin";
-import Button from "./Button"
+import Button from "@mui/material/Button"
 
 export interface IUsernameDialogProps {
     open:boolean,
@@ -130,7 +130,7 @@ const LoginDialog = (props:IUsernameDialogProps) => {
                             inputProps={{ spellCheck: "false" }}
                             autoComplete="off"
                             margin="dense"
-                            label="PasswordIcon"
+                            label="Password"
                             fullWidth
                             variant="standard"
                             value={password}
