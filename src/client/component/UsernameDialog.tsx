@@ -106,20 +106,7 @@ const UsernameDialog = (props:IUsernameDialogProps) => {
                 <Typography variant="h6">Input username</Typography>
             </AppBar>
             <DialogContent style={{marginTop:"30px"}} ref={contentRef}>
-            <TextField
-                    error={hasError}
-                    inputProps={{ spellCheck: "false" }}
-                    inputRef={inputRef}
-                    autoComplete="off"
-                    margin="dense"
-                    label="Username"
-                    fullWidth
-                    variant="standard"
-                    value={username}
-                    onChange={handleChange}
 
-                    helperText={hasError ? errorMessage : ""}
-                />
                 <TextField2
                     type="text"
                     error={hasError}
