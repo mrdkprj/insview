@@ -1,22 +1,20 @@
 import {RefObject, ChangeEvent, MouseEvent, useState, createRef,useEffect} from "react";
-import Dialog from "@mui/material/Dialog"
-import AppBar from "@mui/material/AppBar"
-import Toolbar from "@mui/material/Toolbar"
-import InputAdornment from "@mui/material/InputAdornment"
-import IconButton from "@mui/material/IconButton"
-import Typography from "@mui/material/Typography"
-import DialogContent from "@mui/material/DialogContent"
-import List from "@mui/material/List"
-import ListItem from "@mui/material/ListItem"
-import Avatar from "@mui/material/Avatar"
-import TextField from "@mui/material/TextField"
+import {IHistory} from "@shared";
+import Dialog from "@parts/Dialog"
+import AppBar from "@parts/AppBar"
+import LinkButton from "@parts/LinkButton"
+import Typography from "@parts/Typography"
+import List from "@parts/List"
+import ListItem from "@parts/ListItem"
+import Avatar from "@parts/Avatar"
+import DialogContent from "@parts/DialogContent";
+import Button from "@parts/Button"
+import TextField from "@parts/TextField"
 import CloseIcon from "@mui/icons-material/Close";
 import ClearIcon from "@mui/icons-material/Clear";
 import DeleteIcon from "@mui/icons-material/Delete";
-import Button from "@mui/material/Button"
-import {IHistory} from "../../types";
 
-export interface IUsernameDialogProps {
+type IUsernameDialogProps = {
     open: boolean,
     username: string,
     history:IHistory,
@@ -79,22 +77,16 @@ const UsernameDialog = (props:IUsernameDialogProps) => {
     const renderListItem = () => {
 
         return Object.keys(history).map((key:string) =>
-            <ListItem
-                onClick={() => handleClickHistory(key)}
-                divider={true}
-                sx={{fontSize:14}}
-                secondaryAction={
-                    <IconButton size="small" edge="end" aria-label="delete" onClick={(e) => deleteHistory(e,key)}>
+            <ListItem onClick={() => handleClickHistory(key)}>
+                <div style={{display:"flex", alignItems:"center", justifyContent: "center", width: "100%"}}>
+                    <Avatar alt={history[key].username} src={history[key].profileImage} style={{marginRight:"15px"}}/>
+                    <div style={{flex: 1, display:"flex", flexDirection: "column", justifyContent: "center" }}>
+                        <span>{history[key].name}</span>
+                        <span>{history[key].username}</span>
+                    </div>
+                    <LinkButton size="small" edge="end" onClick={(e:any) => deleteHistory(e,key)}>
                         <DeleteIcon />
-                    </IconButton>
-                }
-            >
-                <div style={{display:"flex", alignItems:"center"}}>
-                    <Avatar alt={history[key].profileImage} src={history[key].profileImage} style={{marginRight:"15px"}}/>
-                    <span>
-                        {history[key].name}<br/>
-                        {history[key].username}
-                    </span>
+                    </LinkButton>
                 </div>
             </ListItem>
         );
@@ -105,46 +97,27 @@ const UsernameDialog = (props:IUsernameDialogProps) => {
     },[])
 
     return (
-        <Dialog
-            sx={{zIndex:1300}}
-            open={props.open}
-            fullScreen
-            disableEnforceFocus={true}
-            disableAutoFocus={true}
-            hideBackdrop={true}
-        >
-            <AppBar sx={{ position: "relative" }}>
-                <Toolbar>
-                    <IconButton
-                        edge="start"
-                        color="inherit"
-                        onClick={closeDialog}
-                        aria-label="close"
-                    >
-                        <CloseIcon />
-                    </IconButton>
-                    <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">Input username</Typography>
-                </Toolbar>
+        <Dialog style={{zIndex:1300}} open={props.open}>
+            <AppBar style={{ height: "45px", display:"flex", justifyContent: "center", alignItems:"center" }}>
+                <LinkButton style={{color:"inherit", position: "absolute", left:"5px"}} onClick={closeDialog}>
+                    <CloseIcon />
+                </LinkButton>
+                <Typography variant="h6">Input username</Typography>
             </AppBar>
-            <DialogContent sx={{marginTop:"30px"}} ref={contentRef}>
+            <DialogContent style={{marginTop:"30px"}} ref={contentRef}>
                 <TextField
+                    type="text"
                     error={hasError}
-                    inputProps={{ spellCheck: "false" }}
-                    inputRef={inputRef}
-                    autoComplete="off"
-                    margin="dense"
                     label="Username"
-                    fullWidth
-                    variant="standard"
                     value={username}
+                    disableFocus={true}
                     onChange={handleChange}
-                    InputProps={{
-                        endAdornment: (
-                          <InputAdornment position="end">
-                                <ClearIcon fontSize="small" onClick={clearText}/>
-                          </InputAdornment>
-                        ),
-                      }}
+                    inputRef={inputRef}
+                    endAdornment={(
+                        <LinkButton size="small" onClick={clearText}>
+                              <ClearIcon fontSize="small"/>
+                        </LinkButton>
+                    )}
                     helperText={hasError ? errorMessage : ""}
                 />
                 <div style={{display:"flex", justifyContent:"center", marginTop:"30px"}}>

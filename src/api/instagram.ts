@@ -726,24 +726,40 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =>
 
 }
 
-const logout = async (req:IgRequest) => {
+const logout = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>>  => {
 
-    const session = getSession(req.headers);
-    if(!session.isAuthenticated){
-        return;
+    const currentSession = getSession(req.headers);
+
+    if(!currentSession.isAuthenticated) throw new Error("Already logged out")
+
+    try{
+        const headers = createHeaders(baseUrl, currentSession);
+        headers.Cookie = req.headers.cookie ?? "";
+
+        const options :AxiosRequestConfig = {
+            url: `${baseUrl}/accounts/logout/ajax/`,
+            method: "POST",
+            headers,
+            withCredentials:true
+        }
+
+        const response = await axios.request(options);
+
+        const session = getSession(response.headers);
+
+        const data = {account:"", success:true, challenge:false, endpoint:""};
+
+        return {
+            data,
+            session
+        }
+
+    }catch(ex:any){
+        return {
+            data:{account:"", success:true, challenge:false, endpoint:""},
+            session: currentSession
+        }
     }
-
-    const headers = createHeaders(baseUrl, session);
-    headers.Cookie = req.headers.cookie ?? "";
-
-    const options :AxiosRequestConfig = {
-        url: `${baseUrl}/accounts/logout/ajax/`,
-        method: "POST",
-        headers,
-        withCredentials:true
-    }
-
-    await axios.request(options);
 }
 
 const follow = async (req:IgRequest) => {

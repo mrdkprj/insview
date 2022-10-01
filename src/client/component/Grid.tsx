@@ -1,7 +1,7 @@
 import { FixedSizeGrid } from "react-window";
 import { css } from "@emotion/react";
 import { memo, createRef, useEffect } from "react";
-import {IMedia} from "../../types";
+import {IMedia} from "@shared";
 
 export interface IGridContext{
     data: IMedia[],

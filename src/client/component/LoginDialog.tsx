@@ -1,15 +1,14 @@
 import {ChangeEvent, useState, useEffect} from "react";
-import Dialog from "@mui/material/Dialog"
-import AppBar from "@mui/material/AppBar"
-import Toolbar from "@mui/material/Toolbar"
-import IconButton from "@mui/material/IconButton"
-import Typography from "@mui/material/Typography"
-import DialogContent from "@mui/material/DialogContent"
-import TextField from "@mui/material/TextField"
+import Dialog from "@parts/Dialog"
+import AppBar from "@parts/AppBar"
+import LinkButton from "@parts/LinkButton"
+import Typography from "@parts/Typography"
+import DialogContent from "@parts/DialogContent"
+import TextField from "@parts/TextField"
+import Button from "@parts/Button"
 import CloseIcon from "@mui/icons-material/Close";
 import PasswordIcon from "@mui/icons-material/Password";
 import PinIcon from "@mui/icons-material/Pin";
-import Button from "@mui/material/Button"
 
 export interface IUsernameDialogProps {
     open:boolean,
@@ -70,39 +69,25 @@ const LoginDialog = (props:IUsernameDialogProps) => {
     },[props.requireCode])
 
     return (
-        <Dialog
-            sx={{zIndex:1300}}
-            open={props.open}
-            fullScreen
-            disableEnforceFocus={true}
-            disableAutoFocus={true}
-            hideBackdrop={true}
-        >
-            <AppBar sx={{ position: "relative" }}>
-
-                <Toolbar>
-                <IconButton edge="start" color="inherit" onClick={props.onClose}>
-                        <CloseIcon />
-                </IconButton>
-                    <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">Authenticate</Typography>
-                    <IconButton edge="end" color="inherit" onClick={toggleDisplay}>
-                        {isChallenge ? <PasswordIcon /> : <PinIcon />}
-                    </IconButton>
-                </Toolbar>
+        <Dialog style={{zIndex:1300}} open={props.open}>
+            <AppBar style={{ height: "45px", display:"flex", justifyContent: "center", alignItems:"center" }}>
+                <LinkButton style={{color:"inherit", position: "absolute", left:"5px"}} onClick={props.onClose}>
+                    <CloseIcon />
+                </LinkButton>
+                <Typography variant="h6">Authenticate</Typography>
+                <LinkButton style={{color:"inherit", position: "absolute", right:"5px"}} onClick={toggleDisplay}>
+                    {isChallenge ? <PasswordIcon /> : <PinIcon />}
+                </LinkButton>
             </AppBar>
-            <DialogContent sx={{marginTop:"30px"}}>
+            <DialogContent style={{marginTop:"30px"}}>
                 {isChallenge ?
                     <form>
                         <TextField
-                            type={"number"}
+                            type="number"
                             error={hasError}
-                            inputProps={{ spellCheck: "false" }}
-                            autoComplete="off"
-                            margin="dense"
                             label="Code"
-                            fullWidth
-                            variant="standard"
                             value={code}
+                            disableFocus={true}
                             onChange={handleCodeChange}
                             helperText={hasError ? EMPTY_CODE : ""}
                         />
@@ -113,27 +98,20 @@ const LoginDialog = (props:IUsernameDialogProps) => {
                     :
                     <form>
                         <TextField
+                            type="text"
                             error={hasError}
-                            inputProps={{ spellCheck: "false" }}
-                            autoComplete="off"
-                            margin="dense"
                             label="Username"
-                            fullWidth
-                            variant="standard"
                             value={account}
+                            disableFocus={true}
                             onChange={handleUsernameChange}
                             helperText={hasError ? EMPTY_ID : ""}
                         />
                         <TextField
-                            type={"password"}
+                            type="password"
                             error={hasError}
-                            inputProps={{ spellCheck: "false" }}
-                            autoComplete="off"
-                            margin="dense"
                             label="Password"
-                            fullWidth
-                            variant="standard"
                             value={password}
+                            disableFocus={true}
                             onChange={handlePasswordChange}
                             helperText={hasError ? EMPTY_ID : ""}
                         />

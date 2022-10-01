@@ -1,17 +1,18 @@
+import { memo, useCallback } from "react";
 import { FixedSizeList } from "react-window";
 import { css } from "@emotion/react";
-import { memo, useCallback } from "react";
-import { IFollowing, IFollowingUser} from "../../types";
-import Dialog from "@mui/material/Dialog"
-import AppBar from "@mui/material/AppBar"
-import IconButton from "@mui/material/IconButton"
-import Typography from "@mui/material/Typography"
-import DialogContent from "@mui/material/DialogContent"
-import Avatar from "@mui/material/Avatar"
+import { IFollowing, IFollowingUser} from "@shared";
+import Dialog from "@parts/Dialog"
+import AppBar from "@parts/AppBar"
+import LinkButton from "@parts/LinkButton"
+import Typography from "@parts/Typography"
+import DialogContent from "@parts/DialogContent"
+import Avatar from "@parts/Avatar"
 import CloseIcon from "@mui/icons-material/Close";
 import LogoutIcon from "@mui/icons-material/Logout";
 
 export interface IAccountContext{
+    account:string,
     open:boolean,
     height: number,
     width: number,
@@ -71,7 +72,7 @@ const AccountDialog = memo<IAccountContext>( (props) => {
         marginRight: "20px"
     })
 
-    const toggleFollow = useCallback( async (e: React.MouseEvent<HTMLButtonElement>, user:IFollowingUser) => {
+    const toggleFollow = useCallback( async (e:any, user:IFollowingUser) => {
 
         await props.toggleFollow(!user.following, user);
 
@@ -102,24 +103,17 @@ const AccountDialog = memo<IAccountContext>( (props) => {
     }
 
     return(
-        <Dialog
-            sx={{zIndex:1300, overflowX:"hidden"}}
-            open={props.open}
-            fullScreen
-            disableEnforceFocus={true}
-            disableAutoFocus={true}
-            hideBackdrop={true}
-        >
-            <AppBar style={{height: barHeight, display:"flex", justifyContent: "center", alignItems:"center"}} sx={{ bgcolor:"#fff"}}>
-                <IconButton size="small" style={{position:"absolute", left:"5px"}} onClick={props.onClose}>
+        <Dialog style={{zIndex:1300, overflowX:"hidden"}} open={props.open}>
+            <AppBar style={{height: barHeight, display:"flex", justifyContent: "center", alignItems:"center", backgroundColor:"#fff"}}>
+                <LinkButton size="small" style={{position:"absolute", left:"5px"}} onClick={props.onClose}>
                         <CloseIcon />
-                </IconButton>
-                <Typography sx={{ color:"#888" }} variant="h6" component="div">Followings</Typography>
-                <IconButton size="small" style={{position:"absolute", right:"5px"}} onClick={props.onLogout}>
+                </LinkButton>
+                <Typography style={{ color:"#888" }} variant="h6">{props.account}</Typography>
+                <LinkButton size="small" style={{position:"absolute", right:"5px"}} onClick={props.onLogout}>
                     <LogoutIcon />
-                </IconButton>
+                </LinkButton>
             </AppBar>
-            <DialogContent sx={{overflow:"hidden", padding:0, marginTop:barHeight + "px"}}>
+            <DialogContent style={{overflow:"hidden", padding:0}}>
                 <FixedSizeList
                     style={{overflowX:"hidden"}}
                     height={props.height - barHeight}

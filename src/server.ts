@@ -4,8 +4,7 @@ import session from "express-session";
 import cors from "cors";
 import type { Cookie } from "tough-cookie";
 
-import { IAuthResponse, IHistory, IMediaResponse, ISession, IUser } from "./types";
-import { emptyResponse, AuthError } from "./types"
+import { IAuthResponse, IHistory, IMediaResponse, ISession, IUser, emptyResponse, AuthError } from "@shared"
 import { IMediaTable } from "./db/IDatabase";
 import model from "./db/model"
 import * as api from "./api/instagram"
@@ -232,6 +231,7 @@ const tryRestore = async (req:any, res:any) => {
         const result = await db.restore(req.session.account);
 
         result.isAuthenticated = session.isAuthenticated;
+        result.account = req.session.account
 
         await sendResponse(req, res, result, session);
 
@@ -331,11 +331,16 @@ const tryLogout = async (req:any, res:any) => {
 
     try{
 
-        await api.logout({data:{}, headers:req.headers});
+        const result = await api.logout({data:{}, headers:req.headers});
 
         req.session.destroy();
 
-        res.status(200).send({success:true});
+        const authResponse :IAuthResponse = {
+            status: result.data,
+            media:emptyResponse,
+        }
+
+        await sendResponse(req, res, authResponse, result.session);
 
     }catch(ex:any){
 

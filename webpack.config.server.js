@@ -23,6 +23,10 @@ module.exports = {
         ]
     },
     resolve: {
+        alias: {
+            "@shared": path.resolve(__dirname, "src/types/"),
+            "@parts" : path.resolve(__dirname, "src/client/componentBase/")
+        },
         extensions: [ '.tsx', '.ts', '.js' ],
         modules: ["node_modules"]
     },

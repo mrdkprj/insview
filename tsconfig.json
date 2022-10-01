@@ -19,6 +19,15 @@
     "jsx": "react-jsx",
     "outDir": "dist",
     "jsxImportSource": "@emotion/react",
+    "baseUrl": "./src",
+    "paths": {
+      "@shared": [
+        "types",
+      ],
+      "@parts/*" : [
+        "client/componentBase/*"
+      ]
+    }
   },
   "exclude": [
     "node_modules"

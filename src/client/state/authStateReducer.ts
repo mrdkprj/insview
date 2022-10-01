@@ -1,4 +1,4 @@
-import { ILoginResponse } from "../../types";
+import { ILoginResponse } from "@shared";
 
 export const initialAuthState : ILoginResponse = {
     account:"",
@@ -29,7 +29,11 @@ export const authStateReducer = (state: ILoginResponse, action: IAuthAction): IL
             return {...state, ...action.value}
 
         case AuthAction.toggleAuth:
-            return {...state, success:action.value}
+            if(action.value.account){
+                return {...state, success:action.value.success, account:action.value.account}
+            }else{
+                return {...state, success:action.value.success}
+            }
 
         default:
             return state;

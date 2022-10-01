@@ -12,6 +12,7 @@
 # production
 /public
 /dist
+/src/client/exp
 \.env
 media.db
 server.js

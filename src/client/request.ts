@@ -1,5 +1,5 @@
 import axios, {AxiosRequestConfig, AxiosResponse, AxiosResponseHeaders, Method} from "axios";
-import {IMediaResponse, IHistory, IUser, IAuthResponse, IFollowing, RequestError, IResponse, IFollowingUser} from "../types"
+import {IMediaResponse, IHistory, IUser, IAuthResponse, IFollowing, RequestError, IResponse, IFollowingUser} from "@shared"
 
 const createOptions = (url:string, method:Method, data:any) :AxiosRequestConfig => {
 

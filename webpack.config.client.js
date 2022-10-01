@@ -1,9 +1,11 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require("copy-webpack-plugin")
+//const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 module.exports = {
     mode: 'production',
+    target: 'web',
     entry: './src/client/index.tsx',
     plugins: [
         new HtmlWebpackPlugin({
@@ -13,7 +15,8 @@ module.exports = {
             patterns: [
                 { from: 'resource/static' }
             ]
-        })
+        }),
+        //new BundleAnalyzerPlugin()
     ],
     module: {
         rules: [
@@ -30,6 +33,10 @@ module.exports = {
         ]
     },
     resolve: {
+        alias: {
+            "@shared": path.resolve(__dirname, "src/types/"),
+            "@parts" : path.resolve(__dirname, "src/client/componentBase/")
+        },
         extensions: [ '.tsx', '.ts', '.js' ]
     },
     output: {

@@ -1,4 +1,4 @@
-import {IMediaResponse, IHistory, IMedia, IUser} from "../types"
+import {IMediaResponse, IHistory, IMedia, IUser} from "@shared"
 
 export interface IDatabase{
 

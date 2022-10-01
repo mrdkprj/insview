@@ -88,6 +88,7 @@ export interface IMediaResponse {
     next: string,
     history:IHistory,
     isAuthenticated:boolean,
+    account?:string,
 }
 
 export interface ILoginResponse {

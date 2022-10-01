@@ -1,5 +1,5 @@
 
-import {emptyUser, IFollowing, IHistory, IMedia, IUser} from "../../types";
+import {emptyUser, IFollowing, IHistory, IMedia, IUser} from "@shared";
 
 export interface IMediaState {
     locked: boolean,
