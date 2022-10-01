@@ -190,6 +190,7 @@ const input = css({
     display: "block",
     minWidth: "0px",
     width: "100%",
+    webkitTapHighlightColor: "transparent",
     animationName: `${autoFillCancel}`,
     animationDuration: "10ms",
     "&:focus" : {
