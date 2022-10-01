@@ -1,5 +1,5 @@
 import React, {useEffect, createRef, forwardRef, useState} from "react"
-import {css} from "@emotion/react";
+import {css, keyframes} from "@emotion/react";
 
 type TextFieldProps = {
     value:any,
@@ -171,6 +171,12 @@ const root = css({
     }
 })
 
+const autoFillCancel = keyframes({
+    "0%":{
+        display: "block"
+    }
+})
+
 const input = css({
     font: "inherit",
     letterSpacing: "inherit",
@@ -184,7 +190,7 @@ const input = css({
     display: "block",
     minWidth: "0px",
     width: "100%",
-    animationName: "mui-auto-fill-cancel",
+    animationName: `${autoFillCancel}`,
     animationDuration: "10ms",
     "&:focus" : {
         outline: "0px"
