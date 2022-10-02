@@ -10,7 +10,7 @@ export interface IMediaState {
     history: IHistory,
     followings: IFollowing,
     rowIndex: number,
-};
+}
 
 export const initialMediaState : IMediaState = {
     locked: false,
@@ -43,11 +43,11 @@ export const MediaAction = {
 export const mediaStateReducer = (state: IMediaState, action: IMediaAction): IMediaState => {
     switch (action.type) {
 
-        case MediaAction.reset:
+        case MediaAction.reset: {
             const user = emptyUser;
             user.username = action.value;
             return {...state, user: user, data: [], selected: 0, next:"", rowIndex:0};
-
+        }
         case MediaAction.update:
             return {...state,
                 user: action.value.user,
@@ -73,7 +73,7 @@ export const mediaStateReducer = (state: IMediaState, action: IMediaAction): IMe
         case MediaAction.toggleLock:
             return {...state, locked:action.value};
 
-        case MediaAction.followings:
+        case MediaAction.followings:{
             let users;
             if(state.followings.users.length > 0){
                 users = state.followings.users.concat(action.value.users)
@@ -82,8 +82,8 @@ export const mediaStateReducer = (state: IMediaState, action: IMediaAction): IMe
             }
             const newFollowings = {users, hasNext:action.value.hasNext, next:action.value.next};
             return {...state, followings:newFollowings};
-
-        case MediaAction.updateFollowStatus:
+        }
+        case MediaAction.updateFollowStatus:{
 
             const newusers = state.followings.users.map(user => {
                 if(user.username === action.value.user.username){
@@ -93,7 +93,7 @@ export const mediaStateReducer = (state: IMediaState, action: IMediaAction): IMe
                 return user;
             })
             return {...state, followings:{...state.followings, users:newusers}};
-
+        }
         default:
             return state;
     }

@@ -16,6 +16,7 @@
 \.env
 media.db
 server.js
+.eslintrc.js
 
 # misc
 .DS_Store

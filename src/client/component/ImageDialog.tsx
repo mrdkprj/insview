@@ -1,5 +1,16 @@
-import { memo, useEffect,useCallback, useRef } from "react"
+import React, { memo, useEffect,useCallback, useRef } from "react"
+import { FixedSizeList as List } from 'react-window';
 import { css } from "@emotion/react";
+import { IMedia } from "@shared";
+
+type ImageDialogProps = {
+    width:number,
+    height:number,
+    data:IMedia[],
+    startIndex:number,
+    onClose:() => void,
+    onImageRendered: (index:number) => void,
+}
 
 const direction = {
     right:"right",
@@ -16,13 +27,15 @@ let swipeState = {
     swiping: true,
     close:false,
     direction: "",
+    left:0,
+    degree:0,
 }
 
 const SCALE = 3;
-let tapped :boolean = false;
+let tapped = false;
 let zoomed = false;
-let timer :any = null;
-let imageRect :any = null;
+let timer = 0;
+let imageRect = null;
 
 const isHorizontalAction = () => {
     if(swipeState.direction === direction.right || swipeState.direction === direction.left){
@@ -32,39 +45,41 @@ const isHorizontalAction = () => {
     return false;
 }
 
-const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => void,mediaId:string}) => {
+const getDirection = (xDiff:number,yDiff:number) => {
+
+    if( Math.abs( xDiff ) > Math.abs( yDiff ) ){
+
+        if( xDiff > 0 ){
+            return direction.left;
+        }
+
+        return direction.right;
+    }
+
+    if( yDiff > 0 ){
+        return direction.up
+    }
+
+    return direction.down;
+
+}
+
+const ImageDialog = (props:ImageDialogProps) => {
 
     const ref = useRef<HTMLDivElement>(null);
-    const imageRef = useRef<HTMLImageElement>(null);
-
-    const getDirection = useCallback((xDiff,yDiff) => {
-
-        if( Math.abs( xDiff ) > Math.abs( yDiff ) ){
-            if( xDiff > 0 ){
-                return direction.left;
-            }
-
-            return direction.right;
-        }
-
-        if( yDiff > 0 ){
-            return direction.up
-        }
-
-        return direction.down;
-
-    },[])
 
     const onTouchStart = useCallback((e) => {
 
         swipeState = {
-            startX: e.touches[0].clientX,
+            startX: e.touches[0].clientX + ref.current?.scrollLeft,
             startY: e.touches[0].clientY,
             moveY: 0,
             moveX:0,
             swiping: true,
             close:false,
             direction: "",
+            left:ref.current?.scrollLeft ?? 0,
+            degree: 0,
         }
 
     },[])
@@ -79,21 +94,28 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
             swiping: false,
             close:false,
             direction:"",
+            left:0,
+            degree: 0,
         }
 
     },[]);
 
     const closeDialog = useCallback(() => {
         cleanupSwipe();
-        onClose();
-    },[cleanupSwipe, onClose])
+        props.onClose();
+    },[cleanupSwipe, props.onClose])
 
-    const onTouchEnd = useCallback((e) => {
+    const onTouchEnd = useCallback(() => {
 
         if(!swipeState.swiping) return;
 
         if(swipeState.close){
             closeDialog();
+            return;
+        }
+
+        if(isHorizontalAction()){
+            endSwipeHorizontal();
             return;
         }
 
@@ -110,28 +132,47 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     },[ref, closeDialog,cleanupSwipe]);
 
+    const endSwipeHorizontal = () => {
+
+        let left = swipeState.left;
+        if(swipeState.degree > 0.8){
+            left = swipeState.direction === direction.left ? swipeState.left + props.width : swipeState.left - props.width
+        }
+
+        ref.current?.scrollTo({ left, behavior: 'smooth' })
+        cleanupSwipe();
+    }
+
     const onTouchMove = useCallback((e) => {
 
         e.preventDefault();
 
-        if(!swipeState.swiping && !zoomed) return;
+        if(!swipeState.swiping || zoomed) return;
 
         const xDiff = swipeState.startX - e.touches[0].clientX;
         const yDiff = swipeState.startY - e.touches[0].clientY;
 
         if(!swipeState.direction){
-            swipeState.direction = getDirection(xDiff,yDiff);
+            swipeState.direction = getDirection(xDiff - swipeState.left, yDiff);
         }
 
         swipeState = {...swipeState, moveY: yDiff, moveX: xDiff};
 
         if(isHorizontalAction()){
+            const degree = (swipeState.moveX - swipeState.left) / props.width;
+            swipeState.degree = Math.abs(degree);
+            ref.current?.scrollTo({ left: swipeState.moveX, behavior: 'auto' })
+
+            if(swipeState.degree > 0.8){
+                endSwipeHorizontal();
+            }
+
             return;
         }
 
-        if(swipeState.direction !== direction.down) return;
+        swipeState.degree = Math.abs(swipeState.moveY) / props.height;
 
-        if(Math.abs(swipeState.moveY) / 100 > 0.15){
+        if(swipeState.degree > 0.15){
             swipeState = {...swipeState, close:true}
         }
 
@@ -141,17 +182,20 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     },[getDirection]);
 
-    const changeScale = useCallback( (e:MouseEvent) => {
+    const changeScale = useCallback( (e:React.MouseEvent<HTMLImageElement>) => {
 
-        if(!imageRef.current || !ref.current) return;
+        if(!ref.current) return;
+
+        const img = e.currentTarget;
+        imageRect = img.getBoundingClientRect();
 
         if(zoomed){
             cleanupSwipe();
-            imageRef.current.style["transform"] = "scale(1)"
+            img.style["transform"] = "scale(1)"
             zoomed = false
         }else{
 
-            let x = e.pageX - imageRect.left;
+            const x = e.pageX - imageRect.left;
             let y = e.pageY - imageRect.top;
 
             const nextTop = imageRect.top - y * 2
@@ -163,8 +207,8 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
                 y = imageRect.height - imageRect.top / 2
             }
 
-            imageRef.current.style["transform-origin" as any] = `${x}px ${y}px`
-            imageRef.current.style["transform"] = `scale(${SCALE})`
+            img.style.transformOrigin = `${x}px ${y}px`
+            img.style["transform"] = `scale(${SCALE})`
 
             zoomed = true;
 
@@ -172,13 +216,13 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     },[cleanupSwipe])
 
-    const onImageClick = useCallback((e:MouseEvent) => {
+    const onImageClick = useCallback((e:React.MouseEvent<HTMLImageElement>) => {
 
         if(!tapped) {
 
             tapped = true;
 
-            timer = setTimeout(() => {
+            timer = window.setTimeout(() => {
                 tapped = false;
             }, 300 );
 
@@ -200,6 +244,24 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     },[closeDialog]);
 
+    const onItemsRendered = ({visibleStartIndex}:{visibleStartIndex:number}) => {
+
+        if(swipeState.swiping) return;
+
+        props.onImageRendered(visibleStartIndex)
+
+    }
+
+    const renderRow = ({index, style}:{index:number, style:React.CSSProperties}) => {
+
+        return (
+            <div style={style} css={ImageContainer}>
+                <img css={ImageViewer} alt={props.data[index].id} src={props.data[index].media_url} onClick={onImageClick}/>
+            </div>
+        )
+
+    }
+
     useEffect(() => {
 
         document.body.style.overflow = "hidden";
@@ -207,10 +269,8 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
         ref.current?.addEventListener("touchstart", onTouchStart, { passive: false });
         ref.current?.addEventListener("touchmove", onTouchMove, { passive: false });
         ref.current?.addEventListener("touchend", onTouchEnd);
-        imageRef.current?.addEventListener("click", onImageClick, { passive: false });
-        document.addEventListener("keydown", handleKeydown, { passive: false });
 
-        imageRect = imageRef.current?.getBoundingClientRect();
+        document.addEventListener("keydown", handleKeydown, { passive: false });
 
         return (() => {
             document.removeEventListener("keydown", handleKeydown);
@@ -220,6 +280,12 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
 
     useEffect( () => () =>  {document.body.style.overflow = ""}, [] );
 
+    const ImageContainer = css({
+        display:"flex",
+        justifyContent: "flex-start",
+        alignItems:"center",
+
+    })
     const ImageViewer = css({
         maxHeight: "100%",
         maxWidth: "100%",
@@ -239,25 +305,34 @@ const ImageDialog = ({mediaUrl,onClose,mediaId}:{mediaUrl:string,onClose:() => v
     });
 
     const Contaner = css({
-        display:"flex",
-        justifyContent: "center",
-        alignItems:"center",
-        flex: 1,
         position: "fixed",
-        transform: "translate(0px, 0px)",
         top:0,
         left: 0,
         zIndex: 2000,
         height: "100%",
         width: "100%",
         background: "#121111",
+        overflow: "hidden",
     });
-
 
     return (
         <div css={Backdrop}>
-            <div css={Contaner} ref={ref}>
-                <img css={ImageViewer} ref={imageRef} alt={mediaId} src={mediaUrl}/>
+            <div css={Contaner}>
+                <List
+                    height={props.height}
+                    itemCount={props.data.length}
+                    itemSize={props.width}
+                    width={props.width}
+                    layout="horizontal"
+                    overscanCount={4}
+                    outerRef={ref}
+                    itemData={props.data}
+                    initialScrollOffset={props.width * (props.startIndex * 1)}
+                    style={{overflow:"hidden"}}
+                    onItemsRendered={onItemsRendered}
+                >
+                    {renderRow}
+                </List>
             </div>
         </div>
     )

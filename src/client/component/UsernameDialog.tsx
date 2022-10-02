@@ -9,8 +9,7 @@ import ListItem from "@parts/ListItem"
 import Avatar from "@parts/Avatar"
 import DialogContent from "@parts/DialogContent";
 import Button from "@parts/Button"
-import TextField from "@mui/material/TextField"
-import TextField2 from "@parts/TextField"
+import TextField from "@parts/TextField"
 import CloseIcon from "@mui/icons-material/Close";
 import ClearIcon from "@mui/icons-material/Clear";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -106,8 +105,7 @@ const UsernameDialog = (props:IUsernameDialogProps) => {
                 <Typography variant="h6">Input username</Typography>
             </AppBar>
             <DialogContent style={{marginTop:"30px"}} ref={contentRef}>
-
-                <TextField2
+                <TextField
                     type="text"
                     error={hasError}
                     label="Username"

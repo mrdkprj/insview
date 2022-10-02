@@ -1,4 +1,4 @@
-import {Fragment, useEffect, useCallback, useReducer } from "react";
+import {Fragment, useEffect, useCallback, useReducer, useState } from "react";
 import AppBar from "@parts/AppBar"
 import LinkButton from "@parts/LinkButton";
 import Typography from "@parts/Typography"
@@ -31,7 +31,7 @@ function App(){
     const [mediaState, dispatchMediaState] = useReducer(mediaStateReducer, initialMediaState);
     const [authState, dispatchAuthState] = useReducer(authStateReducer, initialAuthState);
 
-    const handleError = useCallback( async (ex:any, message:string = "") => {
+    const handleError = useCallback( async (ex:any, message = "") => {
 
         dispatchAuthState({type:AuthAction.toggleAuth, value: {success:ex.data.igAuth}})
 
@@ -253,14 +253,15 @@ function App(){
 
     },[authState.account, authState.endpoint])
 
-    const onIdle = useCallback( async (scrollTop :number) => {
+    const onIdle = async (scrollTop :number) => {
+
         if(mediaState.rowIndex === scrollTop) return;
 
         await save(mediaState.user.username, scrollTop);
 
         dispatchMediaState({type:MediaAction.updateRowIndex, value: scrollTop})
 
-    },[mediaState]);
+    }
 
     /*
     * requestFollowing
@@ -384,10 +385,6 @@ function App(){
                 <UsernameDialog username={mediaState.user.username} onSubmit={onUsernameSubmit} onClose={onUsernameDialogClose} onUsernameDelete={requestDeleteHistory} history={mediaState.history} open={appState.openUsernameModal}/>
             }
 
-            {appState.openImageModal &&
-                <ImageDialog onClose={onImageClose} mediaId={mediaState.data[mediaState.selected].id} mediaUrl={mediaState.data[mediaState.selected].media_url}/>
-            }
-
             {appState.openLoginModal &&
                 <LoginDialog onClose={closeLoginDialog} onSubmit={requestLogin} onCodeSubmit={verifyCode} open={appState.openLoginModal} requireCode={authState.challenge}/>
             }
@@ -433,7 +430,7 @@ function App(){
                 </LinkButton>
             </AppBar>
 
-            <Grid data={mediaState.data} onImageClick={onImageClick} onIdle={onIdle} onLastItemRenrered={loadMoreImages} height={height - barHeight} width={width} />
+            <Grid data={mediaState.data} onImageClick={onImageClick} onIdle={onIdle} onLastItemRenrered={loadMoreImages} height={height} width={width} margin={barHeight}/>
 
         </Fragment>
   );
