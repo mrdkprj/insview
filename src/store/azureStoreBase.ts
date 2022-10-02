@@ -89,7 +89,7 @@ export default class AzureStoreBase{
     }
 
     async touch (sid: string, session: session.SessionData): Promise<void> {
-        //console.log(`Refreshing session: ${sid}`)
+        console.log(`Refreshing session: ${sid}`)
 
         await this.init()
         await this.set(sid, session)

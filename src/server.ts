@@ -263,6 +263,8 @@ const saveSession = (req:any, account:string, session:ISession) => {
     if(session.expires){
         const maxAge = session.expires.getTime() - new Date().getTime();
         req.session.cookie.maxAge = maxAge
+    }else{
+        req.session.cookie.maxAge = 1664704732
     }
 }
 
