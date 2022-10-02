@@ -1,7 +1,6 @@
 import sqliteStoreFactory from "express-session-sqlite"
 import azureStoreFactory from "./azureStore"
 import * as sqlite3 from "sqlite3"
-import {Store} from "express-session"
 
 export const StoreType = {
     sqlite: 0,
