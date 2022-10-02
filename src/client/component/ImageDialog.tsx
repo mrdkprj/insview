@@ -138,7 +138,7 @@ const ImageDialog = (props:ImageDialogProps) => {
         if(swipeState.degree > 0.8){
             left = swipeState.direction === direction.left ? swipeState.left + props.width : swipeState.left - props.width
         }
-alert(`ref.current: ${ref.current === null} -- left: ${left} --- width : ${props.width}`)
+alert(`ref.current: ${swipeState.degree} -- left: ${left} --- width : ${props.width}`)
         ref.current?.scrollTo({ left, behavior: 'smooth' })
         cleanupSwipe();
     }
