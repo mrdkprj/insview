@@ -87,7 +87,7 @@ const ImageDialog = (props:ImageDialogProps) => {
     },[])
 
     const cleanupSwipe = useCallback(() => {
-        swipeState = {...initialSwipeState, left:swipeState.left};
+        swipeState = {...initialSwipeState};
     },[]);
 
     const closeDialog = useCallback(() => {
@@ -140,7 +140,7 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     const onTouchMove = useCallback((e) => {
 
-        //e.preventDefault();
+        e.preventDefault();
 
         if(!swipeState.swiping || zoomed) return;
 
@@ -263,7 +263,7 @@ const ImageDialog = (props:ImageDialogProps) => {
         document.body.style.overflow = "hidden";
 
         ref.current?.addEventListener("touchstart", onTouchStart, { passive: true });
-        ref.current?.addEventListener("touchmove", onTouchMove, { passive: true });
+        ref.current?.addEventListener("touchmove", onTouchMove, { passive: false });
         ref.current?.addEventListener("touchend", onTouchEnd, { passive: true });
 
         document.addEventListener("keydown", handleKeydown);
