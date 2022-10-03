@@ -94,7 +94,7 @@ const ImageDialog = (props:ImageDialogProps) => {
         props.onClose();
     },[cleanupSwipe, props.onClose])
 
-    const onTouchEnd = () => {
+    const onTouchEnd = useCallback(() => {
 
         if(!swipeState.swiping) return;
 
@@ -119,7 +119,7 @@ const ImageDialog = (props:ImageDialogProps) => {
             ref.current.style.transform = `translate(${0}px, ${0}px)`
         }
 
-    }
+    },[ref, closeDialog,cleanupSwipe]);
 
     const endSwipeHorizontal = () => {
 
@@ -261,11 +261,11 @@ const ImageDialog = (props:ImageDialogProps) => {
 
         document.body.style.overflow = "hidden";
 
-        ref.current?.addEventListener("touchstart", onTouchStart, { passive: false });
+        ref.current?.addEventListener("touchstart", onTouchStart, { passive: true });
         ref.current?.addEventListener("touchmove", onTouchMove, { passive: false });
-        ref.current?.addEventListener("touchend", onTouchEnd);
+        ref.current?.addEventListener("touchend", onTouchEnd, { passive: true });
 
-        document.addEventListener("keydown", handleKeydown, { passive: false });
+        document.addEventListener("keydown", handleKeydown);
 
         return (() => {
             document.removeEventListener("keydown", handleKeydown);
