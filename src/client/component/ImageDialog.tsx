@@ -132,6 +132,10 @@ const ImageDialog = (props:ImageDialogProps) => {
         }
 
         ref.current?.scrollTo({ left, behavior: "smooth" })
+
+        if(ref.current?.scrollLeft !== left){
+            ref.current?.scrollTo({ left, behavior: "smooth" })
+        }
         cleanupSwipe();
 
     }
