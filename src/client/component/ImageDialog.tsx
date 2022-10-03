@@ -131,7 +131,7 @@ const ImageDialog = (props:ImageDialogProps) => {
             left = swipeState.direction === direction.left ? swipeState.left + props.width : swipeState.left - props.width
         }
 
-        ref.current?.scrollTo({ left })
+        ref.current?.scrollTo({ left, behavior: "smooth" })
         cleanupSwipe();
     }
 
@@ -321,7 +321,7 @@ const ImageDialog = (props:ImageDialogProps) => {
                     outerRef={ref}
                     itemData={props.data}
                     initialScrollOffset={props.width * (props.startIndex * 1)}
-                    style={{overflow:"hidden", WebkitOverflowScrolling:"touch"}}
+                    style={{overflow:"hidden", WebkitOverflowScrolling:"touch", WebkitTransform :"translateZ(0px)"}}
                     onItemsRendered={onItemsRendered}
                 >
                     {renderRow}
