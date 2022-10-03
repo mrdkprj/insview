@@ -87,7 +87,7 @@ const ImageDialog = (props:ImageDialogProps) => {
     },[])
 
     const cleanupSwipe = useCallback(() => {
-        swipeState = {...initialSwipeState};
+        swipeState = {...initialSwipeState, left:swipeState.left};
     },[]);
 
     const closeDialog = useCallback(() => {
@@ -132,10 +132,9 @@ const ImageDialog = (props:ImageDialogProps) => {
             left = swipeState.direction === direction.left ? swipeState.left + props.width : swipeState.left - props.width
         }
 
-        window.requestAnimationFrame(() => {
-            ref.current?.scrollTo({ left, behavior: "smooth" })
-            cleanupSwipe();
-        })
+        ref.current?.scrollTo({ left, behavior: "smooth" })
+
+        cleanupSwipe();
 
     }
 
