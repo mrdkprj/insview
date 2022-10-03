@@ -74,6 +74,7 @@ const getDirection = (xDiff:number,yDiff:number) => {
 const ImageDialog = (props:ImageDialogProps) => {
 
     const ref = useRef<HTMLDivElement>(null);
+    const cref = useRef<HTMLDivElement>(null)
 
     const onTouchStart = useCallback((e) => {
 
@@ -131,9 +132,10 @@ const ImageDialog = (props:ImageDialogProps) => {
             left = swipeState.direction === direction.left ? swipeState.left + props.width : swipeState.left - props.width
         }
 
-        ref.current?.scrollTo({ left, behavior: "smooth" })
-
-        cleanupSwipe();
+        window.requestAnimationFrame(() => {
+            ref.current?.scrollTo({ left, behavior: "smooth" })
+            cleanupSwipe();
+        })
 
     }
 
@@ -312,7 +314,7 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     return (
         <div css={Backdrop}>
-            <div css={Contaner}>
+            <div css={Contaner} ref={cref}>
                 <List
                     height={props.height}
                     itemCount={props.data.length}
