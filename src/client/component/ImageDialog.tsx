@@ -94,7 +94,7 @@ const ImageDialog = (props:ImageDialogProps) => {
         props.onClose();
     },[cleanupSwipe, props.onClose])
 
-    const onTouchEnd = useCallback(() => {
+    const onTouchEnd = () => {
 
         if(!swipeState.swiping) return;
 
@@ -119,7 +119,7 @@ const ImageDialog = (props:ImageDialogProps) => {
             ref.current.style.transform = `translate(${0}px, ${0}px)`
         }
 
-    },[ref, closeDialog,cleanupSwipe]);
+    }
 
     const endSwipeHorizontal = () => {
 
@@ -133,9 +133,6 @@ const ImageDialog = (props:ImageDialogProps) => {
 
         ref.current?.scrollTo({ left, behavior: "smooth" })
 
-        if(ref.current?.scrollLeft !== left){
-            ref.current?.scrollTo({ left, behavior: "smooth" })
-        }
         cleanupSwipe();
 
     }
