@@ -19,18 +19,24 @@ const direction = {
     down:"down",
 }
 
-let swipeState = {
+const initialSwipeState = {
     startX: 0,
     startY: 0,
+    startTime:0,
     moveY: 0,
     moveX:0,
-    swiping: true,
+    isMoved:false,
+    swiping: false,
     close:false,
     direction: "",
     left:0,
     degree:0,
 }
 
+let swipeState = {...initialSwipeState};
+
+const H_THRESHHOLD = 0.6
+const V_THRESHHOLD = 0.15
 const SCALE = 3;
 let tapped = false;
 let zoomed = false;
@@ -70,34 +76,16 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     const onTouchStart = useCallback((e) => {
 
-        swipeState = {
-            startX: e.touches[0].clientX + ref.current?.scrollLeft,
-            startY: e.touches[0].clientY,
-            moveY: 0,
-            moveX:0,
-            swiping: true,
-            close:false,
-            direction: "",
-            left:ref.current?.scrollLeft ?? 0,
-            degree: 0,
-        }
+        swipeState.startX = e.touches[0].clientX + ref.current?.scrollLeft
+        swipeState.startY = e.touches[0].clientY
+        swipeState.startTime = new Date().getTime();
+        swipeState.swiping = true
+        swipeState.left = ref.current?.scrollLeft ?? 0
 
     },[])
 
     const cleanupSwipe = useCallback(() => {
-
-        swipeState = {
-            startX: 0,
-            startY: 0,
-            moveY: 0,
-            moveX:0,
-            swiping: false,
-            close:false,
-            direction:"",
-            left:0,
-            degree: 0,
-        }
-
+        swipeState = {...initialSwipeState};
     },[]);
 
     const closeDialog = useCallback(() => {
@@ -135,7 +123,10 @@ const ImageDialog = (props:ImageDialogProps) => {
     const endSwipeHorizontal = () => {
 
         let left = swipeState.left;
-        if(swipeState.degree > 0.8){
+
+        const forceSwipe = swipeState.isMoved && new Date().getTime() - swipeState.startTime <= 500
+
+        if(forceSwipe || swipeState.degree > H_THRESHHOLD){
             left = swipeState.direction === direction.left ? swipeState.left + props.width : swipeState.left - props.width
         }
 
@@ -161,9 +152,10 @@ const ImageDialog = (props:ImageDialogProps) => {
         if(isHorizontalAction()){
             const degree = (swipeState.moveX - swipeState.left) / props.width;
             swipeState.degree = Math.abs(degree);
-            ref.current?.scrollTo({ left: swipeState.moveX, behavior: 'auto' })
+            swipeState.isMoved = swipeState.degree > 0
+            ref.current?.scrollTo({ left: swipeState.moveX})
 
-            if(swipeState.degree > 0.8){
+            if(swipeState.degree > H_THRESHHOLD){
                 endSwipeHorizontal();
             }
 
@@ -172,7 +164,7 @@ const ImageDialog = (props:ImageDialogProps) => {
 
         swipeState.degree = Math.abs(swipeState.moveY) / props.height;
 
-        if(swipeState.degree > 0.15){
+        if(swipeState.degree > V_THRESHHOLD){
             swipeState = {...swipeState, close:true}
         }
 
