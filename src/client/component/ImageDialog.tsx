@@ -131,10 +131,9 @@ const ImageDialog = (props:ImageDialogProps) => {
             left = swipeState.direction === direction.left ? swipeState.left + props.width : swipeState.left - props.width
         }
 
-        alert(left)
         ref.current?.scrollTo({ left, behavior: "smooth" })
         cleanupSwipe();
-        alert(ref.current?.scrollLeft)
+
     }
 
     const onTouchMove = useCallback((e) => {
