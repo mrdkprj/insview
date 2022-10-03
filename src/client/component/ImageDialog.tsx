@@ -94,7 +94,9 @@ const ImageDialog = (props:ImageDialogProps) => {
         props.onClose();
     },[cleanupSwipe, props.onClose])
 
-    const onTouchEnd = useCallback(() => {
+    const onTouchEnd = useCallback((e) => {
+
+        e.prevetDefault();
 
         if(!swipeState.swiping) return;
 
@@ -263,7 +265,7 @@ const ImageDialog = (props:ImageDialogProps) => {
 
         ref.current?.addEventListener("touchstart", onTouchStart, { passive: true });
         ref.current?.addEventListener("touchmove", onTouchMove, { passive: false });
-        ref.current?.addEventListener("touchend", onTouchEnd, { passive: true });
+        ref.current?.addEventListener("touchend", onTouchEnd, { passive: false });
 
         document.addEventListener("keydown", handleKeydown);
 
