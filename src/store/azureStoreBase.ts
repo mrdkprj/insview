@@ -42,15 +42,11 @@ export default class AzureStoreBase{
         await this.init()
 
         const querySpec = {
-            query:  `SELECT * FROM ${CONTAINER_NAME} s WHERE s.id = @sid AND @time < s.expires`,
+            query:  `SELECT * FROM ${CONTAINER_NAME} s WHERE s.id = @sid`,
             parameters: [
               {
                 name: "@sid",
                 value: sid
-              },
-              {
-                name:"@time",
-                value: new Date().getTime()
               }
             ]
         };
@@ -72,12 +68,12 @@ export default class AzureStoreBase{
         await this.init()
 
         //console.log(`Setting session: ${sid}`)
-        const expires = session.cookie.expires ? session.cookie.expires.getTime() - new Date().getTime() : new Date().getTime() + this.ttl;
+        const ttl = session.cookie.expires ? session.cookie.expires.getTime() - new Date().getTime() / 1000 : this.ttl;
 
         await this.database.container(CONTAINER_NAME).items.upsert({
             id: sid,
             data: session,
-            expires,
+            ttl,
         });
 
     }
