@@ -305,7 +305,7 @@ const tryChallenge = async (req:any, res:any, account:string, code:string, endpo
     try{
 
         const result = await api.challenge({data:{account, code, endpoint}, headers:req.headers})
-console.log(JSON.stringify(result))
+
         if(result.data.success){
             saveSession(req, account, result.session);
         }
