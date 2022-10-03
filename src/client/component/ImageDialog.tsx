@@ -321,7 +321,7 @@ const ImageDialog = (props:ImageDialogProps) => {
                     outerRef={ref}
                     itemData={props.data}
                     initialScrollOffset={props.width * (props.startIndex * 1)}
-                    style={{overflow:"hidden"}}
+                    style={{overflow:"hidden", WebkitOverflowScrolling:"touch"}}
                     onItemsRendered={onItemsRendered}
                 >
                     {renderRow}

@@ -46,8 +46,6 @@ const getSession = (headers:any) :ISession => {
 
             const cookie = Cookie.parse(cookieString);
 
-            console.log(cookieString)
-
             if(!cookie){
                 return
             }
