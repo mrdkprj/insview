@@ -108,7 +108,7 @@ const ImageDialog = (props:ImageDialogProps) => {
             return;
         }
 
-        if(swipeState.direction === direction.down && Math.abs(swipeState.moveY) / 100 > 0.15){
+        if(swipeState.direction === direction.down && Math.abs(swipeState.moveY) / 100 > V_THRESHHOLD){
             closeDialog();
             return;
         }
@@ -131,8 +131,10 @@ const ImageDialog = (props:ImageDialogProps) => {
             left = swipeState.direction === direction.left ? swipeState.left + props.width : swipeState.left - props.width
         }
 
+        alert(left)
         ref.current?.scrollTo({ left, behavior: "smooth" })
         cleanupSwipe();
+        alert(ref.current?.scrollLeft)
     }
 
     const onTouchMove = useCallback((e) => {
