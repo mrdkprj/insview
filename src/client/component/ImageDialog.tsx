@@ -36,6 +36,7 @@ const initialSwipeState = {
 let swipeState = {...initialSwipeState};
 
 const H_THRESHHOLD = 0.6
+const H_SWIPE_ELAPSE = 150
 const V_THRESHHOLD = 0.15
 const SCALE = 3;
 let tapped = false;
@@ -124,7 +125,7 @@ const ImageDialog = (props:ImageDialogProps) => {
 
         let left = swipeState.left;
 
-        const forceSwipe = swipeState.isMoved && new Date().getTime() - swipeState.startTime <= 500
+        const forceSwipe = swipeState.isMoved && new Date().getTime() - swipeState.startTime <= H_SWIPE_ELAPSE
 
         if(forceSwipe || swipeState.degree > H_THRESHHOLD){
             left = swipeState.direction === direction.left ? swipeState.left + props.width : swipeState.left - props.width
