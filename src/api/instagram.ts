@@ -1,7 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosRequestHeaders, AxiosResponse, AxiosResponseHeaders } from "axios";
 import { IMedia, IMediaResponse, IUser, IFollowingUser, ILoginResponse, IFollowing, IgRequest, IgResponse, ISession} from "../types";
 import { AuthError } from "../types"
-
 import tough from "tough-cookie";
 
 const GRAPH_QL = "#GRAPH_QL";
@@ -422,10 +421,12 @@ const formatGraph = (data:any, session:ISession, user:IUser) : IMediaResponse =>
         if(data.node.edge_sidecar_to_children){
 
             data.node.edge_sidecar_to_children.edges.filter((data:any) => data.node.is_video === false).forEach((data:any) =>{
+
                 media.push({
                     id:data.node.id,
                     media_url: "/media?url=" + data.node.display_url
                 })
+
             })
 
         }else{
@@ -438,6 +439,11 @@ const formatGraph = (data:any, session:ISession, user:IUser) : IMediaResponse =>
         }
     })
 
+    /*
+    edge_media_to_tagged_user":{"edges":[
+    {"node":
+    {"user":{"full_name":"","id":"","username":""}
+    */
     const rowIndex = 0;
 
     let next = "";
@@ -539,10 +545,10 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
     let session = getSession(req.headers);
 
-    let headers = baseRequestHeaders;
+    const headers = baseRequestHeaders;
     headers["user-agent"] = session.userAgent
 
-    let options :AxiosRequestConfig= {
+    const options :AxiosRequestConfig= {
         url: baseUrl,
         method: "GET",
         headers,
@@ -632,7 +638,7 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     const responseCookies = res.headers["set-cookie"] instanceof Array ? res.headers["set-cookie"] : [res.headers["set-cookie"]]
 
-    let requestCookies :string = "";
+    let requestCookies = "";
 
     responseCookies.forEach((cookieString:any) => {
 

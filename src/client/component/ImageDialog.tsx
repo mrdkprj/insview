@@ -77,7 +77,10 @@ const ImageDialog = (props:ImageDialogProps) => {
     const cref = useRef<HTMLDivElement>(null);
 
     const onTouchStart = useCallback((e) => {
+        if(cref.current){
+            cref.current.innerText = "start\n"
 
+        }
         swipeState.startX = e.touches[0].clientX + ref.current?.scrollLeft
         swipeState.startY = e.touches[0].clientY
         swipeState.startTime = new Date().getTime();
@@ -98,7 +101,7 @@ const ImageDialog = (props:ImageDialogProps) => {
     const endSwipeHorizontal = useCallback(() => {
 
         if(cref.current){
-            cref.current.innerText = `init:${swipeState.left}\
+            cref.current.innerText = cref.current.innerText + `init:${swipeState.left}\
             current: ${ref.current?.scrollLeft}\
             `
         }
@@ -117,10 +120,10 @@ const ImageDialog = (props:ImageDialogProps) => {
 
         setTimeout(() => {
             if(cref.current){
-                cref.current.innerText = cref.current.innerText + "\n" + `left: ${ref.current?.scrollLeft}`
+                cref.current.innerText = cref.current.innerText + "\n" + `left3: ${ref.current?.scrollLeft}` + "\n" +  `state: ${swipeState.left}`
 
             }
-        }, 150);
+        }, 250);
 
     },[cleanupSwipe, props.width])
 
