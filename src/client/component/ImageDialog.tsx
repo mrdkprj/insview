@@ -74,6 +74,7 @@ const getDirection = (xDiff:number,yDiff:number) => {
 const ImageDialog = (props:ImageDialogProps) => {
 
     const ref = useRef<HTMLDivElement>(null);
+    const iref = useRef<HTMLDivElement>(null);
     const cref = useRef<HTMLDivElement>(null);
 
     const onTouchStart = useCallback((e) => {
@@ -101,6 +102,10 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     const endSwipeHorizontal = useCallback(() => {
 
+        if(iref.current){
+            iref.current.style.transform = `translate(0px, 0px)`
+        }
+
         if(cref.current){
             cref.current.innerText = cref.current.innerText + `init:${swipeState.left}\
             current: ${ref.current?.scrollLeft}\
@@ -115,7 +120,7 @@ const ImageDialog = (props:ImageDialogProps) => {
             left = swipeState.direction === direction.left ? swipeState.left + props.width : swipeState.left - props.width
         }
 
-        ref.current?.scrollTo({ left })
+        ref.current?.scrollTo({ left, behavior: "smooth" })
 
         cleanupSwipe();
 
@@ -175,7 +180,10 @@ const ImageDialog = (props:ImageDialogProps) => {
             const degree = (swipeState.moveX - swipeState.left) / props.width;
             swipeState.degree = Math.abs(degree);
             swipeState.isMoved = swipeState.degree > 0
-            ref.current?.scrollTo({ left: swipeState.moveX})
+            //ref.current?.scrollTo({ left: swipeState.moveX})
+            if(iref.current){
+                iref.current.style.transform = `translate(${(swipeState.moveX - swipeState.left) * -1}px, 0px)`
+            }
 
             if(swipeState.degree > H_THRESHHOLD){
                 endSwipeHorizontal();
@@ -333,6 +341,7 @@ const ImageDialog = (props:ImageDialogProps) => {
                 initialScrollOffset={props.width * (props.startIndex * 1)}
                 style={{overflow:"hidden", background:"#121111", WebkitTransform :"translateZ(0px)"}}
                 onItemsRendered={onItemsRendered}
+                innerRef={iref}
             >
                 {renderRow}
             </List>
