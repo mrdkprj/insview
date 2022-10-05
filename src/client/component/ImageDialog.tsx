@@ -117,7 +117,7 @@ const ImageDialog = (props:ImageDialogProps) => {
 
         setTimeout(() => {
             if(cref.current){
-                cref.current.innerText = cref.current.innerText + "\n" + `left: ${cref.current?.scrollLeft}`
+                cref.current.innerText = cref.current.innerText + "\n" + `left: ${ref.current?.scrollLeft}`
 
             }
         }, 150);

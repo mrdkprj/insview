@@ -1,5 +1,5 @@
 import {css} from "@emotion/react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 
 type DialogProps = {
     style?: React.CSSProperties,
@@ -14,11 +14,11 @@ const Dialog = (props:DialogProps) => {
     const [_bodyStyle, _setBodyStyle] = useState({})
     const [_open, _setOpen] = useState(props.open)
 
-    const display = () => {
+    const display = useCallback(() => {
         _setBodyStyle({..._bodyStyle, opacity:1})
-    }
+    },[_bodyStyle])
 
-    const hide = () => {
+    const hide = useCallback(() => {
 
         _setBodyStyle({..._bodyStyle, opacity:0})
 
@@ -28,7 +28,7 @@ const Dialog = (props:DialogProps) => {
             _setOpen(false);
         }, 200);
 
-    }
+    },[_bodyStyle])
 
     useEffect(() => {
 
@@ -44,7 +44,7 @@ const Dialog = (props:DialogProps) => {
             hide();
         }
 
-    },[_open])
+    },[_open, display, hide])
 
 
     if(!_open) return (null);
