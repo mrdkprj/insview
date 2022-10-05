@@ -79,10 +79,6 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     const onTouchStart = useCallback((e) => {
 
-        if(cref.current){
-            cref.current.innerText = "start\n"
-
-        }
         swipeState.startX = e.touches[0].clientX + ref.current?.scrollLeft
         swipeState.startY = e.touches[0].clientY
         swipeState.startTime = new Date().getTime();
@@ -102,16 +98,6 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     const endSwipeHorizontal = useCallback(() => {
 
-        if(iref.current){
-            iref.current.style.transform = `translate(0px, 0px)`
-        }
-
-        if(cref.current){
-            cref.current.innerText = cref.current.innerText + `init:${swipeState.left}\
-            current: ${ref.current?.scrollLeft}\
-            `
-        }
-
         let left = swipeState.left;
 
         const forceSwipe = swipeState.isMoved && new Date().getTime() - swipeState.startTime <= H_SWIPE_ELAPSE
@@ -120,16 +106,13 @@ const ImageDialog = (props:ImageDialogProps) => {
             left = swipeState.direction === direction.left ? swipeState.left + props.width : swipeState.left - props.width
         }
 
-        ref.current?.scrollTo({ left, behavior: "smooth" })
+        if(left === swipeState.left && ref.current){
+            ref.current.scrollLeft = left;
+        }else{
+            ref.current?.scrollTo({ left, behavior: "smooth" })
+        }
 
         cleanupSwipe();
-
-        setTimeout(() => {
-            if(cref.current){
-                cref.current.innerText = cref.current.innerText + "\n" + `left3: ${ref.current?.scrollLeft}` + "\n" +  `state: ${swipeState.left}`
-
-            }
-        }, 250);
 
     },[cleanupSwipe, props.width])
 
@@ -156,7 +139,6 @@ const ImageDialog = (props:ImageDialogProps) => {
 
         if(ref.current){
             ref.current.style.transform = `translate(${0}px, ${0}px)`
-            ref.current.style.pointerEvents = ""
         }
 
     },[cleanupSwipe, closeDialog, endSwipeHorizontal]);
@@ -180,7 +162,7 @@ const ImageDialog = (props:ImageDialogProps) => {
             const degree = (swipeState.moveX - swipeState.left) / props.width;
             swipeState.degree = Math.abs(degree);
             swipeState.isMoved = swipeState.degree > 0
-            ref.current?.scrollTo({ left: swipeState.moveX, behavior: "smooth"})
+            ref.current?.scrollTo({ left: swipeState.moveX})
 
             if(swipeState.degree > H_THRESHHOLD){
                 endSwipeHorizontal();
