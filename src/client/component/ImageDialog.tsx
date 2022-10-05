@@ -74,6 +74,7 @@ const getDirection = (xDiff:number,yDiff:number) => {
 const ImageDialog = (props:ImageDialogProps) => {
 
     const ref = useRef<HTMLDivElement>(null);
+    const cref = useRef<HTMLDivElement>(null);
 
     const onTouchStart = useCallback((e) => {
 
@@ -96,6 +97,12 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     const endSwipeHorizontal = useCallback(() => {
 
+        if(cref.current){
+            cref.current.innerText = `init:${swipeState.left}\
+            current: ${ref.current?.scrollLeft}\
+            `
+        }
+
         let left = swipeState.left;
 
         const forceSwipe = swipeState.isMoved && new Date().getTime() - swipeState.startTime <= H_SWIPE_ELAPSE
@@ -107,6 +114,13 @@ const ImageDialog = (props:ImageDialogProps) => {
         ref.current?.scrollTo({ left, behavior: "smooth" })
 
         cleanupSwipe();
+
+        setTimeout(() => {
+            if(cref.current){
+                cref.current.innerText = cref.current.innerText + "\n" + `left: ${cref.current?.scrollLeft}`
+
+            }
+        }, 150);
 
     },[cleanupSwipe, props.width])
 
@@ -301,6 +315,7 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     return (
         <div css={Backdrop}>
+            <div style={{position:"fixed", top:0, left:0, color:"#fff", zIndex:99999}} ref={cref}></div>
             <List
                 height={props.height}
                 itemCount={props.data.length}
