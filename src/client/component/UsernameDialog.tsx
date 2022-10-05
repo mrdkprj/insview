@@ -1,4 +1,4 @@
-import {RefObject, ChangeEvent, MouseEvent, useState, createRef,useEffect} from "react";
+import {RefObject, ChangeEvent, MouseEvent, useState, createRef} from "react";
 import {IHistory} from "@shared";
 import Dialog from "@parts/Dialog"
 import AppBar from "@parts/AppBar"
@@ -32,7 +32,7 @@ const UsernameDialog = (props:IUsernameDialogProps) => {
     const [username, setUsername] = useState(props.username);
     const [history, setHistory] = useState(props.history);
 
-    let errorMessage = "You should input username";
+    const errorMessage = "You should input username";
 
     const onSubmit = () => {
 
@@ -77,7 +77,7 @@ const UsernameDialog = (props:IUsernameDialogProps) => {
     const renderListItem = () => {
 
         return Object.keys(history).map((key:string) =>
-            <ListItem onClick={() => handleClickHistory(key)}>
+            <ListItem key={key} onClick={() => handleClickHistory(key)}>
                 <div style={{display:"flex", alignItems:"center", justifyContent: "center", width: "100%"}}>
                     <Avatar alt={history[key].username} src={history[key].profileImage} style={{marginRight:"15px"}}/>
                     <div style={{flex: 1, display:"flex", flexDirection: "column", justifyContent: "center" }}>
@@ -91,10 +91,6 @@ const UsernameDialog = (props:IUsernameDialogProps) => {
             </ListItem>
         );
     }
-
-    useEffect(() => {
-
-    },[])
 
     return (
         <Dialog style={{zIndex:1300}} open={props.open}>

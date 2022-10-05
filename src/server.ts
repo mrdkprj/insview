@@ -77,7 +77,7 @@ const sendResponse = async (req:any, res:any, data:any, session:ISession) => {
 
 }
 
-const sendErrorResponse = (res:any, ex:any, message:string = "") => {
+const sendErrorResponse = (res:any, ex:any, message = "") => {
 
     let errorMessage
     if(message){
@@ -351,7 +351,7 @@ const tryLogout = async (req:any, res:any) => {
 
 const tryQuery = async (req:any, res:any, username:string, history:IHistory) => {
 
-    let newHistory :IHistory = history;
+    const newHistory :IHistory = history;
 
     try{
 

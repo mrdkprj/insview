@@ -76,7 +76,7 @@ const AccountDialog = memo<IAccountContext>( (props) => {
 
         await props.toggleFollow(!user.following, user);
 
-    },[])
+    },[props])
 
     const onItemsRendered = ({visibleStopIndex}:{visibleStopIndex:number}) => {
         if(visibleStopIndex === rowCount - 1 && props.data.next){

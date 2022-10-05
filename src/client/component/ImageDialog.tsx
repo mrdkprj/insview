@@ -74,7 +74,6 @@ const getDirection = (xDiff:number,yDiff:number) => {
 const ImageDialog = (props:ImageDialogProps) => {
 
     const ref = useRef<HTMLDivElement>(null);
-    const cref = useRef<HTMLDivElement>(null)
 
     const onTouchStart = useCallback((e) => {
 
@@ -93,7 +92,23 @@ const ImageDialog = (props:ImageDialogProps) => {
     const closeDialog = useCallback(() => {
         cleanupSwipe();
         props.onClose();
-    },[cleanupSwipe, props.onClose])
+    },[cleanupSwipe, props])
+
+    const endSwipeHorizontal = useCallback(() => {
+
+        let left = swipeState.left;
+
+        const forceSwipe = swipeState.isMoved && new Date().getTime() - swipeState.startTime <= H_SWIPE_ELAPSE
+
+        if(forceSwipe || swipeState.degree > H_THRESHHOLD){
+            left = swipeState.direction === direction.left ? swipeState.left + props.width : swipeState.left - props.width
+        }
+
+        ref.current?.scrollTo({ left, behavior: "smooth" })
+
+        cleanupSwipe();
+
+    },[cleanupSwipe, props.width])
 
     const onTouchEnd = useCallback(() => {
 
@@ -120,27 +135,11 @@ const ImageDialog = (props:ImageDialogProps) => {
             ref.current.style.transform = `translate(${0}px, ${0}px)`
         }
 
-    },[ref, closeDialog,cleanupSwipe]);
-
-    const endSwipeHorizontal = () => {
-
-        let left = swipeState.left;
-
-        const forceSwipe = swipeState.isMoved && new Date().getTime() - swipeState.startTime <= H_SWIPE_ELAPSE
-
-        if(forceSwipe || swipeState.degree > H_THRESHHOLD){
-            left = swipeState.direction === direction.left ? swipeState.left + props.width : swipeState.left - props.width
-        }
-
-        ref.current?.scrollTo({ left, behavior: "smooth" })
-
-        cleanupSwipe();
-
-    }
+    },[cleanupSwipe, closeDialog, endSwipeHorizontal]);
 
     const onTouchMove = useCallback((e) => {
 
-        e.preventDefault();
+        //e.preventDefault();
 
         if(!swipeState.swiping || zoomed) return;
 
@@ -176,7 +175,7 @@ const ImageDialog = (props:ImageDialogProps) => {
             ref.current.style.transform = `translate(${0}px, ${-swipeState.moveY}px)`
         }
 
-    },[getDirection]);
+    },[endSwipeHorizontal, props.width, props.height]);
 
     const changeScale = useCallback( (e:React.MouseEvent<HTMLImageElement>) => {
 
@@ -263,7 +262,7 @@ const ImageDialog = (props:ImageDialogProps) => {
         document.body.style.overflow = "hidden";
 
         ref.current?.addEventListener("touchstart", onTouchStart, { passive: true });
-        ref.current?.addEventListener("touchmove", onTouchMove, { passive: false });
+        ref.current?.addEventListener("touchmove", onTouchMove, { passive: true });
         ref.current?.addEventListener("touchend", onTouchEnd, { passive: true });
 
         document.addEventListener("keydown", handleKeydown);
@@ -300,36 +299,23 @@ const ImageDialog = (props:ImageDialogProps) => {
         width: "100%",
     });
 
-    const Contaner = css({
-        position: "fixed",
-        top:0,
-        left: 0,
-        zIndex: 2000,
-        height: "100%",
-        width: "100%",
-        background: "#121111",
-        overflow: "hidden",
-    });
-
     return (
         <div css={Backdrop}>
-            <div css={Contaner} ref={cref}>
-                <List
-                    height={props.height}
-                    itemCount={props.data.length}
-                    itemSize={props.width}
-                    width={props.width}
-                    layout="horizontal"
-                    overscanCount={4}
-                    outerRef={ref}
-                    itemData={props.data}
-                    initialScrollOffset={props.width * (props.startIndex * 1)}
-                    style={{overflow:"hidden", WebkitOverflowScrolling:"touch", WebkitTransform :"translateZ(0px)"}}
-                    onItemsRendered={onItemsRendered}
-                >
-                    {renderRow}
-                </List>
-            </div>
+            <List
+                height={props.height}
+                itemCount={props.data.length}
+                itemSize={props.width}
+                width={props.width}
+                layout="horizontal"
+                overscanCount={4}
+                outerRef={ref}
+                itemData={props.data}
+                initialScrollOffset={props.width * (props.startIndex * 1)}
+                style={{overflow:"hidden", background:"#121111", WebkitTransform :"translateZ(0px)"}}
+                onItemsRendered={onItemsRendered}
+            >
+                {renderRow}
+            </List>
         </div>
     )
 
