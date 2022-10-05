@@ -106,7 +106,7 @@ const ImageDialog = (props:ImageDialogProps) => {
             `
         }
 
-        let left = swipeState.left;
+        let left = swipeState.left + props.width//swipeState.left;
 
         const forceSwipe = swipeState.isMoved && new Date().getTime() - swipeState.startTime <= H_SWIPE_ELAPSE
 
