@@ -180,10 +180,7 @@ const ImageDialog = (props:ImageDialogProps) => {
             const degree = (swipeState.moveX - swipeState.left) / props.width;
             swipeState.degree = Math.abs(degree);
             swipeState.isMoved = swipeState.degree > 0
-            //ref.current?.scrollTo({ left: swipeState.moveX})
-            if(iref.current){
-                iref.current.style.transform = `translate(${(swipeState.moveX - swipeState.left) * -1}px, 0px)`
-            }
+            ref.current?.scrollTo({ left: swipeState.moveX, behavior: "smooth"})
 
             if(swipeState.degree > H_THRESHHOLD){
                 endSwipeHorizontal();
