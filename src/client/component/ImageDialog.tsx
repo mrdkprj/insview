@@ -77,6 +77,7 @@ const ImageDialog = (props:ImageDialogProps) => {
     const cref = useRef<HTMLDivElement>(null);
 
     const onTouchStart = useCallback((e) => {
+
         if(cref.current){
             cref.current.innerText = "start\n"
 
@@ -106,7 +107,7 @@ const ImageDialog = (props:ImageDialogProps) => {
             `
         }
 
-        let left = swipeState.left + props.width//swipeState.left;
+        let left = swipeState.left;
 
         const forceSwipe = swipeState.isMoved && new Date().getTime() - swipeState.startTime <= H_SWIPE_ELAPSE
 
@@ -114,7 +115,7 @@ const ImageDialog = (props:ImageDialogProps) => {
             left = swipeState.direction === direction.left ? swipeState.left + props.width : swipeState.left - props.width
         }
 
-        ref.current?.scrollTo({ left, behavior: "smooth" })
+        ref.current?.scrollTo({ left })
 
         cleanupSwipe();
 
@@ -150,6 +151,7 @@ const ImageDialog = (props:ImageDialogProps) => {
 
         if(ref.current){
             ref.current.style.transform = `translate(${0}px, ${0}px)`
+            ref.current.style.pointerEvents = ""
         }
 
     },[cleanupSwipe, closeDialog, endSwipeHorizontal]);
@@ -189,7 +191,7 @@ const ImageDialog = (props:ImageDialogProps) => {
         }
 
         if(ref.current){
-            ref.current.style.transform = `translate(${0}px, ${-swipeState.moveY}px)`
+            ref.current.style.transform = `translate(0px, ${-swipeState.moveY}px)`
         }
 
     },[endSwipeHorizontal, props.width, props.height]);
