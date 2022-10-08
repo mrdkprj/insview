@@ -20,11 +20,11 @@ export const AuthAction = {
 
 export const authStateReducer = (state: ILoginResponse, action: IAuthAction): ILoginResponse => {
     switch (action.type) {
-        case AuthAction.init:
+        case AuthAction.init:{
             const initState = initialAuthState
             initState.account = action.value;
             return {...state, ...initState};
-
+        }
         case AuthAction.update:
             return {...state, ...action.value}
 

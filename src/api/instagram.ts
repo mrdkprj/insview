@@ -17,8 +17,6 @@ const Cookie = tough.Cookie;
 
 const getSession = (headers:any) :ISession => {
 
-    console.log("--------- set cookie ----------")
-
     try{
 
         const session :ISession = {
@@ -182,7 +180,7 @@ const tryRequestGraph = async (req:IgRequest, currentSession:ISession) : Promise
             igId: profile[1],
             username,
             name: title[1],
-            profileImage: decodeURIComponent(profile[2]),
+            profileImage: "/media?url=" + profile[2].replace(/\\/g, ""),
             biography:"",
         }
 
@@ -310,41 +308,6 @@ const requestImage = async (url:string) => {
 }
 
 const requestGraph = async (req:IgRequest, session:ISession, user:IUser) : Promise<AxiosResponse<any, any>> => {
-/*
-    const username = req.data.username;
-    const rhx_gis = "51383432";
-    const gis = crypto.createHash("md5").update(`${rhx_gis}:/${username}/`).digest("hex")
-
-    //const headers = createHeaders(baseUrl + "/" + username + "/", session);
-    //headers["x-instagram-gis"] = gis;
-    const headers :AxiosRequestHeaders = baseRequestHeaders;
-    headers["origin"] = "https://www.instagram.com"
-    headers["referer"] = "https://www.instagram.com/"
-    headers["x-csrftoken"] = session.csrfToken;
-    headers["user-agent"] = session.userAgent;
-
-    headers.Cookie = req.headers.cookie ?? "";
-
-    let url = `${baseUrl}/${username}/?__a=1`;
-    url = `https://i.instagram.com/api/v1/users/web_profile_info/?username=1492agjmd03`
-
-    const options :AxiosRequestConfig = {
-        url,
-        method: "GET",
-        headers,
-        withCredentials:true
-    }
-
-    const response = await axios.request(options);
-
-    if(response.headers["content-type"].includes("html")){
-        console.log("auth error")
-        throw new Error("Auth error")
-    }
-
-
-    return response.data;
-*/
 
     const headers = createHeaders(baseUrl + "/" + user.username + "/", session);
     headers.Cookie = req.headers.cookie ?? "";
@@ -520,6 +483,69 @@ const formatFollowings = (data:any) :IFollowing => {
 
     return {users, hasNext, next};
 
+}
+
+
+const follow = async (req:IgRequest) => {
+
+    const currentSession = getSession(req.headers);
+
+    if(!currentSession.isAuthenticated){
+        throw new AuthError("")
+    }
+
+    const url = `${baseUrl}/web/friendships/${req.data.user.id}/follow/`
+
+    const headers = createHeaders(baseUrl, currentSession);
+    headers.Cookie = req.headers.cookie ?? "";
+
+    const options :AxiosRequestConfig = {
+        url,
+        method: "POST",
+        headers,
+        withCredentials:true
+    }
+
+    const response = await axios.request(options);
+
+    const data = response.data;
+    const session = updateSession(currentSession, response.headers);
+
+    return {
+        data,
+        session
+    }
+}
+
+const unfollow = async (req:IgRequest) => {
+
+    const currentSession = getSession(req.headers);
+
+    if(!currentSession.isAuthenticated){
+        throw new AuthError("")
+    }
+
+    const url = `${baseUrl}/web/friendships/${req.data.user.id}/unfollow/`
+
+    const headers = createHeaders(baseUrl, currentSession);
+    headers.Cookie = req.headers.cookie ?? "";
+
+    const options :AxiosRequestConfig = {
+        url,
+        method: "POST",
+        headers,
+        withCredentials:true
+    }
+
+    const response = await axios.request(options);
+
+    const data = response.data;
+    const session = updateSession(currentSession, response.headers);
+
+    return {
+        data,
+        session
+    }
 }
 
 const extractToken = (headers:AxiosResponseHeaders) => {
@@ -765,68 +791,6 @@ const logout = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>>  => {
             data:{account:"", success:true, challenge:false, endpoint:""},
             session: currentSession
         }
-    }
-}
-
-const follow = async (req:IgRequest) => {
-
-    const currentSession = getSession(req.headers);
-
-    if(!currentSession.isAuthenticated){
-        throw new AuthError("")
-    }
-
-    const url = `${baseUrl}/web/friendships/${req.data.user.id}/follow/`
-
-    const headers = createHeaders(baseUrl, currentSession);
-    headers.Cookie = req.headers.cookie ?? "";
-
-    const options :AxiosRequestConfig = {
-        url,
-        method: "POST",
-        headers,
-        withCredentials:true
-    }
-
-    const response = await axios.request(options);
-
-    const data = response.data;
-    const session = updateSession(currentSession, response.headers);
-
-    return {
-        data,
-        session
-    }
-}
-
-const unfollow = async (req:IgRequest) => {
-
-    const currentSession = getSession(req.headers);
-
-    if(!currentSession.isAuthenticated){
-        throw new AuthError("")
-    }
-
-    const url = `${baseUrl}/web/friendships/${req.data.user.id}/unfollow/`
-
-    const headers = createHeaders(baseUrl, currentSession);
-    headers.Cookie = req.headers.cookie ?? "";
-
-    const options :AxiosRequestConfig = {
-        url,
-        method: "POST",
-        headers,
-        withCredentials:true
-    }
-
-    const response = await axios.request(options);
-
-    const data = response.data;
-    const session = updateSession(currentSession, response.headers);
-
-    return {
-        data,
-        session
     }
 }
 

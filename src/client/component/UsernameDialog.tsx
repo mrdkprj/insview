@@ -1,4 +1,4 @@
-import {RefObject, ChangeEvent, MouseEvent, useState, createRef} from "react";
+import {RefObject, ChangeEvent, MouseEvent, useState, createRef, useEffect} from "react";
 import {IHistory} from "@shared";
 import Dialog from "@parts/Dialog"
 import AppBar from "@parts/AppBar"
@@ -14,7 +14,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import ClearIcon from "@mui/icons-material/Clear";
 import DeleteIcon from "@mui/icons-material/Delete";
 
-type IUsernameDialogProps = {
+type UsernameDialogProps = {
     open: boolean,
     username: string,
     history:IHistory,
@@ -23,16 +23,24 @@ type IUsernameDialogProps = {
     onClose: (history:IHistory) => void,
 }
 
-const UsernameDialog = (props:IUsernameDialogProps) => {
+const errorMessage = "You should input username";
+
+const UsernameDialog = (props:UsernameDialogProps) => {
 
     const contentRef :RefObject<HTMLDivElement> = createRef();
     const inputRef :RefObject<HTMLInputElement> = createRef();
 
     const [hasError, setHasError] = useState(false);
-    const [username, setUsername] = useState(props.username);
-    const [history, setHistory] = useState(props.history);
 
-    const errorMessage = "You should input username";
+    const [username, setUsername] = useState(props.username);
+    useEffect(() => {
+        setUsername(props.username)
+    },[props.username])
+
+    const [history, setHistory] = useState<IHistory>({});
+    useEffect(() => {
+        setHistory(props.history)
+    },[props.history])
 
     const onSubmit = () => {
 
@@ -62,7 +70,8 @@ const UsernameDialog = (props:IUsernameDialogProps) => {
 
         e.stopPropagation();
 
-        const {[username]: value, ...newHistory } = history;
+        const newHistory = {...history}
+        delete newHistory[username]
 
         await props.onUsernameDelete(newHistory, username);
 
@@ -74,9 +83,11 @@ const UsernameDialog = (props:IUsernameDialogProps) => {
         props.onClose(history);
     }
 
-    const renderListItem = () => {
+    const renderListItem = (key:string) => {
 
-        return Object.keys(history).map((key:string) =>
+        if(!props.open) return (null)
+
+        return (
             <ListItem key={key} onClick={() => handleClickHistory(key)}>
                 <div style={{display:"flex", alignItems:"center", justifyContent: "center", width: "100%"}}>
                     <Avatar alt={history[key].username} src={history[key].profileImage} style={{marginRight:"15px"}}/>
@@ -89,7 +100,8 @@ const UsernameDialog = (props:IUsernameDialogProps) => {
                     </LinkButton>
                 </div>
             </ListItem>
-        );
+        )
+
     }
 
     return (
@@ -122,7 +134,7 @@ const UsernameDialog = (props:IUsernameDialogProps) => {
                 </div>
                 <div style={{marginTop:"30px"}}>
                     <List>
-                        {renderListItem()}
+                        {Object.keys(history).map(item => renderListItem(item))}
                     </List>
                 </div>
             </DialogContent>

@@ -1,4 +1,4 @@
-import {Fragment, useEffect, useCallback, useReducer, useState } from "react";
+import {Fragment, useEffect, useCallback, useReducer } from "react";
 import AppBar from "@parts/AppBar"
 import LinkButton from "@parts/LinkButton";
 import Typography from "@parts/Typography"
@@ -8,7 +8,6 @@ import CircularProgress from "@parts/CircularProgress"
 import UsernameDialog from "./component/UsernameDialog"
 import AccountDialog from "./component/AccountDialog";
 import LoginDialog from "./component/LoginDialog"
-import ImageDialog from "./component/ImageDialog";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import InstagramIcon from "@mui/icons-material/Instagram";
 import LoginIcon from "@mui/icons-material/Login";
@@ -47,71 +46,15 @@ function App(){
 
     },[]);
 
-    /*
-    * ImageDialog
-    */
-    const onImageClick = useCallback ((index : number) => {
+    const onIdle = async (scrollTop :number) => {
 
-        dispatchMediaState({type:MediaAction.select, value: index})
-        dispatchAppState({type:AppAction.toggleImageModal, value:true})
+        if(mediaState.mediaScrollTop === scrollTop) return;
 
-    },[])
+        await save(mediaState.user.username, scrollTop);
 
-    /*
-    * UsernameDialog
-    */
-    const onUsernameDialogClose = (history:IHistory) => {
-        dispatchMediaState({type:MediaAction.history, value: history})
-        dispatchAppState({type:AppAction.toggleUsernameModal, value:false})
-    }
-
-    const onUsernameSubmit = (name: string, history:IHistory) => {
-        dispatchAppState({type:AppAction.toggleUsernameModal, value:false})
-        loadImages(name, history, false);
-    }
-
-    const openUsernameDialog = () => {
-        dispatchAppState({type:AppAction.toggleUsernameModal, value:true})
-    }
-
-    const onImageClose = () => {
-        dispatchAppState({type:AppAction.toggleImageModal, value:false})
-    }
-
-    /*
-    * LoginDialog
-    */
-    const openLoginDialog = () => {
-        dispatchAppState({type:AppAction.toggleLoginModal, value:true})
-    }
-
-    const closeLoginDialog = () => {
-        dispatchAppState({type:AppAction.toggleLoginModal, value:false})
-    }
-
-    /*
-    * AccountDialog
-    */
-    const openAccountDialog = async () => {
-
-        if(mediaState.followings.users.length <= 0){
-            await requestFollowing();
-        }
-
-        if(authState.success){
-            dispatchAppState({type:AppAction.toggleAccountModal, value:true})
-        }
+        dispatchMediaState({type:MediaAction.mediaScrollTop, value: scrollTop})
 
     }
-
-    const closeAccountDialog = useCallback(() => {
-        dispatchAppState({type:AppAction.toggleAccountModal, value:false})
-    },[])
-
-    const onUserSelect = useCallback((username:string) => {
-        closeAccountDialog();
-        loadImages(username, mediaState.history, false);
-    },[mediaState.history]);
 
     /*
     * loadImages
@@ -137,7 +80,7 @@ function App(){
 
         }
 
-    },[]);
+    },[handleError]);
 
     /*
     * loadMoreImages
@@ -166,7 +109,7 @@ function App(){
         }
 
 
-    },[mediaState.locked, mediaState.next, mediaState.user])
+    },[handleError, mediaState.locked, mediaState.next, mediaState.user])
 
     /*
     * Delete history
@@ -189,7 +132,7 @@ function App(){
 
         }
 
-    },[mediaState.user.username])
+    },[handleError, mediaState.user.username])
 
     /*
     * login
@@ -223,7 +166,7 @@ function App(){
 
         }
 
-    },[]);
+    },[handleError]);
 
     /*
     * Code verification
@@ -251,17 +194,7 @@ function App(){
             dispatchAppState({type:AppAction.end})
         }
 
-    },[authState.account, authState.endpoint])
-
-    const onIdle = async (scrollTop :number) => {
-
-        if(mediaState.rowIndex === scrollTop) return;
-
-        await save(mediaState.user.username, scrollTop);
-
-        dispatchMediaState({type:MediaAction.updateRowIndex, value: scrollTop})
-
-    }
+    },[handleError, authState.account, authState.endpoint])
 
     /*
     * requestFollowing
@@ -286,7 +219,7 @@ function App(){
             dispatchMediaState({type:MediaAction.toggleLock, value: false})
         }
 
-    },[mediaState.followings.next])
+    },[handleError, mediaState.followings.next])
 
     /*
     * requestMoreFollowing
@@ -303,12 +236,36 @@ function App(){
 
 
     /*
+    * AccountDialog
+    */
+    const openAccountDialog = async () => {
+
+        if(mediaState.followings.users.length <= 0){
+            await requestFollowing();
+        }
+
+        if(authState.success){
+            dispatchAppState({type:AppAction.toggleAccountModal, value:true})
+        }
+
+    }
+
+    const closeAccountDialog = useCallback((scrollTop:number) => {
+        dispatchMediaState({type:MediaAction.followingScrollTop, value:scrollTop})
+        dispatchAppState({type:AppAction.toggleAccountModal, value:false})
+    },[])
+
+    const onUserSelect = useCallback((username:string,) => {
+        loadImages(username, mediaState.history, false);
+    },[loadImages, mediaState.history]);
+
+    /*
     * logout
     */
     const requestLogout = useCallback( async () => {
 
         if(!window.confirm("Are you sure to logout?")){
-            return;
+            return false;
         }
 
         dispatchAppState({type:AppAction.start})
@@ -317,15 +274,16 @@ function App(){
             const result = await logout();
             dispatchAuthState({type:AuthAction.init, value:""})
             dispatchMediaState({type:MediaAction.update, value: result.media})
-            closeAccountDialog();
+            return true;
 
         }catch(ex:any){
             handleError(ex, "Logout attempt failed")
+            return false;
         }finally{
             dispatchAppState({type:AppAction.end})
         }
 
-    },[])
+    },[handleError])
 
     /*
     * Refresh
@@ -366,8 +324,49 @@ function App(){
             dispatchAppState({type:AppAction.end})
         }
 
+    },[handleError])
+
+    /*
+    * ImageDialog
+    */
+    const onImageClick = useCallback ((index : number) => {
+
+        dispatchMediaState({type:MediaAction.select, value: index})
+        dispatchAppState({type:AppAction.toggleImageModal, value:true})
+
     },[])
 
+    /*
+    * UsernameDialog
+    */
+    const onUsernameDialogClose = (history:IHistory) => {
+        dispatchMediaState({type:MediaAction.history, value: history})
+        dispatchAppState({type:AppAction.toggleUsernameModal, value:false})
+    }
+
+    const onUsernameSubmit = (name: string, history:IHistory) => {
+        dispatchAppState({type:AppAction.toggleUsernameModal, value:false})
+        loadImages(name, history, false);
+    }
+
+    const openUsernameDialog = () => {
+        dispatchAppState({type:AppAction.toggleUsernameModal, value:true})
+    }
+
+    /*
+    * LoginDialog
+    */
+    const openLoginDialog = () => {
+        dispatchAppState({type:AppAction.toggleLoginModal, value:true})
+    }
+
+    const closeLoginDialog = () => {
+        dispatchAppState({type:AppAction.toggleLoginModal, value:false})
+    }
+
+    /*
+    * useEffect
+    */
     useEffect(()=>{
         loadImages(emptyResponse.username, emptyResponse.history, false);
     },[loadImages])
@@ -375,22 +374,27 @@ function App(){
     return (
         <Fragment>
 
-            {appState.isLoading &&
-                <Backdrop style={{ color: "#fff", zIndex: 9000 }} open={appState.isLoading}>
-                    <CircularProgress/>
-                </Backdrop>
-            }
+            <Backdrop style={{ color: "#fff", zIndex: 9000 }} open={appState.isLoading}>
+                <CircularProgress/>
+            </Backdrop>
 
             {appState.openUsernameModal &&
-                <UsernameDialog username={mediaState.user.username} onSubmit={onUsernameSubmit} onClose={onUsernameDialogClose} onUsernameDelete={requestDeleteHistory} history={mediaState.history} open={appState.openUsernameModal}/>
+                <UsernameDialog
+                    open={appState.openUsernameModal}
+                    username={mediaState.user.username}
+                    onSubmit={onUsernameSubmit}
+                    onClose={onUsernameDialogClose}
+                    onUsernameDelete={requestDeleteHistory}
+                    history={mediaState.history}/>
             }
 
             {appState.openLoginModal &&
-                <LoginDialog onClose={closeLoginDialog} onSubmit={requestLogin} onCodeSubmit={verifyCode} open={appState.openLoginModal} requireCode={authState.challenge}/>
+                <LoginDialog open={appState.openLoginModal} onClose={closeLoginDialog} onSubmit={requestLogin} onCodeSubmit={verifyCode} requireCode={authState.challenge}/>
             }
 
             {appState.openAccountModal &&
                 <AccountDialog
+                    open={appState.openAccountModal}
                     account={authState.account}
                     data={mediaState.followings}
                     onUserSelect={onUserSelect}
@@ -400,7 +404,7 @@ function App(){
                     onRequest={requestMoreFollowing}
                     onLogout={requestLogout}
                     toggleFollow={toggleFollow}
-                    open={appState.openAccountModal}
+                    initialScrollTop={mediaState.followingScrollTop}
                 />
             }
 
@@ -430,7 +434,7 @@ function App(){
                 </LinkButton>
             </AppBar>
 
-            <Grid data={mediaState.data} onImageClick={onImageClick} onIdle={onIdle} onLastItemRenrered={loadMoreImages} height={height} width={width} margin={barHeight}/>
+            <Grid data={mediaState.data} initialScrollTop={mediaState.mediaScrollTop} onImageClick={onImageClick} onIdle={onIdle} onLastItemRenrered={loadMoreImages} height={height} width={width} margin={barHeight}/>
 
         </Fragment>
   );

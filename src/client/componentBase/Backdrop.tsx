@@ -1,6 +1,14 @@
 import {css} from "@emotion/react";
+import { useState, useEffect } from "react";
 
 const Backdrop = ({...props}) => {
+
+    const [_open, _setOpen] = useState(false);
+    useEffect(() => {
+        _setOpen(props.open)
+    },[props.open])
+
+    if(!_open) return (null)
 
     return (
         <div css={root} style={props.style} >{props.children}</div>

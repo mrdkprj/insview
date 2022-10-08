@@ -11,66 +11,28 @@ import Avatar from "@parts/Avatar"
 import CloseIcon from "@mui/icons-material/Close";
 import LogoutIcon from "@mui/icons-material/Logout";
 
-export interface IAccountContext{
+type AccountDialogProps = {
     account:string,
     open:boolean,
     height: number,
     width: number,
     data: IFollowing,
+    initialScrollTop?:number,
     onRequest: () => void,
-    onLogout: () => void,
-    onClose: () => void,
+    onLogout: () => Promise<boolean>,
+    onClose: (scrollTop:number) => void,
     onUserSelect: (username:string) => void,
     toggleFollow: (follow:boolean, user:IFollowingUser) => Promise<boolean>,
 }
 
 let rowCount = 0;
+let listScrollTop = 0;
 
 const barHeight = 45;
 
-const AccountDialog = memo<IAccountContext>( (props) => {
+const AccountDialog = memo<AccountDialogProps>( (props) => {
 
     rowCount = props.data.users.length - 1;
-
-    const Container = css({
-        display:"flex",
-        alignItems:"center",
-        flex: 1,
-    });
-
-    const User = css({
-        display:"flex",
-        flexDirection: "column",
-        flex: "1 1 auto"
-    });
-
-    const Names = css({
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-        fontSize: "14px",
-        width: "200px"
-    });
-
-    const UnfollowAction = css({
-        padding: "5px 9px",
-        borderRadius: "4px",
-        fontSize: "14px",
-        backgroundColor: "rgb(255, 255, 255)",
-        color: "rgb(0, 0, 0)",
-        border: "1px solid #ccc",
-        marginRight: "20px"
-    })
-
-    const FollowAction = css({
-        padding: "5px 9px",
-        borderRadius: "4px",
-        fontSize: "14px",
-        backgroundColor: "rgb(25, 118, 210)",
-        color: "rgb(255, 255, 255)",
-        border: "1px solid #ccc",
-        marginRight: "20px"
-    })
 
     const toggleFollow = useCallback( async (e:any, user:IFollowingUser) => {
 
@@ -84,12 +46,30 @@ const AccountDialog = memo<IAccountContext>( (props) => {
         }
     }
 
+    const closeDialog = () => {
+        props.onClose(listScrollTop)
+    }
+
+    const requestLogout = async () => {
+        const result = await props.onLogout();
+        if(result) closeDialog();
+    }
+
+    const selectUser = (username:string) => {
+        closeDialog();
+        props.onUserSelect(username);
+    }
+
+    const onListScroll = ({scrollOffset}:{scrollOffset:number}) => {
+        listScrollTop = scrollOffset;
+    }
+
     const renderRow = ({ index, data, style } : { index:number, data:IFollowingUser[], style:any }) => {
 
         return (
             <div css={Container} style={style}>
                 <Avatar alt={data[index].profileImage} src={data[index].profileImage} style={{marginRight:"15px", marginLeft:"24px"}}/>
-                <div css={User} onClick={() => props.onUserSelect(data[index].username)}>
+                <div css={User} onClick={() => selectUser(data[index].username)}>
                     <div css={Names}>{data[index].name}</div>
                     <div css={Names}>{data[index].username}</div>
                 </div>
@@ -105,11 +85,11 @@ const AccountDialog = memo<IAccountContext>( (props) => {
     return(
         <Dialog style={{zIndex:1300, overflowX:"hidden"}} open={props.open}>
             <AppBar style={{height: barHeight, display:"flex", justifyContent: "center", alignItems:"center", backgroundColor:"#fff"}}>
-                <LinkButton size="small" style={{position:"absolute", left:"5px"}} onClick={props.onClose}>
+                <LinkButton size="small" style={{position:"absolute", left:"5px"}} onClick={closeDialog}>
                         <CloseIcon />
                 </LinkButton>
                 <Typography style={{ color:"#888" }} variant="h6">{props.account}</Typography>
-                <LinkButton size="small" style={{position:"absolute", right:"5px"}} onClick={props.onLogout}>
+                <LinkButton size="small" style={{position:"absolute", right:"5px"}} onClick={requestLogout}>
                     <LogoutIcon />
                 </LinkButton>
             </AppBar>
@@ -121,6 +101,8 @@ const AccountDialog = memo<IAccountContext>( (props) => {
                     itemSize={60}
                     width={props.width}
                     itemData={props.data.users}
+                    onScroll={onListScroll}
+                    initialScrollOffset={props.initialScrollTop}
                     onItemsRendered={onItemsRendered}
                 >
                     {renderRow}
@@ -128,6 +110,46 @@ const AccountDialog = memo<IAccountContext>( (props) => {
             </DialogContent>
         </Dialog>
     )
+})
+
+const Container = css({
+    display:"flex",
+    alignItems:"center",
+    flex: 1,
+});
+
+const User = css({
+    display:"flex",
+    flexDirection: "column",
+    flex: "1 1 auto"
+});
+
+const Names = css({
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    fontSize: "14px",
+    width: "200px"
+});
+
+const UnfollowAction = css({
+    padding: "5px 9px",
+    borderRadius: "4px",
+    fontSize: "14px",
+    backgroundColor: "rgb(255, 255, 255)",
+    color: "rgb(0, 0, 0)",
+    border: "1px solid #ccc",
+    marginRight: "20px"
+})
+
+const FollowAction = css({
+    padding: "5px 9px",
+    borderRadius: "4px",
+    fontSize: "14px",
+    backgroundColor: "rgb(25, 118, 210)",
+    color: "rgb(255, 255, 255)",
+    border: "1px solid #ccc",
+    marginRight: "20px"
 })
 
 export default AccountDialog;

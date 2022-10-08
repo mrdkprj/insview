@@ -6,7 +6,7 @@ export interface IAppState {
     openAccountModal: boolean,
     hasError: boolean,
     errorMessage: string,
-};
+}
 
 export const initialAppState : IAppState = {
     isLoading: false,

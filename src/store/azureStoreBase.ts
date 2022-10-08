@@ -84,7 +84,7 @@ export default class AzureStoreBase{
 
         //console.log(`Destroying session: ${sid}`)
 
-        const { resource: result } = await this.database.container(CONTAINER_NAME).item(sid, sid).delete();
+        await this.database.container(CONTAINER_NAME).item(sid, sid).delete();
 
         //console.log(result)
 

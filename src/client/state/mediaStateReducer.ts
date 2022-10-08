@@ -9,7 +9,8 @@ export interface IMediaState {
     selected: number,
     history: IHistory,
     followings: IFollowing,
-    rowIndex: number,
+    mediaScrollTop: number,
+    followingScrollTop:number,
 }
 
 export const initialMediaState : IMediaState = {
@@ -20,7 +21,8 @@ export const initialMediaState : IMediaState = {
     selected: 0,
     history:{},
     followings:{users:[], hasNext:false, next:""},
-    rowIndex: 0,
+    mediaScrollTop: 0,
+    followingScrollTop: 0,
 }
 
 export interface IMediaAction {
@@ -37,16 +39,17 @@ export const MediaAction = {
     followings: "followings",
     updateFollowStatus: "updateFollowStatus",
     toggleLock: "toggleLock",
-    updateRowIndex : "updateRowIndex",
+    mediaScrollTop : "mediaScrollTop",
+    followingScrollTop: "followingScrollTop",
 }
 
 export const mediaStateReducer = (state: IMediaState, action: IMediaAction): IMediaState => {
     switch (action.type) {
 
         case MediaAction.reset: {
-            const user = emptyUser;
-            user.username = action.value;
-            return {...state, user: user, data: [], selected: 0, next:"", rowIndex:0};
+            const initalState = initialMediaState;
+            initalState.user.username = action.value;
+            return {...state, ...initalState};
         }
         case MediaAction.update:
             return {...state,
@@ -55,11 +58,11 @@ export const mediaStateReducer = (state: IMediaState, action: IMediaAction): IMe
                 selected: 0,
                 next:action.value.next,
                 history: action.value.history,
-                rowIndex:action.value.rowIndex
+                mediaScrollTop:action.value.rowIndex
             };
 
         case MediaAction.append:
-            return {...state, data:state.data.concat(action.value.media), next:action.value.next, rowIndex: action.value.rowIndex}
+            return {...state, data:state.data.concat(action.value.media), next:action.value.next, mediaScrollTop: action.value.rowIndex}
 
         case MediaAction.select:
             return {...state, selected:action.value};
@@ -67,8 +70,11 @@ export const mediaStateReducer = (state: IMediaState, action: IMediaAction): IMe
         case MediaAction.history:
             return {...state, history:action.value};
 
-        case MediaAction.updateRowIndex:
-            return {...state, rowIndex: action.value}
+        case MediaAction.mediaScrollTop:
+            return {...state, mediaScrollTop: action.value}
+
+        case MediaAction.followingScrollTop:
+            return {...state, followingScrollTop: action.value}
 
         case MediaAction.toggleLock:
             return {...state, locked:action.value};

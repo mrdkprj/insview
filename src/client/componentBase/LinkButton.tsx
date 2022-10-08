@@ -1,6 +1,6 @@
 import {css} from "@emotion/react";
 
-const onClickHandler = () => {}
+const onClickHandler = () => undefined
 
 const LinkButton = ({...props}) => {
 

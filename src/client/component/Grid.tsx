@@ -9,6 +9,7 @@ type GridProps = {
     height: number,
     width: number,
     margin:number,
+    initialScrollTop?: number,
     onImageClick: (index:number) => void,
     onLastItemRenrered: () => void,
     onIdle: (scrollTop : number) => void,

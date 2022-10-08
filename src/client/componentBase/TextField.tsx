@@ -1,4 +1,4 @@
-import React, {useEffect, createRef, forwardRef, useState} from "react"
+import React, {useEffect, createRef, useState} from "react"
 import {css, keyframes} from "@emotion/react";
 
 type TextFieldProps = {
@@ -45,7 +45,7 @@ const TextField = (props:TextFieldProps) => {
             formRef.current?.classList.add("empty")
         }
 
-    },[props.value])
+    },[formRef, inputRef, props.value])
 
     useEffect(() => {
 
@@ -57,7 +57,7 @@ const TextField = (props:TextFieldProps) => {
             formRef.current?.classList.remove("has-error")
         }
 
-    },[props.error])
+    },[formRef, props.error])
 
     useEffect(() => {
 
@@ -70,7 +70,7 @@ const TextField = (props:TextFieldProps) => {
                 inputRef.current.disabled = false;
             }
         }
-    },[])
+    },[formRef, inputRef, props.disableFocus, props.value])
 
     return (
         <div ref={formRef} css={form}>
@@ -190,7 +190,7 @@ const input = css({
     display: "block",
     minWidth: "0px",
     width: "100%",
-    "-webkit-tap-highlight-color": "transparent",
+    WebkitTapHighlightColor: "transparent",
     animationName: `${autoFillCancel}`,
     animationDuration: "10ms",
     "&:focus" : {

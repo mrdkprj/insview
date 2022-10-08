@@ -43,8 +43,10 @@ let tapped = false;
 let zoomed = false;
 let timer = 0;
 let imageRect = null;
+let idealLeft = 0;
 
 const isHorizontalAction = () => {
+
     if(swipeState.direction === direction.right || swipeState.direction === direction.left){
         return true;
     }
@@ -74,8 +76,6 @@ const getDirection = (xDiff:number,yDiff:number) => {
 const ImageDialog = (props:ImageDialogProps) => {
 
     const ref = useRef<HTMLDivElement>(null);
-    const iref = useRef<HTMLDivElement>(null);
-    const cref = useRef<HTMLDivElement>(null);
 
     const onTouchStart = useCallback((e) => {
 
@@ -98,54 +98,86 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     const endSwipeHorizontal = useCallback(() => {
 
-        let left = swipeState.left;
-
         const forceSwipe = swipeState.isMoved && new Date().getTime() - swipeState.startTime <= H_SWIPE_ELAPSE
 
         if(forceSwipe || swipeState.degree > H_THRESHHOLD){
-            left = swipeState.direction === direction.left ? swipeState.left + props.width : swipeState.left - props.width
+
+            idealLeft = swipeState.direction === direction.left ? swipeState.left + props.width : swipeState.left - props.width
+            ref.current?.scrollTo({ left:idealLeft, behavior: "smooth" })
+
+        }else{
+
+            idealLeft = swipeState.left
+            if(ref.current) ref.current.scrollLeft = idealLeft;
+
         }
 
-        if(left === swipeState.left && ref.current){
-            ref.current.scrollLeft = left;
-        }else{
-            ref.current?.scrollTo({ left, behavior: "smooth" })
-        }
+        setTimeout(() => {
+            if(ref.current && ref.current.scrollLeft !== idealLeft){
+                ref.current.scrollLeft = idealLeft;
+            }
+        }, 150);
 
         cleanupSwipe();
 
     },[cleanupSwipe, props.width])
 
-    const onTouchEnd = useCallback(() => {
+    const endSwipeVertical = useCallback(() => {
 
-        if(!swipeState.swiping) return;
-
-        if(swipeState.close){
+        if(swipeState.close || Math.abs(swipeState.moveY) / 100 > V_THRESHHOLD){
             closeDialog();
             return;
         }
-
-        if(isHorizontalAction()){
-            endSwipeHorizontal();
-            return;
-        }
-
-        if(swipeState.direction === direction.down && Math.abs(swipeState.moveY) / 100 > V_THRESHHOLD){
-            closeDialog();
-            return;
-        }
-
-        cleanupSwipe();
 
         if(ref.current){
             ref.current.style.transform = `translate(${0}px, ${0}px)`
         }
 
-    },[cleanupSwipe, closeDialog, endSwipeHorizontal]);
+        cleanupSwipe();
+
+    },[closeDialog, cleanupSwipe])
+
+    const onTouchEnd = useCallback(() => {
+
+        if(!swipeState.swiping) return;
+
+
+        if(isHorizontalAction()){
+            endSwipeHorizontal();
+        }else{
+            endSwipeVertical();
+        }
+
+    },[endSwipeVertical, endSwipeHorizontal]);
+
+
+    const slideHorizontal = useCallback(() => {
+
+        const degree = (swipeState.moveX - swipeState.left) / props.width;
+        swipeState.degree = Math.abs(degree);
+        swipeState.isMoved = swipeState.degree > 0
+        ref.current?.scrollTo({ left: swipeState.moveX})
+
+        if(swipeState.degree > H_THRESHHOLD){
+            endSwipeHorizontal();
+        }
+    }, [endSwipeHorizontal, props.width])
+
+    const slideVertical = useCallback(() => {
+
+        swipeState.degree = Math.abs(swipeState.moveY) / props.height;
+
+        if(swipeState.degree > V_THRESHHOLD){
+            swipeState = {...swipeState, close:true}
+        }
+
+        if(ref.current){
+            ref.current.style.transform = `translate(0px, ${-swipeState.moveY}px)`
+        }
+
+    },[props.height])
 
     const onTouchMove = useCallback((e) => {
-
-        //e.preventDefault();
 
         if(!swipeState.swiping || zoomed) return;
 
@@ -159,29 +191,12 @@ const ImageDialog = (props:ImageDialogProps) => {
         swipeState = {...swipeState, moveY: yDiff, moveX: xDiff};
 
         if(isHorizontalAction()){
-            const degree = (swipeState.moveX - swipeState.left) / props.width;
-            swipeState.degree = Math.abs(degree);
-            swipeState.isMoved = swipeState.degree > 0
-            ref.current?.scrollTo({ left: swipeState.moveX})
-
-            if(swipeState.degree > H_THRESHHOLD){
-                endSwipeHorizontal();
-            }
-
-            return;
+            slideHorizontal();
+        }else{
+            slideVertical();
         }
 
-        swipeState.degree = Math.abs(swipeState.moveY) / props.height;
-
-        if(swipeState.degree > V_THRESHHOLD){
-            swipeState = {...swipeState, close:true}
-        }
-
-        if(ref.current){
-            ref.current.style.transform = `translate(0px, ${-swipeState.moveY}px)`
-        }
-
-    },[endSwipeHorizontal, props.width, props.height]);
+    },[slideHorizontal, slideVertical]);
 
     const changeScale = useCallback( (e:React.MouseEvent<HTMLImageElement>) => {
 
@@ -307,7 +322,7 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     return (
         <div css={Backdrop}>
-            <div style={{position:"fixed", top:0, left:0, color:"#fff", zIndex:99999}} ref={cref}></div>
+            <div style={{position:"fixed", top:0, left:0, color:"#fff", zIndex:99999}}></div>
             <List
                 height={props.height}
                 itemCount={props.data.length}
@@ -320,7 +335,6 @@ const ImageDialog = (props:ImageDialogProps) => {
                 initialScrollOffset={props.width * (props.startIndex * 1)}
                 style={{overflow:"hidden", background:"#121111", WebkitTransform :"translateZ(0px)"}}
                 onItemsRendered={onItemsRendered}
-                innerRef={iref}
             >
                 {renderRow}
             </List>

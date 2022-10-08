@@ -2,7 +2,7 @@ import {css} from "@emotion/react";
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import CloseIcon from '@mui/icons-material/Close';
 import LinkButton from "@parts/LinkButton"
-import { useEffect, useState, useRef, createRef } from "react";
+import { useEffect, useCallback, useState, useRef, createRef } from "react";
 
 type SnackbarProps = {
     open:boolean,
@@ -23,25 +23,7 @@ const Snackbar = (props:SnackbarProps) => {
     const [_bodyStyle, _setBodyStyle] = useState(props.childStyle)
     const [_open, _setOpen] = useState(props.open)
 
-    const setAutoHideTimer = () => {
-
-        clearTimeout(autoHideTimer.current);
-
-        autoHideTimer.current = window.setTimeout(() => {
-            hide()
-        }, props.autoHideDuration);
-    }
-
-    const display = () => {
-
-        clearTimeout(displayTimer.current);
-
-        displayTimer.current = window.setTimeout(() => {
-            _setBodyStyle({..._bodyStyle, opacity:1, transform:"none"})
-        }, 200);
-    }
-
-    const hide = () => {
+    const hide = useCallback(() => {
 
         _setBodyStyle({..._bodyStyle, opacity:"", transform:"scale(0)"})
 
@@ -51,7 +33,27 @@ const Snackbar = (props:SnackbarProps) => {
             _setOpen(false);
         }, 200);
 
-    }
+    },[_bodyStyle])
+
+    const display = useCallback(() => {
+
+        clearTimeout(displayTimer.current);
+
+        displayTimer.current = window.setTimeout(() => {
+            _setBodyStyle({..._bodyStyle, opacity:1, transform:"none"})
+        }, 200);
+
+    },[_bodyStyle])
+
+    const setAutoHideTimer = useCallback(() => {
+
+        clearTimeout(autoHideTimer.current);
+
+        autoHideTimer.current = window.setTimeout(() => {
+            hide()
+        }, props.autoHideDuration);
+
+    },[hide, props.autoHideDuration])
 
     useEffect(() => {
 
@@ -66,7 +68,7 @@ const Snackbar = (props:SnackbarProps) => {
             setAutoHideTimer();
         }
 
-    },[_open])
+    },[_open, display, setAutoHideTimer])
 
     if(!_open) return (null);
 

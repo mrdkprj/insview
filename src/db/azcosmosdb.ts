@@ -139,7 +139,7 @@ class azcosmosdb implements IDatabase{
 
     }
 
-    async query(queryString:string, params:any[]){
+    async query(_queryString:string, _params:any[]){
 
     }
 

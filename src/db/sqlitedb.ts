@@ -299,7 +299,7 @@ class sqlitedb implements IDatabase{
             console.log("delete error")
             throw new Error("delete failed")
         }
-    };
+    }
 
 }
 

@@ -10,25 +10,26 @@ type DialogProps = {
 const Dialog = (props:DialogProps) => {
 
     const hideTimer = useRef(0);
+    const ref = useRef<HTMLDivElement>(null)
 
-    const [_bodyStyle, _setBodyStyle] = useState({})
     const [_open, _setOpen] = useState(props.open)
 
     const display = useCallback(() => {
-        _setBodyStyle({..._bodyStyle, opacity:1})
-    },[_bodyStyle])
+        if(ref.current) ref.current.style.opacity = "1"
+    },[])
 
     const hide = useCallback(() => {
+        if(!ref.current) return
 
-        _setBodyStyle({..._bodyStyle, opacity:0})
+        ref.current.style.opacity = "0.8"
 
         clearTimeout(hideTimer.current);
 
         hideTimer.current = window.setTimeout(() => {
-            _setOpen(false);
+            if(ref.current) ref.current.style.opacity = "0"
         }, 200);
 
-    },[_bodyStyle])
+    },[])
 
     useEffect(() => {
 
@@ -37,22 +38,18 @@ const Dialog = (props:DialogProps) => {
     },[props.open])
 
     useEffect(() => {
-
         if(_open){
             display();
-        }else{
-            hide();
         }
+    },[_open, display])
 
-    },[_open, display, hide])
-
+    useEffect( () => () => hide(), [hide] );
 
     if(!_open) return (null);
 
-    // how to prevent children focus
     return (
         <div css={root} style={props.style}>
-            <div css={container} style={_bodyStyle}>
+            <div css={container} ref={ref}>
                 <div css={paper}>{props.children}</div>
             </div>
         </div>
