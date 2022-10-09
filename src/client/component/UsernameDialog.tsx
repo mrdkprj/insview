@@ -1,5 +1,5 @@
 import {RefObject, ChangeEvent, MouseEvent, useState, createRef, useEffect} from "react";
-import {IHistory} from "@shared";
+import {IHistory, IUser} from "@shared";
 import Dialog from "@parts/Dialog"
 import AppBar from "@parts/AppBar"
 import LinkButton from "@parts/LinkButton"
@@ -21,6 +21,7 @@ type UsernameDialogProps = {
     onSubmit: (username:string, history:IHistory) => void,
     onUsernameDelete: (history:IHistory, target:string) => Promise<void>,
     onClose: (history:IHistory) => void,
+    onRequestFollow?: (user:IUser) => void,
 }
 
 const errorMessage = "You should input username";
@@ -79,6 +80,10 @@ const UsernameDialog = (props:UsernameDialogProps) => {
 
     }
 
+    const requestFollow = () => {
+        //props.onRequestFollow(username)
+    }
+
     const closeDialog = () => {
         props.onClose(history);
     }
@@ -131,6 +136,7 @@ const UsernameDialog = (props:UsernameDialogProps) => {
                 <div style={{display:"flex", justifyContent:"center", marginTop:"30px"}}>
                     <Button onClick={closeDialog}>Cancel</Button>
                     <Button onClick={onSubmit}>Submit</Button>
+                    <Button onClick={requestFollow}>Follow</Button>
                 </div>
                 <div style={{marginTop:"30px"}}>
                     <List>

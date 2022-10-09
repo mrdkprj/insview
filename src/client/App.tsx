@@ -325,7 +325,28 @@ function App(){
         }
 
     },[handleError])
+/*
+    const followUser = useCallback( async (user:IFollowingUser) => {
 
+        dispatchAppState({type:AppAction.start})
+
+        try{
+
+            await follow(user);
+
+            dispatchMediaState({type:MediaAction.addFollowings, value: user})
+
+            return true;
+
+        }catch(ex:any){
+            handleError(ex, "Follow failed")
+            return false;
+        }finally{
+            dispatchAppState({type:AppAction.end})
+        }
+
+    },[handleError])
+*/
     /*
     * ImageDialog
     */
@@ -385,7 +406,9 @@ function App(){
                     onSubmit={onUsernameSubmit}
                     onClose={onUsernameDialogClose}
                     onUsernameDelete={requestDeleteHistory}
-                    history={mediaState.history}/>
+                    history={mediaState.history}
+                    //onRequestFollow={follow}
+                />
             }
 
             {appState.openLoginModal &&

@@ -20,30 +20,34 @@ const Snackbar = (props:SnackbarProps) => {
     const hideTimer = useRef(0);
     const formRef :React.RefObject<HTMLDivElement> = createRef();
 
-    const [_bodyStyle, _setBodyStyle] = useState(props.childStyle)
     const [_open, _setOpen] = useState(props.open)
 
     const hide = useCallback(() => {
 
-        _setBodyStyle({..._bodyStyle, opacity:"", transform:"scale(0)"})
-
+        clearTimeout(autoHideTimer.current);
         clearTimeout(hideTimer.current);
 
         hideTimer.current = window.setTimeout(() => {
-            _setOpen(false);
+            if(formRef.current){
+                formRef.current.style.opacity = ""
+                formRef.current.style.transform = "scale(0)"
+            }
         }, 200);
 
-    },[_bodyStyle])
+    },[formRef])
 
     const display = useCallback(() => {
 
         clearTimeout(displayTimer.current);
 
         displayTimer.current = window.setTimeout(() => {
-            _setBodyStyle({..._bodyStyle, opacity:1, transform:"none"})
-        }, 200);
+            if(formRef.current){
+                formRef.current.style.opacity = "1"
+                formRef.current.style.transform = "none"
+            }
+        }, 250)
 
-    },[_bodyStyle])
+    },[formRef])
 
     const setAutoHideTimer = useCallback(() => {
 
@@ -62,7 +66,7 @@ const Snackbar = (props:SnackbarProps) => {
     },[props.open])
 
     useEffect(() => {
-
+        console.log("ef")
         if(_open){
             display();
             setAutoHideTimer();
@@ -70,11 +74,13 @@ const Snackbar = (props:SnackbarProps) => {
 
     },[_open, display, setAutoHideTimer])
 
+    useEffect( () => () => hide(), [hide] );
+
     if(!_open) return (null);
 
     return (
         <div css={root} style={props.style}>
-            <div css={alert} style={_bodyStyle} ref={formRef}>
+            <div css={alert} style={props.childStyle} ref={formRef}>
                 <div css={icon}><ErrorOutlineIcon fontSize="inherit" color="inherit"/></div>
                 <div css={msg}>{props.children}</div>
                 <div css={action}>
@@ -94,10 +100,8 @@ const root = css({
     right: "8px",
     justifyContent: "center",
     alignItems: "center",
-    //top: "8px",
     top:"8px",
     "@media(min-width: 600px)" : {
-        //top: "24px",
         top:"24px",
         left: "50%",
         right: "auto",

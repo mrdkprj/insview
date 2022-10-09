@@ -41,6 +41,7 @@ export const MediaAction = {
     toggleLock: "toggleLock",
     mediaScrollTop : "mediaScrollTop",
     followingScrollTop: "followingScrollTop",
+    addFollowings: "addFollowings",
 }
 
 export const mediaStateReducer = (state: IMediaState, action: IMediaAction): IMediaState => {
@@ -98,6 +99,11 @@ export const mediaStateReducer = (state: IMediaState, action: IMediaAction): IMe
 
                 return user;
             })
+            return {...state, followings:{...state.followings, users:newusers}};
+        }
+        case MediaAction.addFollowings:{
+            const newusers = state.followings.users;
+            newusers.push(action.value)
             return {...state, followings:{...state.followings, users:newusers}};
         }
         default:

@@ -272,6 +272,10 @@ const ImageDialog = (props:ImageDialogProps) => {
 
         return (
             <div style={style} css={ImageContainer}>
+                <div css={edge}>
+                    <div>abc_adsfsfa</div>
+                    <div>bbbdasdfs</div>
+                </div>
                 <img css={ImageViewer} alt={props.data[index].id} src={props.data[index].media_url} onClick={onImageClick}/>
             </div>
         )
@@ -320,9 +324,29 @@ const ImageDialog = (props:ImageDialogProps) => {
         width: "100%",
     });
 
+    const edge = css({
+        position:"absolute",
+        top:"5px",
+        left:0,
+        zIndex:2000,
+        width:"100%",
+        height:"100%x",
+        display:"flex",
+        justifyContent: "flex-start",
+        alignItems:"center",
+        flexDirection:"column",
+        "& div" : {
+            letterSpacing:"0.02857em",
+            margin:"5px",
+            padding: "5px",
+            color:"#fff",
+            borderRadius: "5px",
+            backgroundColor:"rgb(25, 118, 210)",
+        }
+    })
+
     return (
         <div css={Backdrop}>
-            <div style={{position:"fixed", top:0, left:0, color:"#fff", zIndex:99999}}></div>
             <List
                 height={props.height}
                 itemCount={props.data.length}
