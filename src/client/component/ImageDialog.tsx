@@ -272,10 +272,6 @@ const ImageDialog = (props:ImageDialogProps) => {
 
         return (
             <div style={style} css={ImageContainer}>
-                <div css={edge}>
-                    <div>abc_adsfsfa</div>
-                    <div>bbbdasdfs</div>
-                </div>
                 <img css={ImageViewer} alt={props.data[index].id} src={props.data[index].media_url} onClick={onImageClick}/>
             </div>
         )
