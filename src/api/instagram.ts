@@ -256,7 +256,8 @@ const formatMedia = (data:any) :IMediaResponse =>{
             data.children.data.filter((data:any) => data.media_type !== "VIDEO").forEach((data:any) =>{
                 media.push({
                     id:data.id,
-                    media_url: data.media_url
+                    media_url: data.media_url,
+                    taggedUsers:[]
                 })
             })
 
@@ -264,7 +265,8 @@ const formatMedia = (data:any) :IMediaResponse =>{
 
             media.push({
                 id:data.id,
-                media_url: data.media_url
+                media_url: data.media_url,
+                taggedUsers:[]
             })
 
         }
@@ -384,29 +386,43 @@ const formatGraph = (data:any, session:ISession, user:IUser) : IMediaResponse =>
         if(data.node.edge_sidecar_to_children){
 
             data.node.edge_sidecar_to_children.edges.filter((data:any) => data.node.is_video === false).forEach((data:any) =>{
-
+                console.log(data.node.edge_media_to_tagged_user.edges)
                 media.push({
                     id:data.node.id,
-                    media_url: "/media?url=" + data.node.display_url
+                    media_url: "/media?url=" + data.node.display_url,
+                    taggedUsers: data.node.edge_media_to_tagged_user.edges.map((edge:any) => {
+                        return {
+                            id:edge.node.user.id,
+                            igId:edge.node.user.id,
+                            username:edge.node.user.username,
+                            name:edge.node.user.full_name,
+                            profileImage:edge.node.user.profile_pic_url,
+                            biography:"",
+                        }
+                    })
                 })
 
             })
 
         }else{
-
             media.push({
                 id:data.node.id,
-                media_url: "/media?url=" + data.node.display_url
+                media_url: "/media?url=" + data.node.display_url,
+                taggedUsers: data.node.edge_media_to_tagged_user.edges.map((edge:any) => {
+                    return {
+                        id:edge.node.user.id,
+                        igId:edge.node.user.id,
+                        username:edge.node.user.username,
+                        name:edge.node.user.full_name,
+                        profileImage:edge.node.user.profile_pic_url,
+                        biography:"",
+                    }
+                })
             })
 
         }
     })
 
-    /*
-    edge_media_to_tagged_user":{"edges":[
-    {"node":
-    {"user":{"full_name":"","id":"","username":""}
-    */
     const rowIndex = 0;
 
     let next = "";

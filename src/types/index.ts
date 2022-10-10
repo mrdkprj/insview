@@ -24,7 +24,8 @@ export class RequestError extends Error {
 
 export const emptyMedia :IMedia = {
     id: "",
-    media_url: ""
+    media_url: "",
+    taggedUsers:[]
 }
 
 export const emptyUser :IUser = {
@@ -55,6 +56,7 @@ export interface IResponse<T> {
 export interface IMedia {
     id: string,
     media_url: string;
+    taggedUsers: IUser[],
 }
 
 export interface IUser{

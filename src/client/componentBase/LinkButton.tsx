@@ -6,6 +6,8 @@ const LinkButton = ({...props}) => {
 
     const styles = [root];
 
+    if(props.css) styles.push(props.css)
+
     if(props.size === "small") styles.push(small)
 
     if(props.size === "medium") styles.push(medium)
