@@ -4,6 +4,7 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { css } from "@emotion/react";
 import { IMedia } from "@shared";
 import LinkButton from "@parts/LinkButton";
+import ImageTag from "./ImageTag";
 
 type ImageDialogProps = {
     width:number,
@@ -78,6 +79,8 @@ const getDirection = (xDiff:number,yDiff:number) => {
 const ImageDialog = (props:ImageDialogProps) => {
 
     const ref = useRef<HTMLDivElement>(null);
+    const tagsRef = useRef<HTMLDivElement>(null);
+    const tagsVisible = useRef(false)
 
     const onTouchStart = useCallback((e) => {
 
@@ -266,24 +269,34 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     },[closeDialog]);
 
+    const onTagClick = (_e:React.MouseEvent) => {
+
+        console.log("clc")
+    }
+
     const hideTags = () => {
-
-        if(ref.current){
-            ref.current.classList.remove("tags")
+/*
+        if(tagsRef.current){
+            tagsRef.current.style.opacity = "0"
         }
-
+*/
     }
 
     const toggleTags = () => {
+/*
+        if(!tagsRef.current) return;
 
-        if(!ref.current) return;
-
-        if(ref.current.classList.contains("tags")){
+        if(tagsRef.current.style.opacity === "1"){
             hideTags();
         }else{
-            ref.current.classList.add("tags")
+            tagsRef.current.style.opacity = "1"
         }
 
+        if(tagsVisible.current) tagsVisible.current = true
+
+        console.log(tagsVisible.current)
+        console.log(!tagsVisible.current)
+        */
     }
 
     const onItemsRendered = ({visibleStartIndex}:{visibleStartIndex:number}) => {
@@ -292,20 +305,15 @@ const ImageDialog = (props:ImageDialogProps) => {
 
         props.onImageRendered(visibleStartIndex)
 
-        hideTags()
-
     }
 
     const renderRow = ({index, style}:{index:number, style:React.CSSProperties}) => {
 
         //const tags = props.data[index].taggedUsers ? props.data[index].taggedUsers : [{id:"abc", username:"tokyodisneyresort_official"}]
-        const tags = [{id:"abc", username:"tokyodisneyresort_official"},{id:"efg", username:"CSSProperties"}]
+        //const tags = [{id:"abc", username:"tokyodisneyresort_official"},{id:"efg", username:"CSSProperties"}]
 
         return (
             <div style={style} css={ImageContainer}>
-                <div css={edge}>
-                    {tags.map(tag => (<div key={tag.id}>{tag.username}</div>) )}
-                </div>
                 <img css={ImageViewer} alt={props.data[index].id} src={props.data[index].media_url} onClick={onImageClick}/>
             </div>
         )
@@ -330,68 +338,6 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     useEffect( () => () =>  {document.body.style.overflow = ""}, [] );
 
-    const ImageContainer = css({
-        display:"flex",
-        justifyContent: "flex-start",
-        alignItems:"center",
-
-    })
-    const ImageViewer = css({
-        maxHeight: "100%",
-        maxWidth: "100%",
-        transition: "transform 0.7s",
-        willChange: "transform"
-    });
-
-    const Backdrop = css({
-        position: "fixed",
-        top:0,
-        left: 0,
-        overflow:"hidden",
-        backgroundColor: "#2a2727d4",
-        zIndex: 2000,
-        height: "100%",
-        width: "100%",
-        userSelect: "none"
-    });
-
-    const tags = css({
-        position:"fixed",
-        bottom:"5px",
-        left:"10px",
-        ".has-tags ~": {
-            display: "inline-flex"
-        }
-    })
-
-    const edge = css({
-        position:"absolute",
-        margin:0,
-        padding:0,
-        opacity: 0,
-        bottom:"3em",
-        left:"10px",
-        zIndex:2000,
-        width:"100%",
-        height:"100%x",
-        display:"flex",
-        justifyContent: "flex-start",
-        alignItems:"self-start",
-        flexDirection:"column",
-        transition: "opacity 225ms cubic-bezier(0.4, 0, 0.2, 1) 0ms",
-        "& div" : {
-            letterSpacing:"0.02857em",
-            margin:"5px 5px 5px 0px",
-            padding: "5px",
-            color:"#fff",
-            borderRadius: "5px",
-            backgroundColor:"rgb(25, 118, 210)",
-        },
-        ".tags &" :{
-            opacity: 1,
-        }
-    })
-
     return (
         <div css={Backdrop}>
             <List
@@ -409,14 +355,43 @@ const ImageDialog = (props:ImageDialogProps) => {
             >
                 {renderRow}
             </List>
-            <span css={tags}>
-                <LinkButton onClick={toggleTags}>
-                    <AccountCircleIcon sx={{ color: "#cdc3c3", mr: 1, my: 0.5 }} />
-                </LinkButton>
-            </span>
         </div>
     )
 
 }
+
+const ImageContainer = css({
+    display:"flex",
+    justifyContent: "flex-start",
+    alignItems:"center",
+
+})
+const ImageViewer = css({
+    maxHeight: "100%",
+    maxWidth: "100%",
+    transition: "transform 0.7s",
+    willChange: "transform"
+});
+
+const Backdrop = css({
+    position: "fixed",
+    top:0,
+    left: 0,
+    overflow:"hidden",
+    backgroundColor: "#2a2727d4",
+    zIndex: 2000,
+    height: "100%",
+    width: "100%",
+    userSelect: "none"
+});
+
+const tags = css({
+    position:"fixed",
+    bottom:"5px",
+    left:"5px",
+    ".has-tags ~": {
+        display: "inline-flex"
+    }
+})
 
 export default memo(ImageDialog);
