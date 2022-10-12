@@ -1,7 +1,7 @@
 import { FixedSizeGrid } from "react-window";
 import { css } from "@emotion/react";
 import {RefObject, memo, createRef, useEffect, Fragment, useState } from "react";
-import {IMedia} from "@shared";
+import {IMedia, IUser} from "@shared";
 import ImageDialog from "./ImageDialog";
 
 type GridProps = {
@@ -13,6 +13,7 @@ type GridProps = {
     onImageClick: (index:number) => void,
     onLastItemRenrered: () => void,
     onIdle: (scrollTop : number) => void,
+    onUserTagClick: (user:IUser) => void,
 }
 
 let gridScrollTop = 0;
@@ -53,21 +54,26 @@ const checkScrollTop = () => {
 
 export const Grid = memo<GridProps>( (props) => {
 
-    const [open, setOpen] = useState(false);
+    const [_open, _setOpen] = useState(false);
 
     context = props;
 
     const onImageClose = () => {
-        setOpen(false);
+        _setOpen(false);
     }
 
     const onImageClick = (index:number) => {
         startIndex = index;
-        setOpen(true);
+        _setOpen(true);
     }
 
     const onImageRendered = (index:number) => {
         gridRef.current?.scrollToItem({rowIndex:Math.floor(index / 3)})
+    }
+
+    const onImageTagClick = (user:IUser) => {
+        _setOpen(false);
+        props.onUserTagClick(user)
     }
 
     const renderRow = ({ columnIndex, data, rowIndex, style } : { columnIndex:number, data:IMedia[], rowIndex:number, style:React.CSSProperties }) => {
@@ -95,7 +101,7 @@ export const Grid = memo<GridProps>( (props) => {
 
     return(
         <Fragment>
-            {open && <ImageDialog width={props.width} height={props.height} onClose={onImageClose} data={props.data} startIndex={startIndex} onImageRendered={onImageRendered} /> }
+            {_open && <ImageDialog width={props.width} height={props.height} onClose={onImageClose} data={props.data} startIndex={startIndex} onImageRendered={onImageRendered} onUserTagClick={onImageTagClick}/> }
             <div css={Container}>
                 <FixedSizeGrid
                     ref={gridRef}

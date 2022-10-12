@@ -386,7 +386,7 @@ const formatGraph = (data:any, session:ISession, user:IUser) : IMediaResponse =>
         if(data.node.edge_sidecar_to_children){
 
             data.node.edge_sidecar_to_children.edges.filter((data:any) => data.node.is_video === false).forEach((data:any) =>{
-                console.log(data.node.edge_media_to_tagged_user.edges)
+
                 media.push({
                     id:data.node.id,
                     media_url: "/media?url=" + data.node.display_url,
@@ -754,8 +754,6 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =>
         }
 
         const response = await axios.request(options);
-
-        console.log(response.data)
 
         const session = getSession(response.headers);
         const data = {account:req.data.account, success:session.isAuthenticated, challenge:!session.isAuthenticated, endpoint:""};

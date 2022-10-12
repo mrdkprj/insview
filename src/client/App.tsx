@@ -18,7 +18,7 @@ import useWindowDimensions from "./dimensions";
 import {appStateReducer, initialAppState, AppAction} from "./state/appStateReducer";
 import {mediaStateReducer, initialMediaState, MediaAction} from "./state/mediaStateReducer";
 import {authStateReducer, initialAuthState, AuthAction} from "./state/authStateReducer";
-import { IHistory, emptyResponse, IFollowingUser } from "@shared";
+import { IHistory, emptyResponse, IFollowingUser, IUser } from "@shared";
 
 function App(){
 
@@ -374,6 +374,10 @@ function App(){
         dispatchAppState({type:AppAction.toggleUsernameModal, value:true})
     }
 
+    const onUserTagClick = (user:IUser) => {
+        loadImages(user.username, mediaState.history, false);
+    }
+
     /*
     * LoginDialog
     */
@@ -457,7 +461,16 @@ function App(){
                 </LinkButton>
             </AppBar>
 
-            <Grid data={mediaState.data} initialScrollTop={mediaState.mediaScrollTop} onImageClick={onImageClick} onIdle={onIdle} onLastItemRenrered={loadMoreImages} height={height} width={width} margin={barHeight}/>
+            <Grid
+                data={mediaState.data}
+                onImageClick={onImageClick}
+                onIdle={onIdle}
+                onLastItemRenrered={loadMoreImages}
+                onUserTagClick={onUserTagClick}
+                height={height}
+                width={width}
+                margin={barHeight}
+            />
 
         </Fragment>
   );

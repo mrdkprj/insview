@@ -2,9 +2,8 @@ import React, { memo, useEffect,useCallback, useRef } from "react"
 import { FixedSizeList as List } from 'react-window';
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { css } from "@emotion/react";
-import { IMedia } from "@shared";
+import { IMedia, IUser } from "@shared";
 import LinkButton from "@parts/LinkButton";
-import ImageTag from "./ImageTag";
 
 type ImageDialogProps = {
     width:number,
@@ -13,6 +12,7 @@ type ImageDialogProps = {
     startIndex:number,
     onClose:() => void,
     onImageRendered: (index:number) => void,
+    onUserTagClick: (user:IUser) => void
 }
 
 const direction = {
@@ -79,12 +79,8 @@ const getDirection = (xDiff:number,yDiff:number) => {
 const ImageDialog = (props:ImageDialogProps) => {
 
     const ref = useRef<HTMLDivElement>(null);
-    const tagsRef = useRef<HTMLDivElement>(null);
-    const tagsVisible = useRef(false)
 
-    const onTouchStart = useCallback((e) => {
-
-        hideTags();
+    const onSwipeStart = useCallback((e) => {
 
         swipeState.startX = e.touches[0].clientX + ref.current?.scrollLeft
         swipeState.startY = e.touches[0].clientY
@@ -144,7 +140,7 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     },[closeDialog, cleanupSwipe])
 
-    const onTouchEnd = useCallback(() => {
+    const onSwipeEnd = useCallback(() => {
 
         if(!swipeState.swiping) return;
 
@@ -184,9 +180,11 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     },[props.height])
 
-    const onTouchMove = useCallback((e) => {
+    const onSwipeMove = useCallback((e) => {
 
         if(!swipeState.swiping || zoomed) return;
+
+        hideTags();
 
         const xDiff = swipeState.startX - e.touches[0].clientX;
         const yDiff = swipeState.startY - e.touches[0].clientY;
@@ -269,34 +267,29 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     },[closeDialog]);
 
-    const onTagClick = (_e:React.MouseEvent) => {
-
-        console.log("clc")
-    }
-
     const hideTags = () => {
-/*
-        if(tagsRef.current){
-            tagsRef.current.style.opacity = "0"
+
+        if(!ref.current) return;
+
+        if(ref.current.classList.contains("tags")){
+            ref.current.classList.remove("tags")
         }
-*/
     }
 
     const toggleTags = () => {
-/*
-        if(!tagsRef.current) return;
 
-        if(tagsRef.current.style.opacity === "1"){
+        if(!ref.current) return;
+
+        if(ref.current.classList.contains("tags")){
             hideTags();
         }else{
-            tagsRef.current.style.opacity = "1"
+            ref.current.classList.add("tags")
         }
 
-        if(tagsVisible.current) tagsVisible.current = true
+    }
 
-        console.log(tagsVisible.current)
-        console.log(!tagsVisible.current)
-        */
+    const onTagClick = (tag:IUser) => {
+        props.onUserTagClick(tag);
     }
 
     const onItemsRendered = ({visibleStartIndex}:{visibleStartIndex:number}) => {
@@ -305,15 +298,24 @@ const ImageDialog = (props:ImageDialogProps) => {
 
         props.onImageRendered(visibleStartIndex)
 
+        if(!ref.current) return;
+
+        if(props.data[visibleStartIndex].taggedUsers.length > 0){
+            ref.current.classList.add("has-tags")
+        }else{
+            ref.current.classList.remove("has-tags")
+        }
+
     }
 
     const renderRow = ({index, style}:{index:number, style:React.CSSProperties}) => {
 
-        //const tags = props.data[index].taggedUsers ? props.data[index].taggedUsers : [{id:"abc", username:"tokyodisneyresort_official"}]
-        //const tags = [{id:"abc", username:"tokyodisneyresort_official"},{id:"efg", username:"CSSProperties"}]
-
+        const tags = props.data[index].taggedUsers ? props.data[index].taggedUsers : []
         return (
             <div style={style} css={ImageContainer}>
+                <div css={edge}>
+                    {tags.map((tag:IUser) => (<div key={tag.id} onClick={() => onTagClick(tag)}>{tag.username}</div>))}
+                </div>
                 <img css={ImageViewer} alt={props.data[index].id} src={props.data[index].media_url} onClick={onImageClick}/>
             </div>
         )
@@ -324,9 +326,9 @@ const ImageDialog = (props:ImageDialogProps) => {
 
         document.body.style.overflow = "hidden";
 
-        ref.current?.addEventListener("touchstart", onTouchStart, { passive: true });
-        ref.current?.addEventListener("touchmove", onTouchMove, { passive: true });
-        ref.current?.addEventListener("touchend", onTouchEnd, { passive: true });
+        ref.current?.addEventListener("touchstart", onSwipeStart, { passive: true });
+        ref.current?.addEventListener("touchmove", onSwipeMove, { passive: true });
+        ref.current?.addEventListener("touchend", onSwipeEnd, { passive: true });
 
         document.addEventListener("keydown", handleKeydown);
 
@@ -334,7 +336,7 @@ const ImageDialog = (props:ImageDialogProps) => {
             document.removeEventListener("keydown", handleKeydown);
         });
 
-    }, [onTouchStart,onTouchMove,onTouchEnd,handleKeydown, onImageClick]);
+    }, [onSwipeStart,onSwipeMove,onSwipeEnd,handleKeydown]);
 
     useEffect( () => () =>  {document.body.style.overflow = ""}, [] );
 
@@ -355,6 +357,11 @@ const ImageDialog = (props:ImageDialogProps) => {
             >
                 {renderRow}
             </List>
+            <span css={tags}>
+                <LinkButton onClick={toggleTags}>
+                    <AccountCircleIcon sx={{ color: "rgb(135 129 129)", mr: 1, my: 0.5 }} />
+                </LinkButton>
+            </span>
         </div>
     )
 
@@ -385,11 +392,40 @@ const Backdrop = css({
     userSelect: "none"
 });
 
+const edge = css({
+    position:"absolute",
+    margin:0,
+    padding:0,
+    opacity: 0,
+    bottom:"3em",
+    left:"10px",
+    zIndex:2000,
+    width:"100%",
+    height:"100%x",
+    display:"flex",
+    justifyContent: "flex-start",
+    alignItems:"self-start",
+    flexDirection:"column",
+    transition: "opacity 225ms cubic-bezier(0.4, 0, 0.2, 1) 0ms",
+    "& div" : {
+        letterSpacing:"0.02857em",
+        margin:"5px 5px 5px 0px",
+        padding: "5px",
+        color:"#fff",
+        borderRadius: "5px",
+        backgroundColor:"rgb(25, 118, 210)",
+    },
+    ".tags &" : {
+        opacity:1,
+    }
+})
+
 const tags = css({
     position:"fixed",
     bottom:"5px",
     left:"5px",
-    ".has-tags ~": {
+    display: "none",
+    ".has-tags + &": {
         display: "inline-flex"
     }
 })
