@@ -51,7 +51,6 @@ const Grid = forwardRef<GridHandler, GridProps>((props, ref) => {
     }
 
     const onImageTagClick = (user:IUser) => {
-        _setOpen(false);
         props.onUserTagClick && props.onUserTagClick(user)
     }
 

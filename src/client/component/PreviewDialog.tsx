@@ -28,7 +28,7 @@ const PreviewDialog = (props:PreviewDialogProps) => {
     }
 
     return (
-        <Dialog style={{zIndex:1300}} open={props.open}>
+        <Dialog style={{zIndex:3000}} open={props.open}>
             <AppBar style={{position:"fixed", height: props.margin, display:"flex", justifyContent: "center", alignItems:"center", backgroundColor:"rgb(33 86 139)" }}>
                 <LinkButton style={{color:"inherit", position: "absolute", left:"5px"}} onClick={props.onClose}>
                     <CloseIcon />
