@@ -1,7 +1,7 @@
 import { memo, useCallback } from "react";
 import { FixedSizeList } from "react-window";
 import { css } from "@emotion/react";
-import { IFollowing, IFollowingUser} from "@shared";
+import { IFollowing, IUser} from "@shared";
 import Dialog from "@parts/Dialog"
 import AppBar from "@parts/AppBar"
 import LinkButton from "@parts/LinkButton"
@@ -22,7 +22,7 @@ type AccountDialogProps = {
     onLogout: () => Promise<boolean>,
     onClose: (scrollTop:number) => void,
     onUserSelect: (username:string) => void,
-    toggleFollow: (follow:boolean, user:IFollowingUser) => Promise<boolean>,
+    toggleFollow: (follow:boolean, user:IUser) => Promise<boolean>,
 }
 
 let rowCount = 0;
@@ -34,7 +34,7 @@ const AccountDialog = memo<AccountDialogProps>( (props) => {
 
     rowCount = props.data.users.length - 1;
 
-    const toggleFollow = useCallback( async (e:any, user:IFollowingUser) => {
+    const toggleFollow = useCallback( async (e:any, user:IUser) => {
 
         await props.toggleFollow(!user.following, user);
 
@@ -64,7 +64,7 @@ const AccountDialog = memo<AccountDialogProps>( (props) => {
         listScrollTop = scrollOffset;
     }
 
-    const renderRow = ({ index, data, style } : { index:number, data:IFollowingUser[], style:any }) => {
+    const renderRow = ({ index, data, style } : { index:number, data:IUser[], style:any }) => {
 
         return (
             <div css={Container} style={style}>

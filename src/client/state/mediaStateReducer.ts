@@ -6,6 +6,9 @@ export interface IMediaState {
     next:string,
     user: IUser,
     data: IMedia[],
+    previewNext:string,
+    previewUser:IUser,
+    previewData:IMedia[],
     selected: number,
     history: IHistory,
     followings: IFollowing,
@@ -18,6 +21,9 @@ export const initialMediaState : IMediaState = {
     next: "",
     user: emptyUser,
     data: [],
+    previewNext:"",
+    previewUser: emptyUser,
+    previewData:[],
     selected: 0,
     history:{},
     followings:{users:[], hasNext:false, next:""},
@@ -41,7 +47,7 @@ export const MediaAction = {
     toggleLock: "toggleLock",
     mediaScrollTop : "mediaScrollTop",
     followingScrollTop: "followingScrollTop",
-    addFollowings: "addFollowings",
+    preview: "preview",
 }
 
 export const mediaStateReducer = (state: IMediaState, action: IMediaAction): IMediaState => {
@@ -90,22 +96,36 @@ export const mediaStateReducer = (state: IMediaState, action: IMediaAction): IMe
             const newFollowings = {users, hasNext:action.value.hasNext, next:action.value.next};
             return {...state, followings:newFollowings};
         }
+
         case MediaAction.updateFollowStatus:{
+
+            let userFound = false;
 
             const newusers = state.followings.users.map(user => {
                 if(user.username === action.value.user.username){
                     user.following = action.value.doFollow
+                    userFound = true;
                 }
 
                 return user;
             })
+
+            if(!userFound){
+                newusers.push(action.value.user)
+            }
+
             return {...state, followings:{...state.followings, users:newusers}};
         }
-        case MediaAction.addFollowings:{
-            const newusers = state.followings.users;
-            newusers.push(action.value)
-            return {...state, followings:{...state.followings, users:newusers}};
+
+        case MediaAction.preview:{
+            if(state.previewUser.username === action.value.user.username){
+                return {...state, previewData: state.previewData.concat(action.value.media), previewNext: action.value.next};
+            }else{
+                return {...state, previewUser:action.value.user, previewData:action.value.media, previewNext: action.value.next};
+            }
+
         }
+
         default:
             return state;
     }

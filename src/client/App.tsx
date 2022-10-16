@@ -1,4 +1,4 @@
-import {Fragment, useEffect, useCallback, useReducer } from "react";
+import {Fragment, useEffect, useCallback, useReducer, useRef } from "react";
 import AppBar from "@parts/AppBar"
 import LinkButton from "@parts/LinkButton";
 import Typography from "@parts/Typography"
@@ -8,23 +8,25 @@ import CircularProgress from "@parts/CircularProgress"
 import UsernameDialog from "./component/UsernameDialog"
 import AccountDialog from "./component/AccountDialog";
 import LoginDialog from "./component/LoginDialog"
+import PreviewDialog from "./component/PreviewDialog"
 import RefreshIcon from "@mui/icons-material/Refresh";
 import InstagramIcon from "@mui/icons-material/Instagram";
 import LoginIcon from "@mui/icons-material/Login";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import {Grid, scrollTo} from "./component/Grid"
+import Grid, {GridHandler} from "./component/Grid"
 import {query, save, queryMore, login, challenge, logout, getFollowings, deleteHistory, follow, unfollow} from "./request";
 import useWindowDimensions from "./dimensions";
 import {appStateReducer, initialAppState, AppAction} from "./state/appStateReducer";
 import {mediaStateReducer, initialMediaState, MediaAction} from "./state/mediaStateReducer";
 import {authStateReducer, initialAuthState, AuthAction} from "./state/authStateReducer";
-import { IHistory, emptyResponse, IFollowingUser, IUser } from "@shared";
+import { IHistory, IUser } from "@shared";
 
 function App(){
 
     const barHeight = 45;
 
     const { width, height } = useWindowDimensions();
+    const gridRef = useRef({} as GridHandler);
 
     const [appState, dispatchAppState] = useReducer(appStateReducer, initialAppState);
     const [mediaState, dispatchMediaState] = useReducer(mediaStateReducer, initialMediaState);
@@ -59,16 +61,21 @@ function App(){
     /*
     * loadImages
     */
-    const loadImages = useCallback(async (username:string, history:IHistory, refresh:boolean) => {
+    const loadImages = useCallback(async ( {username, history, refresh = false, preview = false}:{username:string, history:IHistory, refresh?:boolean, preview?:boolean}) => {
 
         dispatchAppState({type:AppAction.start})
 
         try{
 
-            const result = await query(username, history, refresh);
+            const result = await query(username, history, refresh, preview);
             dispatchAuthState({type:AuthAction.toggleAuth, value:{success:result.status, account:result.data.account}})
-            dispatchMediaState({type:MediaAction.update, value: result.data})
-            scrollTo(result.data.rowIndex)
+
+            if(!preview){
+                dispatchMediaState({type:MediaAction.update, value: result.data})
+                gridRef.current?.scrollTo(result.data.rowIndex)
+            }else{
+                dispatchMediaState({type:MediaAction.preview, value: result.data})
+            }
 
         }catch(ex:any){
 
@@ -94,7 +101,7 @@ function App(){
         try{
 
             dispatchMediaState({type:MediaAction.toggleLock, value: true})
-            const result = await queryMore(mediaState.user, mediaState.next);
+            const result = await queryMore(mediaState.user, mediaState.next, false);
             dispatchAuthState({type:AuthAction.toggleAuth, value:{success:result.status}})
             dispatchMediaState({type:MediaAction.append, value: result.data})
 
@@ -110,6 +117,35 @@ function App(){
 
 
     },[handleError, mediaState.locked, mediaState.next, mediaState.user])
+
+    /*
+    * loadMorePreviewImages
+    */
+    const loadMorePreviewImages = useCallback (async () => {
+
+        if(mediaState.locked || !mediaState.previewNext){
+            return
+        }
+
+        try{
+
+            dispatchMediaState({type:MediaAction.toggleLock, value: true})
+            const result = await queryMore(mediaState.previewUser, mediaState.previewNext, true);
+            dispatchAuthState({type:AuthAction.toggleAuth, value:{success:result.status}})
+            dispatchMediaState({type:MediaAction.preview, value: result.data})
+
+        }catch(ex:any){
+
+            handleError(ex);
+
+        }finally{
+
+            dispatchMediaState({type:MediaAction.toggleLock, value: false})
+
+        }
+
+
+    },[handleError, mediaState.locked, mediaState.previewUser, mediaState.previewNext])
 
     /*
     * Delete history
@@ -255,8 +291,8 @@ function App(){
         dispatchAppState({type:AppAction.toggleAccountModal, value:false})
     },[])
 
-    const onUserSelect = useCallback((username:string,) => {
-        loadImages(username, mediaState.history, false);
+    const onUserSelect = useCallback( async (username:string,) => {
+       await loadImages({username, history:mediaState.history});
     },[loadImages, mediaState.history]);
 
     /*
@@ -288,20 +324,20 @@ function App(){
     /*
     * Refresh
     */
-    const requestRefresh = useCallback( () => {
+    const requestRefresh = useCallback( async () => {
 
         if(!window.confirm("Refresh?")){
             return;
         }
 
-        loadImages(mediaState.user.username, mediaState.history, true);
+        await loadImages({username:mediaState.user.username, history:mediaState.history, refresh:true});
 
     },[loadImages, mediaState.user.username, mediaState.history])
 
     /*
     * Follow/Unfollow
     */
-    const toggleFollow = useCallback( async (doFollow:boolean, user:IFollowingUser) => {
+    const toggleFollow = useCallback( async (doFollow:boolean, user:IUser) => {
 
         dispatchAppState({type:AppAction.start})
 
@@ -325,37 +361,6 @@ function App(){
         }
 
     },[handleError])
-/*
-    const followUser = useCallback( async (user:IFollowingUser) => {
-
-        dispatchAppState({type:AppAction.start})
-
-        try{
-
-            await follow(user);
-
-            dispatchMediaState({type:MediaAction.addFollowings, value: user})
-
-            return true;
-
-        }catch(ex:any){
-            handleError(ex, "Follow failed")
-            return false;
-        }finally{
-            dispatchAppState({type:AppAction.end})
-        }
-
-    },[handleError])
-*/
-    /*
-    * ImageDialog
-    */
-    const onImageClick = useCallback ((index : number) => {
-
-        dispatchMediaState({type:MediaAction.select, value: index})
-        dispatchAppState({type:AppAction.toggleImageModal, value:true})
-
-    },[])
 
     /*
     * UsernameDialog
@@ -365,17 +370,18 @@ function App(){
         dispatchAppState({type:AppAction.toggleUsernameModal, value:false})
     }
 
-    const onUsernameSubmit = (name: string, history:IHistory) => {
+    const onUsernameSubmit = async (username: string, history:IHistory) => {
         dispatchAppState({type:AppAction.toggleUsernameModal, value:false})
-        loadImages(name, history, false);
+        await loadImages({username, history});
     }
 
     const openUsernameDialog = () => {
         dispatchAppState({type:AppAction.toggleUsernameModal, value:true})
     }
 
-    const onUserTagClick = (user:IUser) => {
-        loadImages(user.username, mediaState.history, false);
+    const onUserTagClick = async (user:IUser) => {
+        await loadImages({username:user.username, history:mediaState.history, preview:true});
+        openPreviewDialog();
     }
 
     /*
@@ -390,10 +396,21 @@ function App(){
     }
 
     /*
+    * PreviewDialog
+    */
+    const openPreviewDialog = () => {
+        dispatchAppState({type:AppAction.togglePreviewModal, value:true})
+    }
+
+    const closePreviewDialog = () => {
+        dispatchAppState({type:AppAction.togglePreviewModal, value:false})
+    }
+
+    /*
     * useEffect
     */
     useEffect(()=>{
-        loadImages(emptyResponse.username, emptyResponse.history, false);
+        loadImages({username:"", history:{}});
     },[loadImages])
 
     return (
@@ -411,7 +428,6 @@ function App(){
                     onClose={onUsernameDialogClose}
                     onUsernameDelete={requestDeleteHistory}
                     history={mediaState.history}
-                    //onRequestFollow={follow}
                 />
             }
 
@@ -432,6 +448,20 @@ function App(){
                     onLogout={requestLogout}
                     toggleFollow={toggleFollow}
                     initialScrollTop={mediaState.followingScrollTop}
+                />
+            }
+
+            {appState.openPreviewModal &&
+                <PreviewDialog
+                    open={appState.openPreviewModal}
+                    user={mediaState.user}
+                    data={mediaState.previewData}
+                    height={height}
+                    width={width}
+                    margin={barHeight}
+                    onClose={closePreviewDialog}
+                    toggleFollow={toggleFollow}
+                    onLastItemRenrered={loadMorePreviewImages}
                 />
             }
 
@@ -462,8 +492,8 @@ function App(){
             </AppBar>
 
             <Grid
+                ref={gridRef}
                 data={mediaState.data}
-                onImageClick={onImageClick}
                 onIdle={onIdle}
                 onLastItemRenrered={loadMoreImages}
                 onUserTagClick={onUserTagClick}

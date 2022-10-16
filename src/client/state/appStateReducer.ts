@@ -4,6 +4,7 @@ export interface IAppState {
     openImageModal: boolean,
     openLoginModal: boolean,
     openAccountModal: boolean,
+    openPreviewModal:boolean,
     hasError: boolean,
     errorMessage: string,
 }
@@ -14,6 +15,7 @@ export const initialAppState : IAppState = {
     openImageModal: false,
     openLoginModal: false,
     openAccountModal: false,
+    openPreviewModal: false,
     hasError: false,
     errorMessage: "",
 }
@@ -30,6 +32,7 @@ export const AppAction = {
     toggleImageModal: "toggleImageModal",
     toggleLoginModal: "toggleLoginModal",
     toggleAccountModal: "toggleAccountModal",
+    togglePreviewModal: "togglePreviewModal",
     showError: "showError",
     hideError: "hideError"
 }
@@ -53,6 +56,9 @@ export const appStateReducer = (state: IAppState, action: IAppAction): IAppState
 
         case AppAction.toggleAccountModal:
             return {...state, openAccountModal:action.value};
+
+        case AppAction.togglePreviewModal:
+            return {...state, openPreviewModal:action.value}
 
         case AppAction.showError:
             return {...state, hasError:true, errorMessage: action.value};

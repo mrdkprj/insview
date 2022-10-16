@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosRequestHeaders, AxiosResponse, AxiosResponseHeaders } from "axios";
-import { IMedia, IMediaResponse, IUser, IFollowingUser, ILoginResponse, IFollowing, IgRequest, IgResponse, ISession} from "../types";
+import { IMedia, IMediaResponse, IUser, ILoginResponse, IFollowing, IgRequest, IgResponse, ISession} from "../types";
 import { AuthError } from "../types"
 import tough from "tough-cookie";
 
@@ -172,16 +172,37 @@ const tryRequestGraph = async (req:IgRequest, currentSession:ISession) : Promise
 
         const pageResponse = await axios.request(options);
 
+        /*
         const title = pageResponse.data.match(/<title>(.*)\(&#064;(.*)\).*<\/title>/);
         const profile = pageResponse.data.match(/"props":{"id":"([0-9]*)".*"profile_pic_url":"(.*)","show_suggested_profiles"/);
+        */
+        const appId = pageResponse.data.match(/"customHeaders":{"X-IG-App-ID":"(.*)","X-IG-D"/)
+
+        const profileSession = updateSession(currentSession, pageResponse.headers)
+        const profileHeaders = createHeaders(baseUrl + "/" + username + "/", profileSession);
+        profileHeaders["x-ig-app-id"] = appId[1]
+        profileHeaders.Cookie = req.headers.cookie ?? "";
+
+        const url = `https://i.instagram.com/api/v1/users/web_profile_info/?username=${username}`
+        const profileOptions :AxiosRequestConfig = {
+            url,
+            method: "GET",
+            headers:pageHeaders,
+            withCredentials:true
+        }
+
+        const profileResponse = await axios.request(profileOptions);
+
+        const userData = profileResponse.data.data.user;
 
         const user :IUser = {
-            id: profile[1],
-            igId: profile[1],
+            id: userData.id,
+            igId: userData.id,
             username,
-            name: title[1],
-            profileImage: "/media?url=" + profile[2].replace(/\\/g, ""),
-            biography:"",
+            name: userData.full_name,
+            profileImage: "/media?url=" + userData.profile_pic_url,
+            biography:userData.biography,
+            following:userData.followed_by_viewer,
         }
 
         const requestSession = updateSession(currentSession, pageResponse.headers)
@@ -282,12 +303,13 @@ const formatMedia = (data:any) :IMediaResponse =>{
     const username = root.username;
 
     const user :IUser = {
-        id: root.id,
+        id: root.ig_id,
         igId: root.ig_id,
         username,
         name: root.name,
         profileImage: root.profile_picture_url,
         biography: root.biography,
+        following:false,
     }
 
     const history = {[username]: user}
@@ -482,7 +504,7 @@ const formatFollowings = (data:any) :IFollowing => {
 
     const dataNode = data.data.user.edge_follow;
 
-    const users :IFollowingUser[] = dataNode.edges.map((user:any) :IFollowingUser => {
+    const users :IUser[] = dataNode.edges.map((user:any) :IUser => {
         return {
             id:user.node.id,
             igId:user.node.id,

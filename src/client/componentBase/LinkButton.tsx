@@ -1,8 +1,17 @@
-import {css} from "@emotion/react";
+import {css, SerializedStyles} from "@emotion/react";
+import React from "react";
 
-const onClickHandler = () => undefined
+type LinkButtonProps = {
+    style?:React.CSSProperties,
+    css?: SerializedStyles,
+    size?:string,
+    edge?:string,
+    type?:string,
+    children?:any,
+    onClick?: (e:React.MouseEvent) => void,
+}
 
-const LinkButton = ({...props}) => {
+const LinkButton = (props:LinkButtonProps) => {
 
     const styles = [root];
 
@@ -16,10 +25,8 @@ const LinkButton = ({...props}) => {
 
     if(props.edge === "end") styles.push(end)
 
-    const onClickFn = props.onClick ? props.onClick : onClickHandler
-
     return (
-        <button css={styles} style={props.style} onClick={onClickFn}>{props.children}</button>
+        <button css={styles} style={props.style} onClick={(e) => props.onClick ? props.onClick(e) : (e)}>{props.children}</button>
     )
 }
 

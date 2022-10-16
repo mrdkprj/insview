@@ -121,6 +121,7 @@ app.post("/query", async (req, res) => {
     const username = req.body.username;
     const history = req.body.history;
     const forceRequest = req.body.refresh;
+    const preview = req.body.preview;
 
     if(forceRequest){
         return await tryRefresh(req, res, username, history);
@@ -129,7 +130,7 @@ app.post("/query", async (req, res) => {
     if(!username){
         await tryRestore(req, res);
     }else{
-        await tryQuery(req, res, username, history);
+        await tryQuery(req, res, username, history, preview);
     }
 
 });
@@ -138,8 +139,9 @@ app.post("/querymore", async (req, res) => {
 
     const user = req.body.user;
     const next = req.body.next;
+    const preview = req.body.preview
 
-    await tryQueryMore(req, res, user, next);
+    await tryQueryMore(req, res, user, next, preview);
 
 });
 
@@ -347,46 +349,43 @@ const tryLogout = async (req:any, res:any) => {
     }
 }
 
-const tryQuery = async (req:any, res:any, username:string, history:IHistory) => {
+const tryQuery = async (req:any, res:any, username:string, history:IHistory, preview:boolean) => {
 
     const newHistory :IHistory = history;
 
     try{
 
-        const mediaData :IMediaTable = await db.queryMedia(req.session.account, username);
+        const exisitingData :IMediaTable = await db.queryMedia(req.session.account, username);
 
-        if(mediaData.username){
+        let session;
+        let igResponse:IMediaResponse;
 
-            const session = api.getSession(req.headers);
-
-            newHistory[mediaData.username] = mediaData.user
-
-            await db.saveHistory(req.session.account, username, newHistory);
-
-            const resultData :IMediaResponse = {
-                username: mediaData.username,
-                media: mediaData.media,
-                user: mediaData.user,
-                rowIndex: mediaData.rowIndex,
-                next: mediaData.next,
+        if(exisitingData.username){
+            session = api.getSession(req.headers);
+            igResponse = {
+                username: exisitingData.username,
+                media: exisitingData.media,
+                user: exisitingData.user,
+                rowIndex: exisitingData.rowIndex,
+                next: exisitingData.next,
                 history: newHistory,
                 isAuthenticated: session.isAuthenticated
             }
 
-            return await sendResponse(req, res, resultData, session);
-
+        }else{
+            const result = await api.requestMedia({data:{username}, headers: req.headers});
+            igResponse = result.data
+            session = result.session
         }
 
-        const igResponse = await api.requestMedia({data:{username}, headers: req.headers});
+        if(!preview){
+            newHistory[igResponse.username] = igResponse.user;
+            igResponse.history = newHistory;
+            await db.saveHistory(req.session.account, username, newHistory);
+            await db.saveMedia(req.session.account, igResponse);
+        }
 
-        newHistory[igResponse.data.username] = igResponse.data.user;
-
-        igResponse.data.history = newHistory;
-
-        await db.saveMedia(req.session.account, igResponse.data);
-        await db.saveHistory(req.session.account, username, newHistory);
-
-        await sendResponse(req, res, igResponse.data, igResponse.session);
+        await sendResponse(req, res, igResponse, session);
 
     }catch(ex:any){
 
@@ -395,7 +394,7 @@ const tryQuery = async (req:any, res:any, username:string, history:IHistory) => 
     }
 }
 
-const tryQueryMore = async (req:any, res:any, user:IUser, next:string) => {
+const tryQueryMore = async (req:any, res:any, user:IUser, next:string, preview:boolean) => {
 
     try{
 
@@ -403,9 +402,10 @@ const tryQueryMore = async (req:any, res:any, user:IUser, next:string) => {
 
         const igResponse = await api.requestMore({data:{user, next}, headers:req.headers});
 
-        igResponse.data.history = historyData.history;
-
-        await db.appendMedia(req.session.account,igResponse.data);
+        if(!preview){
+            igResponse.data.history = historyData.history;
+            await db.appendMedia(req.session.account,igResponse.data);
+        }
 
         await sendResponse(req, res, igResponse.data, igResponse.session);
 

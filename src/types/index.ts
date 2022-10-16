@@ -35,6 +35,7 @@ export const emptyUser :IUser = {
     name:"",
     profileImage:"",
     biography:"",
+    following:false,
 }
 
 export const emptyResponse :IMediaResponse = {
@@ -66,10 +67,7 @@ export interface IUser{
     name:string,
     profileImage:string,
     biography:string,
-}
-
-export interface IFollowingUser extends IUser{
-    following:boolean;
+    following:boolean
 }
 
 export interface IHistory{
@@ -77,7 +75,7 @@ export interface IHistory{
 }
 
 export interface IFollowing{
-    users: IFollowingUser[];
+    users: IUser[];
     hasNext:boolean;
     next:string
 }

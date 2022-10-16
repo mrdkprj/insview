@@ -1,5 +1,5 @@
 import axios, {AxiosRequestConfig, AxiosResponse, AxiosResponseHeaders, Method} from "axios";
-import {IMediaResponse, IHistory, IUser, IAuthResponse, IFollowing, RequestError, IResponse, IFollowingUser} from "@shared"
+import {IMediaResponse, IHistory, IUser, IAuthResponse, IFollowing, RequestError, IResponse} from "@shared"
 
 const createOptions = (url:string, method:Method, data:any) :AxiosRequestConfig => {
 
@@ -28,11 +28,11 @@ const throwError = (ex:any) => {
 
 }
 
-const query = async (username: string, history:IHistory, refresh:boolean) : Promise<IResponse<IMediaResponse>> => {
+const query = async (username: string, history:IHistory, refresh:boolean, preview:boolean) : Promise<IResponse<IMediaResponse>> => {
 
     const url = "/query";
     const method = "POST";
-    const data = {username, history, refresh};
+    const data = {username, history, refresh, preview};
 
     const options = createOptions(url, method, data);
 
@@ -50,11 +50,11 @@ const query = async (username: string, history:IHistory, refresh:boolean) : Prom
 
 }
 
-const queryMore = async (user:IUser, next:string) : Promise<IResponse<IMediaResponse>> => {
+const queryMore = async (user:IUser, next:string, preview:boolean) : Promise<IResponse<IMediaResponse>> => {
 
     const url = "/querymore";
     const method = "POST";
-    const data = {user, next};
+    const data = {user, next, preview};
 
     const options = createOptions(url, method, data);
 
@@ -179,7 +179,7 @@ const deleteHistory = async (history:IHistory, current:string, target:string) =>
 
 }
 
-const follow = async (user:IFollowingUser) => {
+const follow = async (user:IUser) => {
 
     const url = "/follow";
     const method = "POST";
@@ -195,7 +195,7 @@ const follow = async (user:IFollowingUser) => {
 
 }
 
-const unfollow = async (user:IFollowingUser) => {
+const unfollow = async (user:IUser) => {
 
     const url = "/unfollow";
     const method = "POST";
