@@ -48,7 +48,7 @@ function App(){
 
     },[]);
 
-    const onIdle = async (scrollTop :number) => {
+    const onIdle = useCallback( async (scrollTop :number) => {
 
         if(mediaState.mediaScrollTop === scrollTop) return;
 
@@ -56,7 +56,7 @@ function App(){
 
         dispatchMediaState({type:MediaAction.mediaScrollTop, value: scrollTop})
 
-    }
+    },[mediaState.mediaScrollTop, mediaState.user.username])
 
     /*
     * loadImages
@@ -379,11 +379,6 @@ function App(){
         dispatchAppState({type:AppAction.toggleUsernameModal, value:true})
     }
 
-    const onUserTagClick = async (user:IUser) => {
-        await loadImages({username:user.username, history:mediaState.history, preview:true});
-        openPreviewDialog();
-    }
-
     /*
     * LoginDialog
     */
@@ -405,6 +400,14 @@ function App(){
     const closePreviewDialog = () => {
         dispatchAppState({type:AppAction.togglePreviewModal, value:false})
     }
+
+    /*
+    * imagedialog
+    */
+    const onUserTagClick = useCallback( async (user:IUser) => {
+        await loadImages({username:user.username, history:mediaState.history, preview:true});
+        openPreviewDialog();
+    },[loadImages, mediaState.history])
 
     /*
     * useEffect
@@ -454,7 +457,7 @@ function App(){
             {appState.openPreviewModal &&
                 <PreviewDialog
                     open={appState.openPreviewModal}
-                    user={mediaState.user}
+                    user={mediaState.previewUser}
                     data={mediaState.previewData}
                     height={height}
                     width={width}
