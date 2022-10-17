@@ -51,6 +51,7 @@ const root = css({
     overflow: "visible",
     color: "rgba(0, 0, 0, 0.54)",
     transition: "background-color 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms",
+    WebkitTapHighlightColor: "transparent",
     fontSize: "1.125rem"
 })
 

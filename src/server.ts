@@ -268,9 +268,6 @@ const saveSession = (req:any, account:string, session:ISession) => {
 
     req.session.account = account
 
-    console.log("-------------session----------")
-    session.cookies.forEach(c => console.log(JSON.stringify(c)));
-
     if(session.expires){
         const maxAge = session.expires.getTime() - new Date().getTime();
         req.session.cookie.maxAge = maxAge

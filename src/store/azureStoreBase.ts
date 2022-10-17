@@ -69,14 +69,7 @@ export default class AzureStoreBase{
 
         //console.log(`Setting session: ${sid}`)
 
-        let ttl = this.ttl
-        if(session.cookie.expires){
-            const ttlFromXxpires = Math.round((session.cookie.expires.getTime() - new Date().getTime()) / 1000);
-            console.log(session.cookie.expires)
-            if(ttlFromXxpires > 0){
-                ttl = ttlFromXxpires;
-            }
-        }
+        const ttl = session.cookie.expires ? Math.round((session.cookie.expires.getTime() - new Date().getTime()) / 1000) : this.ttl
 
         await this.database.container(CONTAINER_NAME).items.upsert({
             id: sid,
