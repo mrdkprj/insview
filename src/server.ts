@@ -81,7 +81,7 @@ const sendErrorResponse = (res:any, ex:any, message = "") => {
     if(message){
         errorMessage = message;
     }else{
-        errorMessage = ex.resposne ? ex.response.data : ex.message;
+        errorMessage = ex.resposne ? ex.response.data.message : ex.message;
     }
 
     if(ex instanceof AuthError){
@@ -410,8 +410,7 @@ const tryQueryMore = async (req:any, res:any, user:IUser, next:string, preview:b
         await sendResponse(req, res, igResponse.data, igResponse.session);
 
     }catch(ex:any){
-        console.log("----------query more error -----------")
-console.log(ex)
+
         return sendErrorResponse(res, ex);
 
     }
