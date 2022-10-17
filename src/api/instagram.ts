@@ -779,7 +779,7 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =>
 
         const session = getSession(response.headers);
         const data = {account:req.data.account, success:session.isAuthenticated, challenge:!session.isAuthenticated, endpoint:""};
-
+console.log(response.data)
         return {
             data,
             session

@@ -53,12 +53,14 @@ db.create();
 
 const sendResponse = async (req:any, res:any, data:any, session:ISession) => {
 
+    const domain = isProduction ? req.hostname : ""
+
     session.cookies.forEach((cookie:Cookie) => {
 
         if(cookie.maxAge <= 0) return;
 
         res.cookie(cookie.key, cookie.value, {
-            domain:isProduction ? cookie.domain : "",
+            domain:domain,
             expires:cookie.expires,
             httpOnly:cookie.httpOnly,
             path:cookie.path,
