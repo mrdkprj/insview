@@ -410,7 +410,9 @@ const tryQueryMore = async (req:any, res:any, user:IUser, next:string, preview:b
         await sendResponse(req, res, igResponse.data, igResponse.session);
 
     }catch(ex:any){
-
+        console.log("-----------query more erro ---------------\n")
+console.log(ex.response.data)
+console.log(ex.response.headers)
         return sendErrorResponse(res, ex);
 
     }
