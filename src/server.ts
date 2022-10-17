@@ -411,7 +411,7 @@ const tryQueryMore = async (req:any, res:any, user:IUser, next:string, preview:b
 
     }catch(ex:any){
         console.log("----------query more error -----------")
-console.log(ex.message)
+console.log(ex)
         return sendErrorResponse(res, ex);
 
     }
