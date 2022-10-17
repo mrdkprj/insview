@@ -77,14 +77,20 @@ const sendResponse = async (req:any, res:any, data:any, session:ISession) => {
 
 const sendErrorResponse = (res:any, ex:any, message = "") => {
 
+    let loginRequired = false;
+
     let errorMessage
     if(message){
         errorMessage = message;
     }else{
-        errorMessage = ex.resposne ? ex.response.data.message : ex.message;
+        errorMessage = ex.response ? ex.response.data.message : ex.message;
     }
 
-    if(ex instanceof AuthError){
+    if(ex.response){
+        loginRequired = ex.response.data.require_login
+    }
+
+    if(ex instanceof AuthError || loginRequired){
         res.set({"ig-auth":false});
     }else{
         res.set({"ig-auth":true});
@@ -410,9 +416,7 @@ const tryQueryMore = async (req:any, res:any, user:IUser, next:string, preview:b
         await sendResponse(req, res, igResponse.data, igResponse.session);
 
     }catch(ex:any){
-        console.log("-----------query more erro ---------------\n")
-console.log(ex.response.data)
-console.log(ex.response.headers)
+
         return sendErrorResponse(res, ex);
 
     }
