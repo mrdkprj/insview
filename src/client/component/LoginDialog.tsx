@@ -4,8 +4,7 @@ import AppBar from "@parts/AppBar"
 import LinkButton from "@parts/LinkButton"
 import Typography from "@parts/Typography"
 import DialogContent from "@parts/DialogContent"
-import TextField from "@mui/material/TextField"
-//"@parts/TextField"
+import TextField from "@parts/TextField"
 import Button from "@parts/Button"
 import CloseIcon from "@mui/icons-material/Close";
 import PasswordIcon from "@mui/icons-material/Password";
@@ -35,7 +34,7 @@ const LoginDialog = (props:IUsernameDialogProps) => {
 
         if(account && password){
             setHasError(false);
-            props.onSubmit(account, password)
+            //props.onSubmit(account, password)
             console.log(`onSubmit:${account} & ${password}`)
         }else{
             setHasError(true);
@@ -45,7 +44,7 @@ const LoginDialog = (props:IUsernameDialogProps) => {
     const onSubmitCode = () => {
         if(code){
             setHasError(false);
-            props.onCodeSubmit(code);
+            //props.onCodeSubmit(code);
             console.log(`code:${code}`)
         }else{
             setHasError(true);
@@ -53,15 +52,15 @@ const LoginDialog = (props:IUsernameDialogProps) => {
     }
 
     const handleAccountChange = (e: ChangeEvent<HTMLInputElement>) => {
-        setAccount(e.target.value);
+        //setAccount(e.target.value);
     };
 
     const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
-        setPassword(e.target.value);
+        //setPassword(e.target.value);
     };
 
     const handleCodeChange = (e: ChangeEvent<HTMLInputElement>) => {
-        setCode(e.target.value);
+        //setCode(e.target.value);
     };
 
     const toggleDisplay = () => {
@@ -91,7 +90,7 @@ const LoginDialog = (props:IUsernameDialogProps) => {
                             error={hasError}
                             label="Code"
                             value={code}
-                            //disableFocus={true}
+                            disableFocus={true}
                             onChange={handleCodeChange}
                             helperText={hasError ? EMPTY_CODE : ""}
                         />
@@ -106,7 +105,7 @@ const LoginDialog = (props:IUsernameDialogProps) => {
                             error={hasError}
                             label="Username"
                             value={account}
-                            //disableFocus={true}
+                            disableFocus={true}
                             onChange={handleAccountChange}
                             helperText={hasError ? EMPTY_ID : ""}
                         />
@@ -115,7 +114,7 @@ const LoginDialog = (props:IUsernameDialogProps) => {
                             error={hasError}
                             label="Password"
                             value={password}
-                            //disableFocus={true}
+                            disableFocus={true}
                             onChange={handlePasswordChange}
                             helperText={hasError ? EMPTY_ID : ""}
                         />
