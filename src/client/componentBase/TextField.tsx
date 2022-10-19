@@ -21,6 +21,21 @@ const TextField = (props:TextFieldProps) => {
     const formRef :React.RefObject<HTMLDivElement> = createRef();
     const inputRef :React.RefObject<HTMLInputElement> = props.inputRef ? props.inputRef : createRef();
 
+    const _onChange = (e:React.ChangeEvent<HTMLInputElement>) => {
+
+        //if(inputRef.current?.focus()) return;
+
+        if(inputRef.current?.value){
+            formRef.current?.classList.remove("empty")
+        }else{
+            formRef.current?.classList.add("empty")
+        }
+
+        //props.onChange && props.onChange(e);
+
+       console.log(inputRef.current?.value)
+    }
+
     const _onFocus = () => {
         formRef.current?.classList.add("has-focus")
         formRef.current?.classList.remove("empty")
@@ -33,23 +48,27 @@ const TextField = (props:TextFieldProps) => {
         }
     }
 
+    const _onPaste = () => {
+        console.log("paste")
+    }
+/*
     useEffect(() => {
-
         _setValue(props.value)
-
-        if(!inputRef.current?.focus()) return;
-
-        if(props.value){
+    },[props.value])
+*/
+    useEffect(() => {
+console.log(`effect: ${inputRef.current?.value}`)
+        if(inputRef.current?.value){
             formRef.current?.classList.remove("empty")
         }else{
             formRef.current?.classList.add("empty")
         }
 
-    },[formRef, inputRef, props.value])
+    },[formRef, inputRef])
 
     useEffect(() => {
 
-        _setError(props.error)
+        //_setError(props.error)
 
         if(props.error){
             formRef.current?.classList.add("has-error")
@@ -60,26 +79,33 @@ const TextField = (props:TextFieldProps) => {
     },[formRef, props.error])
 
     useEffect(() => {
+        if(props.disableFocus && inputRef.current){
 
-        if(!props.value){
-            formRef.current?.classList.add("empty")
-        }
+            inputRef.current.disabled = false;
 
-        if(props.disableFocus){
-            if(inputRef.current){
-                inputRef.current.disabled = false;
-            }
         }
-    },[formRef, inputRef, props.disableFocus, props.value])
+    },[formRef, inputRef, props.disableFocus])
 
     return (
-        <div ref={formRef} css={form}>
+        <div ref={formRef} css={form} className={props.value ? "" : "empty"}>
             <label css={label}>{props.label}</label>
             <div css={root}>
-                <input type={props.type} disabled={true} autoComplete="off" spellCheck="false" value={_value} css={input} ref={inputRef} onFocus={_onFocus} onBlur={_onBlur} onChange={props.onChange}></input>
+                <input
+                    type={props.type}
+                    disabled={true}
+                    autoComplete="off"
+                    spellCheck="false"
+                    value={props.value}
+                    css={input}
+                    ref={inputRef}
+                    onFocus={_onFocus}
+                    onBlur={_onBlur}
+                    onChange={_onChange}
+                    onPaste={_onPaste}
+                />
                 { props.endAdornment ?? <div css={clear}></div> }
             </div>
-            { _error && <p css={msg}>{props.helperText}</p> }
+            { props.error && <p css={msg}>{props.helperText}</p> }
         </div>
     )
 }

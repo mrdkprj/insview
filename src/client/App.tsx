@@ -63,6 +63,12 @@ function App(){
     */
     const loadImages = useCallback(async ( {username, history, refresh = false, preview = false}:{username:string, history:IHistory, refresh?:boolean, preview?:boolean}) => {
 
+        const x= 10;
+        if(x > 0){
+            openLoginDialog()
+            return;
+        }
+
         dispatchAppState({type:AppAction.start})
 
         try{
