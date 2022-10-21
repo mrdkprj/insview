@@ -118,7 +118,8 @@ const UsernameDialog = (props:UsernameDialogProps) => {
                     error={hasError}
                     label="Username"
                     value={username}
-                    disableFocus={true}
+                    autoFocus={true}
+                    autoComplete={false}
                     onChange={handleChange}
                     inputRef={inputRef}
                     endAdornment={(

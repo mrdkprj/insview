@@ -63,8 +63,6 @@ function App(){
     */
     const loadImages = useCallback(async ( {username, history, refresh = false, preview = false}:{username:string, history:IHistory, refresh?:boolean, preview?:boolean}) => {
 
-
-
         dispatchAppState({type:AppAction.start})
 
         try{

@@ -1,4 +1,4 @@
-import React, {useEffect, createRef, useState} from "react"
+import React, {useEffect, createRef, useCallback} from "react"
 import {css, keyframes} from "@emotion/react";
 
 type TextFieldProps = {
@@ -10,33 +10,25 @@ type TextFieldProps = {
     onChange?: (e:React.ChangeEvent<HTMLInputElement>) => void,
     endAdornment?: JSX.Element,
     helperText?:string,
-    disableFocus?:boolean
+    autoFocus?:boolean,
+    autoComplete?:boolean,
 }
 
 const TextField = (props:TextFieldProps) => {
-
-    const [_error, _setError] = useState(props.error);
-    const [_value, _setValue] = useState(props.value);
 
     const formRef :React.RefObject<HTMLDivElement> = createRef();
     const inputRef :React.RefObject<HTMLInputElement> = props.inputRef ? props.inputRef : createRef();
 
     const _onChange = (e:React.ChangeEvent<HTMLInputElement>) => {
 
-        //if(inputRef.current?.focus()) return;
+        toggleFilled(inputRef.current?.value);
 
-        if(inputRef.current?.value){
-            formRef.current?.classList.remove("empty")
-        }else{
-            formRef.current?.classList.add("empty")
-        }
+        props.onChange && props.onChange(e);
 
-        //props.onChange && props.onChange(e);
-
-       console.log(inputRef.current?.value)
     }
 
     const _onFocus = () => {
+        console.log("focuws")
         formRef.current?.classList.add("has-focus")
         formRef.current?.classList.remove("empty")
     }
@@ -48,27 +40,30 @@ const TextField = (props:TextFieldProps) => {
         }
     }
 
-    const _onPaste = () => {
-        console.log("paste")
-    }
-/*
-    useEffect(() => {
-        _setValue(props.value)
-    },[props.value])
-*/
-    useEffect(() => {
-console.log(`effect: ${inputRef.current?.value}`)
-        if(inputRef.current?.value){
+    const toggleFilled = useCallback((value:any) => {
+
+        if(value || document.activeElement === inputRef.current){
             formRef.current?.classList.remove("empty")
         }else{
             formRef.current?.classList.add("empty")
         }
 
+        console.log(document.activeElement === inputRef.current)
+        console.log(inputRef.current?.value)
+
     },[formRef, inputRef])
 
-    useEffect(() => {
+    const _onAnimationStart = (e:React.AnimationEvent<HTMLInputElement>) => {
 
-        //_setError(props.error)
+       if(e.animationName.endsWith("autoFillCancel")){
+            toggleFilled(inputRef.current?.value)
+       }else{
+            toggleFilled("value")
+       }
+
+    }
+
+    useEffect(() => {
 
         if(props.error){
             formRef.current?.classList.add("has-error")
@@ -79,21 +74,18 @@ console.log(`effect: ${inputRef.current?.value}`)
     },[formRef, props.error])
 
     useEffect(() => {
-        if(props.disableFocus && inputRef.current){
 
-            inputRef.current.disabled = false;
+        toggleFilled(props.value)
 
-        }
-    },[formRef, inputRef, props.disableFocus])
+    },[formRef, props.value, toggleFilled])
 
     return (
-        <div ref={formRef} css={form} className={props.value ? "" : "empty"}>
+        <div ref={formRef} css={form}>
             <label css={label}>{props.label}</label>
             <div css={root}>
                 <input
                     type={props.type}
-                    disabled={true}
-                    autoComplete="off"
+                    autoComplete={props.autoComplete === false ? "new-password" : "on"}
                     spellCheck="false"
                     value={props.value}
                     css={input}
@@ -101,7 +93,7 @@ console.log(`effect: ${inputRef.current?.value}`)
                     onFocus={_onFocus}
                     onBlur={_onBlur}
                     onChange={_onChange}
-                    onPaste={_onPaste}
+                    onAnimationStart={_onAnimationStart}
                 />
                 { props.endAdornment ?? <div css={clear}></div> }
             </div>
@@ -119,7 +111,7 @@ const form = css({
     margin: "8px 0px 4px",
     border: "0px",
     verticalAlign: "top",
-    width: "100%"
+    width: "100%",
 });
 
 const label = css({
@@ -198,9 +190,17 @@ const root = css({
 })
 
 const autoFillCancel = keyframes({
-    "0%":{
+    "from":{
         display: "block"
-    }
+    },
+    label: "autoFillCancel"
+})
+
+const autoFill = keyframes({
+    "from":{
+        display: "block"
+    },
+    label: "autoFill"
 })
 
 const input = css({
@@ -221,6 +221,10 @@ const input = css({
     animationDuration: "10ms",
     "&:focus" : {
         outline: "0px"
+    },
+    "&:-webkit-autofill":{
+        animationDuration: "5000s",
+        animationName: `${autoFill}`
     }
 })
 

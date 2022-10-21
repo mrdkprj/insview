@@ -21,6 +21,7 @@ export interface IUsernameDialogProps {
 const LoginDialog = (props:IUsernameDialogProps) => {
 
     const [hasError, setHasError] = useState(false);
+    const [hasCodeError, setHasCodeError] = useState(false);
     const [isChallenge, setIsChallenge] = useState(props.requireCode);
 
     const [account, setAccount] = useState("");
@@ -34,8 +35,7 @@ const LoginDialog = (props:IUsernameDialogProps) => {
 
         if(account && password){
             setHasError(false);
-            //props.onSubmit(account, password)
-            console.log(`onSubmit:${account} & ${password}`)
+            props.onSubmit(account, password)
         }else{
             setHasError(true);
         }
@@ -43,24 +43,23 @@ const LoginDialog = (props:IUsernameDialogProps) => {
 
     const onSubmitCode = () => {
         if(code){
-            setHasError(false);
-            //props.onCodeSubmit(code);
-            console.log(`code:${code}`)
+            setHasCodeError(false);
+            props.onCodeSubmit(code);
         }else{
-            setHasError(true);
+            setHasCodeError(true);
         }
     }
 
     const handleAccountChange = (e: ChangeEvent<HTMLInputElement>) => {
-        //setAccount(e.target.value);
+        setAccount(e.target.value);
     };
 
     const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
-        //setPassword(e.target.value);
+        setPassword(e.target.value);
     };
 
     const handleCodeChange = (e: ChangeEvent<HTMLInputElement>) => {
-        //setCode(e.target.value);
+        setCode(e.target.value);
     };
 
     const toggleDisplay = () => {
@@ -84,28 +83,30 @@ const LoginDialog = (props:IUsernameDialogProps) => {
             </AppBar>
             <DialogContent style={{marginTop:"30px"}}>
                 {isChallenge ?
-                    <form>
+                    <div>
                         <TextField
                             type="number"
                             error={hasError}
                             label="Code"
                             value={code}
-                            disableFocus={true}
+                            autoFocus={true}
+                            autoComplete={false}
                             onChange={handleCodeChange}
-                            helperText={hasError ? EMPTY_CODE : ""}
+                            helperText={hasCodeError ? EMPTY_CODE : ""}
                         />
                         <div style={{display:"flex", justifyContent:"center", marginTop:"30px"}}>
                             <Button onClick={onSubmitCode}>Verify</Button>
                         </div>
-                    </form>
+                    </div>
                     :
-                    <form>
+                    <div>
                         <TextField
                             type="text"
                             error={hasError}
                             label="Username"
                             value={account}
-                            disableFocus={true}
+                            autoFocus={true}
+                            autoComplete={true}
                             onChange={handleAccountChange}
                             helperText={hasError ? EMPTY_ID : ""}
                         />
@@ -114,7 +115,8 @@ const LoginDialog = (props:IUsernameDialogProps) => {
                             error={hasError}
                             label="Password"
                             value={password}
-                            disableFocus={true}
+                            autoFocus={true}
+                            autoComplete={true}
                             onChange={handlePasswordChange}
                             helperText={hasError ? EMPTY_ID : ""}
                         />
@@ -122,7 +124,7 @@ const LoginDialog = (props:IUsernameDialogProps) => {
                             <Button onClick={props.onClose}>Cancel</Button>
                             <Button onClick={onSubmit}>Login</Button>
                         </div>
-                    </form>
+                    </div>
                 }
             </DialogContent>
         </Dialog>
