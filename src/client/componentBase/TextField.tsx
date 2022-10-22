@@ -48,9 +48,6 @@ const TextField = (props:TextFieldProps) => {
             formRef.current?.classList.add("empty")
         }
 
-        console.log(document.activeElement === inputRef.current)
-        console.log(inputRef.current?.value)
-
     },[formRef, inputRef])
 
     const _onAnimationStart = (e:React.AnimationEvent<HTMLInputElement>) => {

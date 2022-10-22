@@ -13,12 +13,14 @@ class sqlite implements IDatabaseProvider{
     }
 
     store(session:any){
+
         const SqliteStore = sqliteStoreFactory(session);
         return new SqliteStore({
             driver: sqlite3.Database,
             path: "../media.db",
             ttl: 60000 * 60 * 24,
         })
+
     }
 }
 
