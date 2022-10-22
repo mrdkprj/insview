@@ -122,6 +122,11 @@ const createHeaders = (referer:string, session:ISession) :AxiosRequestHeaders =>
     return headers;
 }
 
+const getAppId = (data:any) => {
+    const appIds = data.match(/"customHeaders":{"X-IG-App-ID":"(.*)","X-IG-D"/)
+    return appIds[1]
+}
+
 const requestMedia = async (req:IgRequest) : Promise<IgResponse<IMediaResponse>> => {
 
     const session = getSession(req.headers);
@@ -176,11 +181,9 @@ const tryRequestGraph = async (req:IgRequest, currentSession:ISession) : Promise
         const title = pageResponse.data.match(/<title>(.*)\(&#064;(.*)\).*<\/title>/);
         const profile = pageResponse.data.match(/"props":{"id":"([0-9]*)".*"profile_pic_url":"(.*)","show_suggested_profiles"/);
         */
-        const appId = pageResponse.data.match(/"customHeaders":{"X-IG-App-ID":"(.*)","X-IG-D"/)
-
         const profileSession = updateSession(currentSession, pageResponse.headers)
         const profileHeaders = createHeaders(baseUrl + "/" + username + "/", profileSession);
-        profileHeaders["x-ig-app-id"] = appId[1]
+        profileHeaders["x-ig-app-id"] = getAppId(pageResponse.data)
         profileHeaders.Cookie = req.headers.cookie ?? "";
 
         const url = `https://i.instagram.com/api/v1/users/web_profile_info/?username=${username}`
@@ -622,10 +625,12 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     try{
 
         headers.Cookie = "ig_cb=1;"
+        headers["x-instagram-ajax"] = 1;
+        const initialPage = await axios.request(options);
 
-        let rolloutHash = 1;
-        headers["x-instagram-ajax"] = rolloutHash;
 
+        headers["x-ig-app-id"] = getAppId(initialPage.data);
+        options.url = "https://i.instagram.com/api/v1/public/landing_info/"
         const baseResult = await axios.request(options);
 
         const baseCsrftoken = extractToken(baseResult.headers)
@@ -634,12 +639,9 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
             throw new Error("Token not found")
         }
 
-        const sharedData = JSON.parse(baseResult.data.match(/<script type="text\/javascript">window\._sharedData = (.*)<\/script>/)[1].slice(0, -1));
-        rolloutHash = sharedData.rollout_hash;
-
         headers["x-requested-with"] = "XMLHttpRequest"
         headers["x-csrftoken"] = baseCsrftoken;
-        headers["x-instagram-ajax"] = rolloutHash;
+
         headers["content-type"] = "application/x-www-form-urlencoded"
 
         const createEncPassword = (pwd:string) => {
@@ -675,8 +677,6 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         if(ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required"){
             return await requestChallenge(account, options, ex.response)
         }
-
-        console.log("Login failed")
 
         if(ex.response){
             console.log(ex.response.data)
@@ -779,7 +779,9 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =>
 
         const session = getSession(response.headers);
         const data = {account:req.data.account, success:session.isAuthenticated, challenge:!session.isAuthenticated, endpoint:""};
-console.log(response.data)
+
+        console.log(response.data)
+
         return {
             data,
             session
