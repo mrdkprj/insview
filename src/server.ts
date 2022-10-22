@@ -19,10 +19,6 @@ const port = process.env.PORT || 5000
 
 const isProduction = process.env.NODE_ENV === "production";
 
-if (!isProduction) {
-    require("dotenv").config();
-}
-
 const publicDir = isProduction ? "./public" : "../public"
 
 const app = express();

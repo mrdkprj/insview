@@ -1,39 +1,7 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	"use strict";
-/******/ 	var __webpack_modules__ = ({
-
-/***/ 142:
-/***/ ((module) => {
-
-module.exports = require("dotenv");
-
-/***/ })
-
-/******/ 	});
-/************************************************************************/
-/******/ 	// The module cache
-/******/ 	var __webpack_module_cache__ = {};
-/******/ 	
-/******/ 	// The require function
-/******/ 	function __webpack_require__(moduleId) {
-/******/ 		// Check if module is in cache
-/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
-/******/ 		if (cachedModule !== undefined) {
-/******/ 			return cachedModule.exports;
-/******/ 		}
-/******/ 		// Create a new module (and put it into the cache)
-/******/ 		var module = __webpack_module_cache__[moduleId] = {
-/******/ 			// no module.id needed
-/******/ 			// no module.loaded needed
-/******/ 			exports: {}
-/******/ 		};
-/******/ 	
-/******/ 		// Execute the module function
-/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
-/******/ 	
-/******/ 		// Return the exports of the module
-/******/ 		return module.exports;
-/******/ 	}
+/******/ 	// The require scope
+/******/ 	var __webpack_require__ = {};
 /******/ 	
 /************************************************************************/
 /******/ 	/* webpack/runtime/compat get default export */
@@ -67,8 +35,6 @@ module.exports = require("dotenv");
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
-// This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
-(() => {
 
 ;// CONCATENATED MODULE: external "path"
 const external_path_namespaceObject = require("path");
@@ -1148,9 +1114,6 @@ var _a;
 
 const port = process.env.PORT || 5000;
 const isProduction = "production" === "production";
-if (!isProduction) {
-    (__webpack_require__(142).config)();
-}
 const publicDir = isProduction ? "./public" : "../public";
 const app = external_express_default()();
 const store = model.store((external_express_session_default()));
@@ -1488,8 +1451,6 @@ const retrieveImage = async (req, res) => {
 app.listen(port, () => {
     console.log(`Start server on port ${port}.`);
 });
-
-})();
 
 /******/ })()
 ;
