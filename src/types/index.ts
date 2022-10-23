@@ -50,76 +50,76 @@ export const emptyResponse :IMediaResponse = {
 
 
 export interface IResponse<T> {
-    status: boolean,
-    data: T,
+    status: boolean;
+    data: T;
 }
 
 export interface IMedia {
-    id: string,
+    id: string;
     media_url: string;
-    taggedUsers: IUser[],
+    taggedUsers: IUser[];
 }
 
 export interface IUser{
-    id:string,
-    igId:string,
-    username:string,
-    name:string,
-    profileImage:string,
-    biography:string,
-    following:boolean
+    id:string;
+    igId:string;
+    username:string;
+    name:string;
+    profileImage:string;
+    biography:string;
+    following:boolean;
 }
 
 export interface IHistory{
-    [key: string]:IUser
+    [key: string]:IUser;
 }
 
 export interface IFollowing{
     users: IUser[];
     hasNext:boolean;
-    next:string
+    next:string;
 }
 
 export interface IMediaResponse {
     username: string;
     media: IMedia[];
-    user: IUser,
+    user: IUser;
     rowIndex: number;
-    next: string,
-    history:IHistory,
-    isAuthenticated:boolean,
-    account?:string,
+    next: string;
+    history:IHistory;
+    isAuthenticated:boolean;
+    account?:string;
 }
 
 export interface ILoginResponse {
-    account:string,
-    success:boolean,
-    challenge:boolean,
-    endpoint:string,
+    account:string;
+    success:boolean;
+    challenge:boolean;
+    endpoint:string;
 }
 
 export interface IAuthResponse {
-    status:ILoginResponse,
-    media:IMediaResponse
+    status:ILoginResponse;
+    media:IMediaResponse;
 }
 
 export interface IgRequest{
-    data:any,
-    headers:IncomingHttpHeaders,
+    data:any;
+    headers:IncomingHttpHeaders;
 }
 
 export interface IgResponse<T>{
-    data:T,
-    session: ISession
+    data:T;
+    session: ISession;
 }
 
 export interface ISession {
-    isAuthenticated:boolean,
-    csrfToken:string,
-    userId:string,
-    userAgent:string,
-    cookies: Cookie[],
-    expires: Date | null,
+    isAuthenticated:boolean;
+    csrfToken:string;
+    userId:string;
+    userAgent:string;
+    cookies: Cookie[];
+    expires: Date | null;
 }
 
 

@@ -1,15 +1,15 @@
 import { ILoginResponse } from "@shared";
 
+interface IAuthAction {
+    type: string;
+    value?: any;
+}
+
 export const initialAuthState : ILoginResponse = {
     account:"",
     success:false,
     challenge:false,
     endpoint:""
-}
-
-export interface IAuthAction {
-    type: string,
-    value: any
 }
 
 export const AuthAction = {

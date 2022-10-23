@@ -1,10 +1,10 @@
 import {css} from "@emotion/react";
 import { useEffect, useState, useRef, useCallback } from "react";
 
-type DialogProps = {
-    style?: React.CSSProperties,
-    children?: any,
-    open:boolean,
+interface DialogProps {
+    style?: React.CSSProperties;
+    children?: any;
+    open:boolean;
 }
 
 const Dialog = (props:DialogProps) => {

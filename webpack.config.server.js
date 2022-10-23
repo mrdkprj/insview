@@ -1,18 +1,18 @@
-const path = require('path');
-const webpack = require('webpack');
+const path = require("path");
+const webpack = require("webpack");
 const nodeExternals = require("webpack-node-externals")
 
 module.exports = {
-    mode: 'production',
-    entry: './src/server.ts',
-    target: 'node',
+    mode: "production",
+    entry: "./src/server.ts",
+    target: "node",
     externals: [
         nodeExternals()
     ],
     plugins:[
         new webpack.IgnorePlugin({
             resourceRegExp: /^\.\/db\/sqlite$/,
-        })
+        }),
     ],
     module: {
         rules: [
@@ -27,11 +27,11 @@ module.exports = {
             "@shared": path.resolve(__dirname, "src/types/"),
             "@parts" : path.resolve(__dirname, "src/client/componentBase/")
         },
-        extensions: [ '.tsx', '.ts', '.js' ],
+        extensions: [ ".tsx", ".ts", ".js" ],
         modules: ["node_modules"]
     },
     output: {
-        filename: 'server.js',
+        filename: "server.js",
         path: path.resolve(__dirname)
     },
     optimization:{

@@ -10,7 +10,7 @@ const Avatar = ({...props}) => {
     }
 
     const getInitial = (text:string) => {
-        return text ? text.charAt(0) : "h"
+        return text ? text.charAt(0) : "a"
     }
 
     return (

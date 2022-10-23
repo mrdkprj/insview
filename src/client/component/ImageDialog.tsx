@@ -5,28 +5,28 @@ import { css } from "@emotion/react";
 import { IMedia, IUser } from "@shared";
 import LinkButton from "@parts/LinkButton";
 
-type ImageDialogProps = {
-    width:number,
-    height:number,
-    data:IMedia[],
-    startIndex:number,
-    onClose:() => void,
-    onImageRendered: (index:number) => void,
-    onUserTagClick: (user:IUser) => void
+interface ImageDialogProps {
+    width:number;
+    height:number;
+    data:IMedia[];
+    startIndex:number;
+    onClose:() => void;
+    onImageRendered: (index:number) => void;
+    onUserTagClick: (user:IUser) => void;
 }
 
 interface ISwipeState {
-    startX: number,
-    startY: number,
-    startTime: number,
-    moveY: number,
-    moveX:number,
-    isMoved:boolean,
-    swiping: boolean,
-    close: boolean,
-    direction: string,
-    left:number,
-    degree:number,
+    startX: number;
+    startY: number;
+    startTime: number;
+    moveY: number;
+    moveX:number;
+    isMoved:boolean;
+    swiping: boolean;
+    close: boolean;
+    direction: string;
+    left:number;
+    degree:number;
 }
 
 const initialSwipeState = {

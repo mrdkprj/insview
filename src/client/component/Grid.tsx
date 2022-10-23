@@ -4,24 +4,25 @@ import {RefObject, memo, createRef, useEffect, Fragment, useState, useRef, useCa
 import {IMedia, IUser} from "@shared";
 import ImageDialog from "./ImageDialog";
 
-type GridProps = {
-    data: IMedia[],
-    height: number,
-    width: number,
-    margin:number,
-    initialScrollTop?: number,
-    onLastItemRenrered?: () => void,
-    onIdle?: (scrollTop : number) => void,
-    onUserTagClick?: (user:IUser) => void,
+interface GridProps {
+    data: IMedia[];
+    height: number;
+    width: number;
+    margin:number;
+    initialScrollTop?: number;
+    onLastItemRenrered?: () => void;
+    onIdle?: (scrollTop : number) => void;
+    onUserTagClick?: (user:IUser) => void;
 }
 
 export interface GridHandler {
-    scrollTo: (scrollTop:number) => void,
+    scrollTo: (scrollTop:number) => void
 }
+
+const columnCount = 3;
 
 const Grid = forwardRef<GridHandler, GridProps>((props, ref) => {
 
-    const columnCount = 3;
     const imageSize = props.width / 3;
     const rowCount = Math.ceil((props.data.length  / columnCount));
 

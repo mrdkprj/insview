@@ -14,13 +14,13 @@ import CloseIcon from "@mui/icons-material/Close";
 import ClearIcon from "@mui/icons-material/Clear";
 import DeleteIcon from "@mui/icons-material/Delete";
 
-type UsernameDialogProps = {
-    open: boolean,
-    username: string,
-    history:IHistory,
-    onSubmit: (username:string, history:IHistory) => void,
-    onUsernameDelete: (history:IHistory, target:string) => Promise<void>,
-    onClose: (history:IHistory) => void,
+interface UsernameDialogProps {
+    open: boolean;
+    username: string;
+    history:IHistory;
+    onSubmit: (username:string, history:IHistory) => void;
+    onUsernameDelete: (history:IHistory, target:string) => Promise<void>;
+    onClose: (history:IHistory) => void;
 }
 
 const errorMessage = "You should input username";

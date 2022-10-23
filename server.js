@@ -101,17 +101,11 @@ var __asyncValues = (undefined && undefined.__asyncValues) || function (o) {
 };
 async function create(client, databaseId, containerConfigs) {
     var e_1, _a;
-    /**
-    * Create the database if it does not exist
-    */
     const { database } = await client.databases.createIfNotExists({
         id: databaseId
     });
     console.log(`Created database:\n${database.id}\n`);
     try {
-        /**
-        * Create the container if it does not exist
-        */
         for (var containerConfigs_1 = __asyncValues(containerConfigs), containerConfigs_1_1; containerConfigs_1_1 = await containerConfigs_1.next(), !containerConfigs_1_1.done;) {
             const config = containerConfigs_1_1.value;
             const response = await client.database(databaseId).containers.createIfNotExists({ id: config.ContainerId, partitionKey: config.PartitionKey, defaultTtl: -1 }, { offerThroughput: 400 });

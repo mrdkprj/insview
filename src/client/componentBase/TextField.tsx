@@ -1,17 +1,17 @@
 import React, {useEffect, createRef, useCallback} from "react"
 import {css, keyframes} from "@emotion/react";
 
-type TextFieldProps = {
-    value:any,
-    error:boolean,
-    label:string,
-    type:string,
-    inputRef?:React.RefObject<HTMLInputElement>
-    onChange?: (e:React.ChangeEvent<HTMLInputElement>) => void,
-    endAdornment?: JSX.Element,
-    helperText?:string,
-    autoFocus?:boolean,
-    autoComplete?:boolean,
+interface TextFieldProps {
+    value:any;
+    error:boolean;
+    label:string;
+    type:string;
+    inputRef?:React.RefObject<HTMLInputElement>;
+    onChange?: (e:React.ChangeEvent<HTMLInputElement>) => void;
+    endAdornment?: JSX.Element;
+    helperText?:string;
+    autoFocus?:boolean;
+    autoComplete?:boolean;
 }
 
 const TextField = (props:TextFieldProps) => {

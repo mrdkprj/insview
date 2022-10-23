@@ -1,7 +1,6 @@
 import {IMediaResponse, IHistory, IMedia, IUser} from "@shared"
 
 export interface IDatabase{
-
     create: () => void;
     restore: (account:string) => Promise<IMediaResponse>;
     queryHistory: (account:string) => Promise<IHistoryTable>;
@@ -15,14 +14,14 @@ export interface IDatabase{
 }
 
 export interface IHistoryTable{
-    username:string,
-    history:IHistory
+    username:string;
+    history:IHistory;
 }
 
 export interface IMediaTable{
-    username: string,
-    media: IMedia[],
-    user: IUser,
-    rowIndex: number,
-    next: string,
+    username: string;
+    media: IMedia[];
+    user: IUser;
+    rowIndex: number;
+    next: string;
 }

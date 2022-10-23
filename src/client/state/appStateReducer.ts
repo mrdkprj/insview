@@ -1,12 +1,17 @@
-export interface IAppState {
-    isLoading: boolean,
-    openUsernameModal: boolean,
-    openImageModal: boolean,
-    openLoginModal: boolean,
-    openAccountModal: boolean,
-    openPreviewModal:boolean,
-    hasError: boolean,
-    errorMessage: string,
+interface IAppState {
+    isLoading: boolean;
+    openUsernameModal: boolean;
+    openImageModal: boolean;
+    openLoginModal: boolean;
+    openAccountModal: boolean;
+    openPreviewModal:boolean;
+    hasError: boolean;
+    errorMessage: string;
+}
+
+interface IAppAction {
+    type: string;
+    value?: any;
 }
 
 export const initialAppState : IAppState = {
@@ -20,10 +25,6 @@ export const initialAppState : IAppState = {
     errorMessage: "",
 }
 
-export interface IAppAction {
-    type: string,
-    value?: any
-}
 
 export const AppAction = {
     start: "start",

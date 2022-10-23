@@ -1,4 +1,4 @@
-import { memo, useCallback } from "react";
+import { memo, useCallback, useRef } from "react";
 import { FixedSizeList } from "react-window";
 import { css } from "@emotion/react";
 import { IFollowing, IUser} from "@shared";
@@ -11,28 +11,26 @@ import Avatar from "@parts/Avatar"
 import CloseIcon from "@mui/icons-material/Close";
 import LogoutIcon from "@mui/icons-material/Logout";
 
-type AccountDialogProps = {
-    account:string,
-    open:boolean,
-    height: number,
-    width: number,
-    data: IFollowing,
-    initialScrollTop?:number,
-    onRequest: () => void,
-    onLogout: () => Promise<boolean>,
-    onClose: (scrollTop:number) => void,
-    onUserSelect: (username:string) => void,
-    toggleFollow: (follow:boolean, user:IUser) => Promise<boolean>,
+interface AccountDialogProps {
+    account:string;
+    open:boolean;
+    height: number;
+    width: number;
+    data: IFollowing;
+    initialScrollTop?:number;
+    onRequest: () => void;
+    onLogout: () => Promise<boolean>;
+    onClose: (scrollTop:number) => void;
+    onUserSelect: (username:string) => void;
+    toggleFollow: (follow:boolean, user:IUser) => Promise<boolean>;
 }
-
-let rowCount = 0;
-let listScrollTop = 0;
 
 const barHeight = 45;
 
 const AccountDialog = memo<AccountDialogProps>( (props) => {
 
-    rowCount = props.data.users.length - 1;
+    const rowCount = props.data.users.length - 1;
+    const listScrollTop = useRef<number>(0);
 
     const toggleFollow = useCallback( async (e:any, user:IUser) => {
 
@@ -47,7 +45,7 @@ const AccountDialog = memo<AccountDialogProps>( (props) => {
     }
 
     const closeDialog = () => {
-        props.onClose(listScrollTop)
+        props.onClose(listScrollTop.current)
     }
 
     const requestLogout = async () => {
@@ -61,7 +59,7 @@ const AccountDialog = memo<AccountDialogProps>( (props) => {
     }
 
     const onListScroll = ({scrollOffset}:{scrollOffset:number}) => {
-        listScrollTop = scrollOffset;
+        listScrollTop.current = scrollOffset;
     }
 
     const renderRow = ({ index, data, style } : { index:number, data:IUser[], style:any }) => {

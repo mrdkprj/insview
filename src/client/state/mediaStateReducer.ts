@@ -1,19 +1,24 @@
 
 import {emptyUser, IFollowing, IHistory, IMedia, IUser} from "@shared";
 
-export interface IMediaState {
-    locked: boolean,
-    next:string,
-    user: IUser,
-    data: IMedia[],
-    previewNext:string,
-    previewUser:IUser,
-    previewData:IMedia[],
-    history: IHistory,
-    isFollowingsReady:boolean,
-    followings: IFollowing,
-    mediaScrollTop: number,
-    followingScrollTop:number,
+interface IMediaState {
+    locked: boolean;
+    next:string;
+    user: IUser;
+    data: IMedia[];
+    previewNext:string;
+    previewUser:IUser;
+    previewData:IMedia[];
+    history: IHistory;
+    isFollowingsReady:boolean;
+    followings: IFollowing;
+    mediaScrollTop: number;
+    followingScrollTop:number;
+}
+
+interface IMediaAction {
+    type: string;
+    value?: any;
 }
 
 export const initialMediaState : IMediaState = {
@@ -29,11 +34,6 @@ export const initialMediaState : IMediaState = {
     followings:{users:[], hasNext:false, next:""},
     mediaScrollTop: 0,
     followingScrollTop: 0,
-}
-
-export interface IMediaAction {
-    type: string,
-    value: any
 }
 
 export const MediaAction = {

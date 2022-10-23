@@ -5,7 +5,7 @@ import cors from "cors";
 import type { Cookie } from "tough-cookie";
 
 import { IAuthResponse, IHistory, IMediaResponse, ISession, IUser, emptyResponse, AuthError } from "@shared"
-import { IMediaTable } from "./db/IDatabase";
+import { IMediaTable } from "./types/IDatabase";
 import model from "./db/model"
 import * as api from "./api/instagram"
 

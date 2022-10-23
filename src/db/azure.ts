@@ -1,5 +1,5 @@
-import { IDatabase } from "./IDatabase";
-import { IDatabaseProvider } from "./IDatabaseProvider";
+import { IDatabase } from "../types/IDatabase";
+import { IDatabaseProvider } from "../types/IDatabaseProvider";
 import azcosmos from "./azcosmosdb";
 import azureStoreFactory from "../store/azureStore";
 

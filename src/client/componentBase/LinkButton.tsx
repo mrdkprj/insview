@@ -1,14 +1,14 @@
 import {css, SerializedStyles} from "@emotion/react";
 import React from "react";
 
-type LinkButtonProps = {
-    style?:React.CSSProperties,
-    css?: SerializedStyles,
-    size?:string,
-    edge?:string,
-    type?:string,
-    children?:any,
-    onClick?: (e:React.MouseEvent) => void,
+interface LinkButtonProps {
+    style?:React.CSSProperties;
+    css?: SerializedStyles;
+    size?:string;
+    edge?:string;
+    type?:string;
+    children?:any;
+    onClick?: (e:React.MouseEvent) => void;
 }
 
 const LinkButton = (props:LinkButtonProps) => {

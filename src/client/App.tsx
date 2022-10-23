@@ -398,7 +398,7 @@ function App(){
     }
 
     const closePreviewDialog = () => {
-        dispatchMediaState({type:MediaAction.resetPreview, value:null})
+        dispatchMediaState({type:MediaAction.resetPreview})
         dispatchAppState({type:AppAction.togglePreviewModal, value:false})
     }
 

@@ -8,16 +8,16 @@ import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder"
 import Grid from "./Grid"
 import { IMedia, IUser } from "@shared";
 
-type PreviewDialogProps = {
-    user:IUser,
-    data: IMedia[],
-    height:number,
-    width:number,
-    margin:number,
-    open: boolean,
-    onClose: () => void,
-    toggleFollow: (doFollow:boolean, user:IUser) => Promise<boolean>,
-    onLastItemRenrered: () => void,
+interface PreviewDialogProps {
+    user:IUser;
+    data: IMedia[];
+    height:number;
+    width:number;
+    margin:number;
+    open: boolean;
+    onClose: () => void;
+    toggleFollow: (doFollow:boolean, user:IUser) => Promise<boolean>;
+    onLastItemRenrered: () => void;
 }
 
 const PreviewDialog = (props:PreviewDialogProps) => {

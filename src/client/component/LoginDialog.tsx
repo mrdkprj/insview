@@ -10,15 +10,18 @@ import CloseIcon from "@mui/icons-material/Close";
 import PasswordIcon from "@mui/icons-material/Password";
 import PinIcon from "@mui/icons-material/Pin";
 
-export interface IUsernameDialogProps {
-    open:boolean,
-    requireCode:boolean,
-    onSubmit: (account:string, password:string) => Promise<void>,
-    onCodeSubmit: (code:string) => Promise<void>,
-    onClose: () => void,
+interface ILoginDialogProps {
+    open:boolean;
+    requireCode:boolean;
+    onSubmit: (account:string, password:string) => Promise<void>;
+    onCodeSubmit: (code:string) => Promise<void>;
+    onClose: () => void;
 }
 
-const LoginDialog = (props:IUsernameDialogProps) => {
+const EMPTY_ID = "You should input username/password";
+const EMPTY_CODE = "You should input code"
+
+const LoginDialog = (props:ILoginDialogProps) => {
 
     const [hasError, setHasError] = useState(false);
     const [hasCodeError, setHasCodeError] = useState(false);
@@ -27,9 +30,6 @@ const LoginDialog = (props:IUsernameDialogProps) => {
     const [account, setAccount] = useState("");
     const [password, setPassword] = useState("");
     const [code, setCode] = useState("");
-
-    const EMPTY_ID = "You should input username/password";
-    const EMPTY_CODE = "You should input code"
 
     const onSubmit = () => {
 

@@ -4,13 +4,13 @@ import CloseIcon from '@mui/icons-material/Close';
 import LinkButton from "@parts/LinkButton"
 import { useEffect, useCallback, useState, useRef, createRef } from "react";
 
-type SnackbarProps = {
-    open:boolean,
-    autoHideDuration:number,
-    style:React.CSSProperties,
-    childStyle:React.CSSProperties,
-    children:any,
-    onClose: () => void,
+interface SnackbarProps {
+    open:boolean;
+    autoHideDuration:number;
+    style:React.CSSProperties;
+    childStyle:React.CSSProperties;
+    children:any;
+    onClose: () => void;
 }
 
 const Snackbar = (props:SnackbarProps) => {
