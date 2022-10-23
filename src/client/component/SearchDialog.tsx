@@ -25,7 +25,7 @@ type UsernameDialogProps = {
 
 const errorMessage = "You should input username";
 
-const UsernameDialog = (props:UsernameDialogProps) => {
+const SearchDialog = (props:UsernameDialogProps) => {
 
     const contentRef :RefObject<HTMLDivElement> = createRef();
     const inputRef :RefObject<HTMLInputElement> = createRef();
@@ -110,7 +110,7 @@ const UsernameDialog = (props:UsernameDialogProps) => {
                 <LinkButton style={{color:"inherit", position: "absolute", left:"5px"}} onClick={closeDialog}>
                     <CloseIcon />
                 </LinkButton>
-                <Typography variant="h6">Input username</Typography>
+                <Typography variant="h6">Search</Typography>
             </AppBar>
             <DialogContent style={{marginTop:"30px"}} ref={contentRef}>
                 <TextField
@@ -143,4 +143,4 @@ const UsernameDialog = (props:UsernameDialogProps) => {
     )
 }
 
-export default UsernameDialog;
+export default SearchDialog;

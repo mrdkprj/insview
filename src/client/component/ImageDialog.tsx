@@ -15,11 +15,18 @@ type ImageDialogProps = {
     onUserTagClick: (user:IUser) => void
 }
 
-const direction = {
-    right:"right",
-    left:"left",
-    up: "up",
-    down:"down",
+interface ISwipeState {
+    startX: number,
+    startY: number,
+    startTime: number,
+    moveY: number,
+    moveX:number,
+    isMoved:boolean,
+    swiping: boolean,
+    close: boolean,
+    direction: string,
+    left:number,
+    degree:number,
 }
 
 const initialSwipeState = {
@@ -36,25 +43,15 @@ const initialSwipeState = {
     degree:0,
 }
 
-let swipeState = {...initialSwipeState};
-
 const H_THRESHHOLD = 0.6
 const H_SWIPE_ELAPSE = 150
 const V_THRESHHOLD = 0.15
 const SCALE = 3;
-let tapped = false;
-let zoomed = false;
-let timer = 0;
-let imageRect = null;
-let idealLeft = 0;
-
-const isHorizontalAction = () => {
-
-    if(swipeState.direction === direction.right || swipeState.direction === direction.left){
-        return true;
-    }
-
-    return false;
+const DIRECTION = {
+    right:"right",
+    left:"left",
+    up: "up",
+    down:"down",
 }
 
 const getDirection = (xDiff:number,yDiff:number) => {
@@ -62,36 +59,52 @@ const getDirection = (xDiff:number,yDiff:number) => {
     if( Math.abs( xDiff ) > Math.abs( yDiff ) ){
 
         if( xDiff > 0 ){
-            return direction.left;
+            return DIRECTION.left;
         }
 
-        return direction.right;
+        return DIRECTION.right;
     }
 
     if( yDiff > 0 ){
-        return direction.up
+        return DIRECTION.up
     }
 
-    return direction.down;
+    return DIRECTION.down;
 
 }
 
 const ImageDialog = (props:ImageDialogProps) => {
 
+    const swipeState = useRef<ISwipeState>({...initialSwipeState});
+    const imageRect = useRef<DOMRect | null>(null);
+    const tapped = useRef<boolean>(false);
+    const zoomed = useRef<boolean>(false);
+    const timer = useRef<number>(0);
+    const idealLeft = useRef<number>(0);
+
     const ref = useRef<HTMLDivElement>(null);
+
+    const isHorizontalAction = () => {
+
+        if(swipeState.current.direction === DIRECTION.right || swipeState.current.direction === DIRECTION.left){
+            return true;
+        }
+
+        return false;
+    }
 
     const onSwipeStart = useCallback((e) => {
 
-        swipeState.startX = e.touches[0].clientX + ref.current?.scrollLeft
-        swipeState.startY = e.touches[0].clientY
-        swipeState.startTime = new Date().getTime();
-        swipeState.swiping = true
-        swipeState.left = ref.current?.scrollLeft ?? 0
+        swipeState.current.startX = e.touches[0].clientX + ref.current?.scrollLeft
+        swipeState.current.startY = e.touches[0].clientY
+        swipeState.current.startTime = new Date().getTime();
+        swipeState.current.swiping = true
+        swipeState.current.left = ref.current?.scrollLeft ?? 0
 
     },[])
 
     const cleanupSwipe = useCallback(() => {
-        swipeState = {...initialSwipeState};
+        swipeState.current = {...initialSwipeState};
     },[]);
 
     const closeDialog = useCallback(() => {
@@ -101,23 +114,23 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     const endSwipeHorizontal = useCallback(() => {
 
-        const forceSwipe = swipeState.isMoved && new Date().getTime() - swipeState.startTime <= H_SWIPE_ELAPSE
+        const forceSwipe = swipeState.current.isMoved && new Date().getTime() - swipeState.current.startTime <= H_SWIPE_ELAPSE
 
-        if(forceSwipe || swipeState.degree > H_THRESHHOLD){
+        if(forceSwipe || swipeState.current.degree > H_THRESHHOLD){
 
-            idealLeft = swipeState.direction === direction.left ? swipeState.left + props.width : swipeState.left - props.width
-            ref.current?.scrollTo({ left:idealLeft, behavior: "smooth" })
+            idealLeft.current = swipeState.current.direction === DIRECTION.left ? swipeState.current.left + props.width : swipeState.current.left - props.width
+            ref.current?.scrollTo({ left:idealLeft.current, behavior: "smooth" })
 
         }else{
 
-            idealLeft = swipeState.left
-            if(ref.current) ref.current.scrollLeft = idealLeft;
+            idealLeft.current = swipeState.current.left
+            if(ref.current) ref.current.scrollLeft = idealLeft.current;
 
         }
 
         setTimeout(() => {
-            if(ref.current && ref.current.scrollLeft !== idealLeft){
-                ref.current.scrollLeft = idealLeft;
+            if(ref.current && ref.current.scrollLeft !== idealLeft.current){
+                ref.current.scrollLeft = idealLeft.current;
             }
         }, 150);
 
@@ -127,22 +140,25 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     const endSwipeVertical = useCallback(() => {
 
-        if(swipeState.close || Math.abs(swipeState.moveY) / 100 > V_THRESHHOLD){
+        const forceSwipe = swipeState.current.close || swipeState.current.isMoved && new Date().getTime() - swipeState.current.startTime <= H_SWIPE_ELAPSE
+
+        if(forceSwipe || swipeState.current.degree > V_THRESHHOLD){
+
             closeDialog();
-            return;
-        }
 
-        if(ref.current){
-            ref.current.style.transform = `translate(${0}px, ${0}px)`
-        }
+        }else{
 
-        cleanupSwipe();
+            cleanupSwipe();
+
+            if(ref.current) ref.current.style.transform = `translate(${0}px, ${0}px)`
+
+        }
 
     },[closeDialog, cleanupSwipe])
 
     const onSwipeEnd = useCallback(() => {
 
-        if(!swipeState.swiping) return;
+        if(!swipeState.current.swiping) return;
 
 
         if(isHorizontalAction()){
@@ -156,44 +172,45 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     const slideHorizontal = useCallback(() => {
 
-        const degree = (swipeState.moveX - swipeState.left) / props.width;
-        swipeState.degree = Math.abs(degree);
-        swipeState.isMoved = swipeState.degree > 0
-        ref.current?.scrollTo({ left: swipeState.moveX})
+        const degree = (swipeState.current.moveX - swipeState.current.left) / props.width;
+        swipeState.current.degree = Math.abs(degree);
+        swipeState.current.isMoved = swipeState.current.degree > 0
+        ref.current?.scrollTo({ left: swipeState.current.moveX})
 
-        if(swipeState.degree > H_THRESHHOLD){
+        if(swipeState.current.degree > H_THRESHHOLD){
             endSwipeHorizontal();
         }
     }, [endSwipeHorizontal, props.width])
 
     const slideVertical = useCallback(() => {
 
-        swipeState.degree = Math.abs(swipeState.moveY) / props.height;
+        swipeState.current.degree = Math.abs(swipeState.current.moveY) / props.height;
 
-        if(swipeState.degree > V_THRESHHOLD){
-            swipeState = {...swipeState, close:true}
+        if(swipeState.current.degree > V_THRESHHOLD){
+            swipeState.current.close = true;
         }
 
         if(ref.current){
-            ref.current.style.transform = `translate(0px, ${-swipeState.moveY}px)`
+            ref.current.style.transform = `translate(0px, ${-swipeState.current.moveY}px)`
         }
 
     },[props.height])
 
     const onSwipeMove = useCallback((e) => {
 
-        if(!swipeState.swiping || zoomed) return;
+        if(!swipeState.current.swiping || zoomed.current) return;
 
         hideTags();
 
-        const xDiff = swipeState.startX - e.touches[0].clientX;
-        const yDiff = swipeState.startY - e.touches[0].clientY;
+        const xDiff = swipeState.current.startX - e.touches[0].clientX;
+        const yDiff = swipeState.current.startY - e.touches[0].clientY;
 
-        if(!swipeState.direction){
-            swipeState.direction = getDirection(xDiff - swipeState.left, yDiff);
+        if(!swipeState.current.direction){
+            swipeState.current.direction = getDirection(xDiff - swipeState.current.left, yDiff);
         }
 
-        swipeState = {...swipeState, moveY: yDiff, moveX: xDiff};
+        swipeState.current.moveY = yDiff
+        swipeState.current.moveX = xDiff
 
         if(isHorizontalAction()){
             slideHorizontal();
@@ -208,30 +225,30 @@ const ImageDialog = (props:ImageDialogProps) => {
         if(!ref.current) return;
 
         const img = e.currentTarget;
-        imageRect = img.getBoundingClientRect();
+        imageRect.current = img.getBoundingClientRect();
 
-        if(zoomed){
+        if(zoomed.current){
             cleanupSwipe();
             img.style["transform"] = "scale(1)"
-            zoomed = false
+            zoomed.current = false
         }else{
 
-            const x = e.pageX - imageRect.left;
-            let y = e.pageY - imageRect.top;
+            const x = e.pageX - imageRect.current.left;
+            let y = e.pageY - imageRect.current.top;
 
-            const nextTop = imageRect.top - y * 2
-            const nextBottom = (imageRect.top + imageRect.height * SCALE) - y * 2
+            const nextTop = imageRect.current.top - y * 2
+            const nextBottom = (imageRect.current.top + imageRect.current.height * SCALE) - y * 2
 
             if(nextTop > 0){
-                y = imageRect.top / 2;
+                y = imageRect.current.top / 2;
             }else if(nextBottom < window.screen.height){
-                y = imageRect.height - imageRect.top / 2
+                y = imageRect.current.height - imageRect.current.top / 2
             }
 
             img.style.transformOrigin = `${x}px ${y}px`
             img.style["transform"] = `scale(${SCALE})`
 
-            zoomed = true;
+            zoomed.current = true;
 
         }
 
@@ -239,19 +256,19 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     const onImageClick = useCallback((e:React.MouseEvent<HTMLImageElement>) => {
 
-        if(!tapped) {
+        if(!tapped.current) {
 
-            tapped = true;
+            tapped.current = true;
 
-            timer = window.setTimeout(() => {
-                tapped = false;
+            timer.current = window.setTimeout(() => {
+                tapped.current = false;
             }, 300 );
 
             return;
         }
 
-        clearTimeout(timer)
-        tapped = false;
+        clearTimeout(timer.current)
+        tapped.current = false;
 
         hideTags()
 
@@ -294,7 +311,7 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     const onItemsRendered = ({visibleStartIndex}:{visibleStartIndex:number}) => {
 
-        if(swipeState.swiping) return;
+        if(swipeState.current.swiping) return;
 
         props.onImageRendered(visibleStartIndex)
 

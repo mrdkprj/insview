@@ -298,7 +298,7 @@ const tryLogin = async (req:any, res:any, account:string, password:string) => {
         await sendResponse(req, res, authResponse, result.session);
 
     }catch(ex:any){
-        console.log(ex.message)
+
         sendErrorResponse(res, ex, "Login failed");
 
     }

@@ -22,9 +22,9 @@ type PreviewDialogProps = {
 
 const PreviewDialog = (props:PreviewDialogProps) => {
 
-    const toggleFollow = () => {
+    const toggleFollow = async () => {
         const doFollow = !props.user.following
-        props.toggleFollow(doFollow, props.user);
+        await props.toggleFollow(doFollow, props.user);
     }
 
     return (
@@ -35,10 +35,10 @@ const PreviewDialog = (props:PreviewDialogProps) => {
                 </LinkButton>
                 <Typography variant="subtitle1">{props.user.username}</Typography>
                 <LinkButton style={{color:"inherit", position: "absolute", right:"5px"}} onClick={toggleFollow}>
-                    {props.user.following === true ?
-                        <FavoriteBorderIcon />
+                    {props.user.following ?
+                        <FavoriteIcon />
                         :
-                        <FavoriteIcon/>
+                        <FavoriteBorderIcon/>
                     }
                 </LinkButton>
             </AppBar>

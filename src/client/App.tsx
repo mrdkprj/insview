@@ -5,7 +5,7 @@ import Typography from "@parts/Typography"
 import Backdrop from "@parts/Backdrop"
 import Snackbar from "@parts/Snackbar";
 import CircularProgress from "@parts/CircularProgress"
-import UsernameDialog from "./component/UsernameDialog"
+import SearchDialog from "./component/SearchDialog"
 import AccountDialog from "./component/AccountDialog";
 import LoginDialog from "./component/LoginDialog"
 import PreviewDialog from "./component/PreviewDialog"
@@ -276,7 +276,7 @@ function App(){
     */
     const openAccountDialog = async () => {
 
-        if(mediaState.followings.users.length <= 0){
+        if(!mediaState.isFollowingsReady){
             await requestFollowing();
         }
 
@@ -363,7 +363,7 @@ function App(){
     },[handleError])
 
     /*
-    * UsernameDialog
+    * SearchDialog
     */
     const onUsernameDialogClose = (history:IHistory) => {
         dispatchMediaState({type:MediaAction.history, value: history})
@@ -398,6 +398,7 @@ function App(){
     }
 
     const closePreviewDialog = () => {
+        dispatchMediaState({type:MediaAction.resetPreview, value:null})
         dispatchAppState({type:AppAction.togglePreviewModal, value:false})
     }
 
@@ -424,7 +425,7 @@ function App(){
             </Backdrop>
 
             {appState.openUsernameModal &&
-                <UsernameDialog
+                <SearchDialog
                     open={appState.openUsernameModal}
                     username={mediaState.user.username}
                     onSubmit={onUsernameSubmit}

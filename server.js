@@ -446,25 +446,19 @@ class azure {
 const dbprovider =  false ? 0 : new db_azure();
 /* harmony default export */ const model = (dbprovider);
 
-;// CONCATENATED MODULE: external "axios"
-const external_axios_namespaceObject = require("axios");
-var external_axios_default = /*#__PURE__*/__webpack_require__.n(external_axios_namespaceObject);
 ;// CONCATENATED MODULE: external "tough-cookie"
 const external_tough_cookie_namespaceObject = require("tough-cookie");
 var external_tough_cookie_default = /*#__PURE__*/__webpack_require__.n(external_tough_cookie_namespaceObject);
-;// CONCATENATED MODULE: ./src/api/instagram.ts
+;// CONCATENATED MODULE: ./src/api/util.ts
 
-
-
-const GRAPH_QL = "#GRAPH_QL";
 const baseUrl = "https://www.instagram.com";
+const Cookie = (external_tough_cookie_default()).Cookie;
 const baseRequestHeaders = {
     "Accept": "*/*",
     "Accept-Encoding": "gzip, deflate",
     "Accept-Language": "en-US",
     "Authority": "www.instagram.com",
 };
-const Cookie = (external_tough_cookie_default()).Cookie;
 const getSession = (headers) => {
     try {
         const session = {
@@ -540,351 +534,9 @@ const createHeaders = (referer, session) => {
     headers["user-agent"] = session.userAgent;
     return headers;
 };
-const requestMedia = async (req) => {
-    const session = getSession(req.headers);
-    const access_token = process.env.TOKEN;
-    const userId = process.env.USER_ID;
-    const version = process.env.VERSION;
-    const username = req.data.username;
-    const url = `https://graph.facebook.com/v${version}/${userId}?fields=business_discovery.username(${username}){id,username,name,biography,profile_picture_url,ig_id,media{id,media_url,media_type,children{id,media_url,media_type}}}&access_token=${access_token}`;
-    try {
-        const response = await external_axios_default().get(url);
-        const data = formatMedia(response.data);
-        return {
-            data,
-            session
-        };
-    }
-    catch (ex) {
-        return await tryRequestGraph(req, session);
-    }
-};
-const tryRequestGraph = async (req, currentSession) => {
-    var _a, _b;
-    if (!currentSession.isAuthenticated) {
-        throw new AuthError("");
-    }
-    try {
-        const username = req.data.username;
-        const pageHeaders = createHeaders(baseUrl + "/" + username + "/", currentSession);
-        pageHeaders.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
-        const pageUrl = `${baseUrl}/${username}/`;
-        const options = {
-            url: pageUrl,
-            method: "GET",
-            headers: pageHeaders,
-            withCredentials: true
-        };
-        const pageResponse = await external_axios_default().request(options);
-        /*
-        const title = pageResponse.data.match(/<title>(.*)\(&#064;(.*)\).*<\/title>/);
-        const profile = pageResponse.data.match(/"props":{"id":"([0-9]*)".*"profile_pic_url":"(.*)","show_suggested_profiles"/);
-        */
-        const appId = pageResponse.data.match(/"customHeaders":{"X-IG-App-ID":"(.*)","X-IG-D"/);
-        const profileSession = updateSession(currentSession, pageResponse.headers);
-        const profileHeaders = createHeaders(baseUrl + "/" + username + "/", profileSession);
-        profileHeaders["x-ig-app-id"] = appId[1];
-        profileHeaders.Cookie = (_b = req.headers.cookie) !== null && _b !== void 0 ? _b : "";
-        const url = `https://i.instagram.com/api/v1/users/web_profile_info/?username=${username}`;
-        const profileOptions = {
-            url,
-            method: "GET",
-            headers: pageHeaders,
-            withCredentials: true
-        };
-        const profileResponse = await external_axios_default().request(profileOptions);
-        const userData = profileResponse.data.data.user;
-        const user = {
-            id: userData.id,
-            igId: userData.id,
-            username,
-            name: userData.full_name,
-            profileImage: "/media?url=" + userData.profile_pic_url,
-            biography: userData.biography,
-            following: userData.followed_by_viewer,
-        };
-        const requestSession = updateSession(currentSession, pageResponse.headers);
-        const response = await requestGraph(req, requestSession, user);
-        const session = updateSession(currentSession, response.headers);
-        const data = formatGraph(response.data.data, session, user);
-        return {
-            data,
-            session
-        };
-    }
-    catch (ex) {
-        console.log(ex.message);
-        throw new Error("User not found");
-    }
-};
-const requestMore = async (req) => {
-    const session = getSession(req.headers);
-    if (req.data.next.startsWith(GRAPH_QL)) {
-        return tryRequestMoreGraph(req, session);
-    }
-    const access_token = process.env.TOKEN;
-    const userId = process.env.USER_ID;
-    const version = process.env.VERSION;
-    const url = `https://graph.facebook.com/v${version}/${userId}?fields=business_discovery.username(${req.data.user.username}){id,username,name,profile_picture_url,ig_id,media.after(${req.data.next}){id,media_url,media_type,children{id,media_url,media_type}}}&access_token=${access_token}`;
-    const response = await external_axios_default().get(url);
-    const data = formatMedia(response.data);
-    return {
-        data,
-        session
-    };
-};
-const tryRequestMoreGraph = async (req, currentSession) => {
-    if (!currentSession.isAuthenticated) {
-        throw new AuthError("");
-    }
-    const response = await requestMoreByGraphql(req, currentSession);
-    const session = updateSession(currentSession, response.headers);
-    const formatResult = formatGraph(response.data.data, session, req.data.user);
-    const data = formatResult;
-    return {
-        data,
-        session
-    };
-};
-const formatMedia = (data) => {
-    const media = [];
-    const root = data.business_discovery;
-    root.media.data.filter((data) => data.media_type !== "VIDEO").forEach((data) => {
-        if (data.children) {
-            data.children.data.filter((data) => data.media_type !== "VIDEO").forEach((data) => {
-                media.push({
-                    id: data.id,
-                    media_url: data.media_url,
-                    taggedUsers: []
-                });
-            });
-        }
-        else {
-            media.push({
-                id: data.id,
-                media_url: data.media_url,
-                taggedUsers: []
-            });
-        }
-    });
-    const rowIndex = 0;
-    let next = "";
-    if (root.media.paging) {
-        next = root.media.paging.cursors.after;
-    }
-    const username = root.username;
-    const user = {
-        id: root.ig_id,
-        igId: root.ig_id,
-        username,
-        name: root.name,
-        profileImage: root.profile_picture_url,
-        biography: root.biography,
-        following: false,
-    };
-    const history = { [username]: user };
-    return { username, media, user, rowIndex, next, history, isAuthenticated: true };
-};
-const requestImage = async (url) => {
-    const options = {
-        url,
-        method: "GET",
-        headers: baseRequestHeaders,
-        responseType: "stream",
-        withCredentials: true
-    };
-    return await external_axios_default().request(options);
-};
-const requestGraph = async (req, session, user) => {
-    var _a;
-    const headers = createHeaders(baseUrl + "/" + user.username + "/", session);
-    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
-    const params = JSON.stringify({
-        id: user.id,
-        first: 12,
-    });
-    const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`;
-    const options = {
-        url,
-        method: "GET",
-        headers,
-        withCredentials: true
-    };
-    const response = await external_axios_default().request(options);
-    if (response.headers["content-type"].includes("html")) {
-        throw new Error("Auth error");
-    }
-    if (!response.data.data) {
-        throw new Error("Response error");
-    }
-    return response;
-};
-const requestMoreByGraphql = async (req, session) => {
-    var _a;
-    const params = JSON.stringify({
-        id: req.data.user.id,
-        first: 12,
-        after: req.data.next.replace(GRAPH_QL, "")
-    });
-    const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`;
-    const headers = createHeaders(baseUrl + "/" + req.data.user.username + "/", session);
-    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
-    const options = {
-        url,
-        method: "GET",
-        headers,
-        withCredentials: true
-    };
-    const response = await external_axios_default().request(options);
-    if (response.headers["content-type"].includes("html")) {
-        throw new Error("Auth error");
-    }
-    if (!response.data.data) {
-        throw new Error("Response error");
-    }
-    return response;
-};
-const formatGraph = (data, session, user) => {
-    const media = [];
-    const mediaNode = data.user.edge_owner_to_timeline_media;
-    mediaNode.edges.filter((data) => data.node.is_video === false).forEach((data) => {
-        if (data.node.edge_sidecar_to_children) {
-            data.node.edge_sidecar_to_children.edges.filter((data) => data.node.is_video === false).forEach((data) => {
-                media.push({
-                    id: data.node.id,
-                    media_url: "/media?url=" + data.node.display_url,
-                    taggedUsers: data.node.edge_media_to_tagged_user.edges.map((edge) => {
-                        return {
-                            id: edge.node.user.id,
-                            igId: edge.node.user.id,
-                            username: edge.node.user.username,
-                            name: edge.node.user.full_name,
-                            profileImage: edge.node.user.profile_pic_url,
-                            biography: "",
-                        };
-                    })
-                });
-            });
-        }
-        else {
-            media.push({
-                id: data.node.id,
-                media_url: "/media?url=" + data.node.display_url,
-                taggedUsers: data.node.edge_media_to_tagged_user.edges.map((edge) => {
-                    return {
-                        id: edge.node.user.id,
-                        igId: edge.node.user.id,
-                        username: edge.node.user.username,
-                        name: edge.node.user.full_name,
-                        profileImage: edge.node.user.profile_pic_url,
-                        biography: "",
-                    };
-                })
-            });
-        }
-    });
-    const rowIndex = 0;
-    let next = "";
-    if (mediaNode.page_info.has_next_page) {
-        next = GRAPH_QL + mediaNode.page_info.end_cursor;
-    }
-    const username = user.username;
-    const history = { [username]: user };
-    return { username, media, user, rowIndex, next, history, isAuthenticated: session.isAuthenticated };
-};
-const requestFollowings = async (req) => {
-    var _a;
-    const currentSession = getSession(req.headers);
-    const params = req.data.next ? {
-        id: currentSession.userId,
-        first: 20,
-        after: req.data.next
-    } : {
-        id: currentSession.userId,
-        first: 20
-    };
-    const url = `https://www.instagram.com/graphql/query/?query_hash=58712303d941c6855d4e888c5f0cd22f&variables=${encodeURIComponent(JSON.stringify(params))}`;
-    const headers = createHeaders(baseUrl, currentSession);
-    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
-    const options = {
-        url,
-        method: "GET",
-        headers,
-        withCredentials: true
-    };
-    const response = await external_axios_default().request(options);
-    if (response.headers["content-type"].includes("html")) {
-        throw new Error("Auth error");
-    }
-    const data = formatFollowings(response.data);
-    const session = updateSession(currentSession, response.headers);
-    return {
-        data,
-        session
-    };
-};
-const formatFollowings = (data) => {
-    const dataNode = data.data.user.edge_follow;
-    const users = dataNode.edges.map((user) => {
-        return {
-            id: user.node.id,
-            igId: user.node.id,
-            username: user.node.username,
-            name: user.node.full_name,
-            biography: "",
-            profileImage: "/media?url=" + user.node.profile_pic_url,
-            following: true,
-        };
-    });
-    const hasNext = dataNode.page_info.has_next_page;
-    const next = hasNext ? dataNode.page_info.end_cursor : "";
-    return { users, hasNext, next };
-};
-const follow = async (req) => {
-    var _a;
-    const currentSession = getSession(req.headers);
-    if (!currentSession.isAuthenticated) {
-        throw new AuthError("");
-    }
-    const url = `${baseUrl}/web/friendships/${req.data.user.id}/follow/`;
-    const headers = createHeaders(baseUrl, currentSession);
-    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
-    const options = {
-        url,
-        method: "POST",
-        headers,
-        withCredentials: true
-    };
-    const response = await external_axios_default().request(options);
-    const data = response.data;
-    const session = updateSession(currentSession, response.headers);
-    return {
-        data,
-        session
-    };
-};
-const unfollow = async (req) => {
-    var _a;
-    const currentSession = getSession(req.headers);
-    if (!currentSession.isAuthenticated) {
-        throw new AuthError("");
-    }
-    const url = `${baseUrl}/web/friendships/${req.data.user.id}/unfollow/`;
-    const headers = createHeaders(baseUrl, currentSession);
-    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
-    const options = {
-        url,
-        method: "POST",
-        headers,
-        withCredentials: true
-    };
-    const response = await external_axios_default().request(options);
-    const data = response.data;
-    const session = updateSession(currentSession, response.headers);
-    return {
-        data,
-        session
-    };
+const getAppId = (data) => {
+    const appIds = data.match(/"customHeaders":{"X-IG-App-ID":"(.*)","X-IG-D"/);
+    return appIds[1];
 };
 const extractToken = (headers) => {
     const setCookieHeader = headers["set-cookie"] || [];
@@ -895,6 +547,25 @@ const extractToken = (headers) => {
     }
     return csrftoken;
 };
+const getCookieString = (cookies) => {
+    let setCookieString = "";
+    cookies.forEach((cookieString) => {
+        const cookie = Cookie.parse(cookieString);
+        if (!cookie) {
+            return;
+        }
+        setCookieString += `${cookie.key}=${cookie.value};`;
+    });
+    return setCookieString;
+};
+
+
+;// CONCATENATED MODULE: external "axios"
+const external_axios_namespaceObject = require("axios");
+var external_axios_default = /*#__PURE__*/__webpack_require__.n(external_axios_namespaceObject);
+;// CONCATENATED MODULE: ./src/api/login.ts
+
+
 const login = async (req) => {
     console.log("----------try login----------");
     const account = req.data.account;
@@ -909,18 +580,17 @@ const login = async (req) => {
     };
     try {
         headers.Cookie = "ig_cb=1;";
-        let rolloutHash = 1;
-        headers["x-instagram-ajax"] = rolloutHash;
+        headers["x-instagram-ajax"] = 1;
+        const initialPage = await external_axios_default().request(options);
+        headers["x-ig-app-id"] = getAppId(initialPage.data);
+        options.url = "https://i.instagram.com/api/v1/public/landing_info/";
         const baseResult = await external_axios_default().request(options);
         const baseCsrftoken = extractToken(baseResult.headers);
         if (!baseCsrftoken) {
             throw new Error("Token not found");
         }
-        const sharedData = JSON.parse(baseResult.data.match(/<script type="text\/javascript">window\._sharedData = (.*)<\/script>/)[1].slice(0, -1));
-        rolloutHash = sharedData.rollout_hash;
         headers["x-requested-with"] = "XMLHttpRequest";
         headers["x-csrftoken"] = baseCsrftoken;
-        headers["x-instagram-ajax"] = rolloutHash;
         headers["content-type"] = "application/x-www-form-urlencoded";
         const createEncPassword = (pwd) => {
             return `#PWD_INSTAGRAM_BROWSER:0:${Math.floor(Date.now() / 1000)}:${pwd}`;
@@ -948,7 +618,6 @@ const login = async (req) => {
         if (ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required") {
             return await requestChallenge(account, options, ex.response);
         }
-        console.log("Login failed");
         if (ex.response) {
             console.log(ex.response.data);
         }
@@ -966,15 +635,7 @@ const requestChallenge = async (account, options, res) => {
     const resToken = extractToken(res.headers);
     options.headers["x-csrftoken"] = resToken;
     const responseCookies = res.headers["set-cookie"] instanceof Array ? res.headers["set-cookie"] : [res.headers["set-cookie"]];
-    let requestCookies = "";
-    responseCookies.forEach((cookieString) => {
-        const cookie = Cookie.parse(cookieString);
-        if (!cookie) {
-            return;
-        }
-        requestCookies += `${cookie.key}=${cookie.value};`;
-    });
-    options.headers.Cookie = requestCookies;
+    options.headers.Cookie = getCookieString(responseCookies);
     const url = baseUrl + res.data.checkpoint_url;
     options.url = url;
     options.method = "GET";
@@ -1062,46 +723,371 @@ const logout = async (req) => {
     }
 };
 
-/*
-  async _getFollowData({ fieldName, queryHash, variables }) {
-    return this.request("/graphql/query/", {
-      qs: {
-        query_hash: queryHash,
-        variables: JSON.stringify(variables)
-      }
-    })
-      .then(data => data.data.user[fieldName])
-      .then(({ count, page_info, edges }) => ({
-        count,
-        page_info,
-        data: edges.map(edge => edge.node)
-      }))
-  }
 
-  async getFollowers({ userId, first = 20, after }) {
-    return this._getFollowData({
-      fieldName: "edge_followed_by",
-      queryHash: "37479f2b8209594dde7facb0d904896a",
-      variables: {
-        id: userId,
-        first,
-        after
-      }
-    })
-  }
+;// CONCATENATED MODULE: ./src/api/media.ts
 
-  async getFollowings({ userId, first = 20, after }) {
-    return this._getFollowData({
-      fieldName: "edge_follow",
-      queryHash: "58712303d941c6855d4e888c5f0cd22f",
-      variables: {
-        id: userId,
-        first,
-        after
-      }
-    })
-  }
-  */ 
+
+
+const GRAPH_QL = "#GRAPH_QL";
+const requestMedia = async (req) => {
+    const session = getSession(req.headers);
+    const access_token = process.env.TOKEN;
+    const userId = process.env.USER_ID;
+    const version = process.env.VERSION;
+    const username = req.data.username;
+    const url = `https://graph.facebook.com/v${version}/${userId}?fields=business_discovery.username(${username}){id,username,name,biography,profile_picture_url,ig_id,media{id,media_url,media_type,children{id,media_url,media_type}}}&access_token=${access_token}`;
+    try {
+        const response = await external_axios_default().get(url);
+        const data = _formatMedia(response.data);
+        return {
+            data,
+            session
+        };
+    }
+    catch (ex) {
+        return await _tryRequestGraph(req, session);
+    }
+};
+const requestMore = async (req) => {
+    const session = getSession(req.headers);
+    if (req.data.next.startsWith(GRAPH_QL)) {
+        return _tryRequestMoreGraph(req, session);
+    }
+    const access_token = process.env.TOKEN;
+    const userId = process.env.USER_ID;
+    const version = process.env.VERSION;
+    const url = `https://graph.facebook.com/v${version}/${userId}?fields=business_discovery.username(${req.data.user.username}){id,username,name,profile_picture_url,ig_id,media.after(${req.data.next}){id,media_url,media_type,children{id,media_url,media_type}}}&access_token=${access_token}`;
+    const response = await external_axios_default().get(url);
+    const data = _formatMedia(response.data);
+    return {
+        data,
+        session
+    };
+};
+const _formatMedia = (data) => {
+    const media = [];
+    const root = data.business_discovery;
+    root.media.data.filter((data) => data.media_type !== "VIDEO").forEach((data) => {
+        if (data.children) {
+            data.children.data.filter((data) => data.media_type !== "VIDEO").forEach((data) => {
+                media.push({
+                    id: data.id,
+                    media_url: data.media_url,
+                    taggedUsers: []
+                });
+            });
+        }
+        else {
+            media.push({
+                id: data.id,
+                media_url: data.media_url,
+                taggedUsers: []
+            });
+        }
+    });
+    const rowIndex = 0;
+    let next = "";
+    if (root.media.paging) {
+        next = root.media.paging.cursors.after;
+    }
+    const username = root.username;
+    const user = {
+        id: root.ig_id,
+        igId: root.ig_id,
+        username,
+        name: root.name,
+        profileImage: root.profile_picture_url,
+        biography: root.biography,
+        following: false,
+    };
+    const history = { [username]: user };
+    return { username, media, user, rowIndex, next, history, isAuthenticated: true };
+};
+const _tryRequestGraph = async (req, currentSession) => {
+    var _a, _b;
+    if (!currentSession.isAuthenticated) {
+        throw new AuthError("");
+    }
+    try {
+        const username = req.data.username;
+        const pageHeaders = createHeaders(baseUrl + "/" + username + "/", currentSession);
+        pageHeaders.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
+        const pageUrl = `${baseUrl}/${username}/`;
+        const options = {
+            url: pageUrl,
+            method: "GET",
+            headers: pageHeaders,
+            withCredentials: true
+        };
+        const pageResponse = await external_axios_default().request(options);
+        /*
+        const title = pageResponse.data.match(/<title>(.*)\(&#064;(.*)\).*<\/title>/);
+        const profile = pageResponse.data.match(/"props":{"id":"([0-9]*)".*"profile_pic_url":"(.*)","show_suggested_profiles"/);
+        */
+        const profileSession = updateSession(currentSession, pageResponse.headers);
+        const profileHeaders = createHeaders(baseUrl + "/" + username + "/", profileSession);
+        profileHeaders["x-ig-app-id"] = getAppId(pageResponse.data);
+        profileHeaders.Cookie = (_b = req.headers.cookie) !== null && _b !== void 0 ? _b : "";
+        const url = `https://i.instagram.com/api/v1/users/web_profile_info/?username=${username}`;
+        const profileOptions = {
+            url,
+            method: "GET",
+            headers: pageHeaders,
+            withCredentials: true
+        };
+        const profileResponse = await external_axios_default().request(profileOptions);
+        const userData = profileResponse.data.data.user;
+        const user = {
+            id: userData.id,
+            igId: userData.id,
+            username,
+            name: userData.full_name,
+            profileImage: "/media?url=" + userData.profile_pic_url,
+            biography: userData.biography,
+            following: userData.followed_by_viewer,
+        };
+        const requestSession = updateSession(currentSession, pageResponse.headers);
+        const response = await _requestGraph(req, requestSession, user);
+        const session = updateSession(currentSession, response.headers);
+        const data = _formatGraph(response.data.data, session, user);
+        return {
+            data,
+            session
+        };
+    }
+    catch (ex) {
+        console.log(ex.message);
+        throw new Error("User not found");
+    }
+};
+const _tryRequestMoreGraph = async (req, currentSession) => {
+    if (!currentSession.isAuthenticated) {
+        throw new AuthError("");
+    }
+    const response = await _requestMoreByGraphql(req, currentSession);
+    const session = updateSession(currentSession, response.headers);
+    const formatResult = _formatGraph(response.data.data, session, req.data.user);
+    const data = formatResult;
+    return {
+        data,
+        session
+    };
+};
+const _requestGraph = async (req, session, user) => {
+    var _a;
+    const headers = createHeaders(baseUrl + "/" + user.username + "/", session);
+    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
+    const params = JSON.stringify({
+        id: user.id,
+        first: 12,
+    });
+    const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`;
+    const options = {
+        url,
+        method: "GET",
+        headers,
+        withCredentials: true
+    };
+    const response = await external_axios_default().request(options);
+    if (response.headers["content-type"].includes("html")) {
+        throw new Error("Auth error");
+    }
+    if (!response.data.data) {
+        throw new Error("Response error");
+    }
+    return response;
+};
+const _requestMoreByGraphql = async (req, session) => {
+    var _a;
+    const params = JSON.stringify({
+        id: req.data.user.id,
+        first: 12,
+        after: req.data.next.replace(GRAPH_QL, "")
+    });
+    const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`;
+    const headers = createHeaders(baseUrl + "/" + req.data.user.username + "/", session);
+    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
+    const options = {
+        url,
+        method: "GET",
+        headers,
+        withCredentials: true
+    };
+    const response = await external_axios_default().request(options);
+    if (response.headers["content-type"].includes("html")) {
+        throw new Error("Auth error");
+    }
+    if (!response.data.data) {
+        throw new Error("Response error");
+    }
+    return response;
+};
+const _formatGraph = (data, session, user) => {
+    const media = [];
+    const mediaNode = data.user.edge_owner_to_timeline_media;
+    mediaNode.edges.filter((data) => data.node.is_video === false).forEach((data) => {
+        if (data.node.edge_sidecar_to_children) {
+            data.node.edge_sidecar_to_children.edges.filter((data) => data.node.is_video === false).forEach((data) => {
+                media.push({
+                    id: data.node.id,
+                    media_url: "/media?url=" + data.node.display_url,
+                    taggedUsers: data.node.edge_media_to_tagged_user.edges.map((edge) => {
+                        return {
+                            id: edge.node.user.id,
+                            igId: edge.node.user.id,
+                            username: edge.node.user.username,
+                            name: edge.node.user.full_name,
+                            profileImage: edge.node.user.profile_pic_url,
+                            biography: "",
+                        };
+                    })
+                });
+            });
+        }
+        else {
+            media.push({
+                id: data.node.id,
+                media_url: "/media?url=" + data.node.display_url,
+                taggedUsers: data.node.edge_media_to_tagged_user.edges.map((edge) => {
+                    return {
+                        id: edge.node.user.id,
+                        igId: edge.node.user.id,
+                        username: edge.node.user.username,
+                        name: edge.node.user.full_name,
+                        profileImage: edge.node.user.profile_pic_url,
+                        biography: "",
+                    };
+                })
+            });
+        }
+    });
+    const rowIndex = 0;
+    let next = "";
+    if (mediaNode.page_info.has_next_page) {
+        next = GRAPH_QL + mediaNode.page_info.end_cursor;
+    }
+    const username = user.username;
+    const history = { [username]: user };
+    return { username, media, user, rowIndex, next, history, isAuthenticated: session.isAuthenticated };
+};
+const requestImage = async (url) => {
+    const options = {
+        url,
+        method: "GET",
+        headers: baseRequestHeaders,
+        responseType: "stream",
+        withCredentials: true
+    };
+    return await external_axios_default().request(options);
+};
+
+
+;// CONCATENATED MODULE: ./src/api/follow.ts
+
+
+
+const requestFollowings = async (req) => {
+    var _a;
+    const currentSession = getSession(req.headers);
+    const params = req.data.next ? {
+        id: currentSession.userId,
+        first: 20,
+        after: req.data.next
+    } : {
+        id: currentSession.userId,
+        first: 20
+    };
+    const url = `https://www.instagram.com/graphql/query/?query_hash=58712303d941c6855d4e888c5f0cd22f&variables=${encodeURIComponent(JSON.stringify(params))}`;
+    const headers = createHeaders(baseUrl, currentSession);
+    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
+    const options = {
+        url,
+        method: "GET",
+        headers,
+        withCredentials: true
+    };
+    const response = await external_axios_default().request(options);
+    if (response.headers["content-type"].includes("html")) {
+        throw new Error("Auth error");
+    }
+    const data = _formatFollowings(response.data);
+    const session = updateSession(currentSession, response.headers);
+    return {
+        data,
+        session
+    };
+};
+const _formatFollowings = (data) => {
+    const dataNode = data.data.user.edge_follow;
+    const users = dataNode.edges.map((user) => {
+        return {
+            id: user.node.id,
+            igId: user.node.id,
+            username: user.node.username,
+            name: user.node.full_name,
+            biography: "",
+            profileImage: "/media?url=" + user.node.profile_pic_url,
+            following: true,
+        };
+    });
+    const hasNext = dataNode.page_info.has_next_page;
+    const next = hasNext ? dataNode.page_info.end_cursor : "";
+    return { users, hasNext, next };
+};
+const follow = async (req) => {
+    var _a;
+    const currentSession = getSession(req.headers);
+    if (!currentSession.isAuthenticated) {
+        throw new AuthError("");
+    }
+    const url = `${baseUrl}/web/friendships/${req.data.user.id}/follow/`;
+    const headers = createHeaders(baseUrl, currentSession);
+    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
+    const options = {
+        url,
+        method: "POST",
+        headers,
+        withCredentials: true
+    };
+    const response = await external_axios_default().request(options);
+    const data = response.data;
+    const session = updateSession(currentSession, response.headers);
+    return {
+        data,
+        session
+    };
+};
+const unfollow = async (req) => {
+    var _a;
+    const currentSession = getSession(req.headers);
+    if (!currentSession.isAuthenticated) {
+        throw new AuthError("");
+    }
+    const url = `${baseUrl}/web/friendships/${req.data.user.id}/unfollow/`;
+    const headers = createHeaders(baseUrl, currentSession);
+    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
+    const options = {
+        url,
+        method: "POST",
+        headers,
+        withCredentials: true
+    };
+    const response = await external_axios_default().request(options);
+    const data = response.data;
+    const session = updateSession(currentSession, response.headers);
+    return {
+        data,
+        session
+    };
+};
+
+
+;// CONCATENATED MODULE: ./src/api/instagram.ts
+
+
+
+
+
 
 ;// CONCATENATED MODULE: ./src/server.ts
 var _a;

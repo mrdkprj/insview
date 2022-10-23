@@ -9,8 +9,8 @@ export interface IMediaState {
     previewNext:string,
     previewUser:IUser,
     previewData:IMedia[],
-    selected: number,
     history: IHistory,
+    isFollowingsReady:boolean,
     followings: IFollowing,
     mediaScrollTop: number,
     followingScrollTop:number,
@@ -24,8 +24,8 @@ export const initialMediaState : IMediaState = {
     previewNext:"",
     previewUser: emptyUser,
     previewData:[],
-    selected: 0,
     history:{},
+    isFollowingsReady:false,
     followings:{users:[], hasNext:false, next:""},
     mediaScrollTop: 0,
     followingScrollTop: 0,
@@ -40,7 +40,6 @@ export const MediaAction = {
     reset: "reset",
     update: "update",
     append: "append",
-    select: "select",
     history: "history",
     followings: "followings",
     updateFollowStatus: "updateFollowStatus",
@@ -48,6 +47,7 @@ export const MediaAction = {
     mediaScrollTop : "mediaScrollTop",
     followingScrollTop: "followingScrollTop",
     preview: "preview",
+    resetPreview: "resetPreview",
 }
 
 export const mediaStateReducer = (state: IMediaState, action: IMediaAction): IMediaState => {
@@ -62,7 +62,6 @@ export const mediaStateReducer = (state: IMediaState, action: IMediaAction): IMe
             return {...state,
                 user: action.value.user,
                 data: action.value.media,
-                selected: 0,
                 next:action.value.next,
                 history: action.value.history,
                 mediaScrollTop:action.value.rowIndex
@@ -70,9 +69,6 @@ export const mediaStateReducer = (state: IMediaState, action: IMediaAction): IMe
 
         case MediaAction.append:
             return {...state, data:state.data.concat(action.value.media), next:action.value.next, mediaScrollTop: action.value.rowIndex}
-
-        case MediaAction.select:
-            return {...state, selected:action.value};
 
         case MediaAction.history:
             return {...state, history:action.value};
@@ -87,35 +83,38 @@ export const mediaStateReducer = (state: IMediaState, action: IMediaAction): IMe
             return {...state, locked:action.value};
 
         case MediaAction.followings:{
+
             let users;
             if(state.followings.users.length > 0){
                 users = state.followings.users.concat(action.value.users)
             }else{
                 users = action.value.users
             }
+
             const newFollowings = {users, hasNext:action.value.hasNext, next:action.value.next};
-            return {...state, followings:newFollowings};
+
+            return {...state, isFollowingsReady:true, followings:newFollowings};
         }
 
         case MediaAction.updateFollowStatus:{
 
-            let userFound = false;
+            if(state.previewUser.username === action.value.user.username){
+                return {...state, isFollowingsReady:false, previewUser: {...state.previewUser, following:action.value.doFollow} }
+            }
 
-            const newusers = state.followings.users.map(user => {
+            const updatedUsers = state.followings.users.map(user => {
                 if(user.username === action.value.user.username){
                     user.following = action.value.doFollow
-                    userFound = true;
                 }
 
                 return user;
             })
 
-            if(!userFound){
-                newusers.push(action.value.user)
-            }
-
-            return {...state, followings:{...state.followings, users:newusers}};
+            return {...state, followings:{...state.followings, users:updatedUsers}};
         }
+
+        case MediaAction.resetPreview:
+            return {...state, previewData:[], previewNext:"", previewUser:emptyUser}
 
         case MediaAction.preview:{
             if(state.previewUser.username === action.value.user.username){

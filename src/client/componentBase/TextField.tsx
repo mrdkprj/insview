@@ -28,7 +28,6 @@ const TextField = (props:TextFieldProps) => {
     }
 
     const _onFocus = () => {
-        console.log("focuws")
         formRef.current?.classList.add("has-focus")
         formRef.current?.classList.remove("empty")
     }
