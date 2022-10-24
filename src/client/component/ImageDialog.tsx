@@ -82,6 +82,7 @@ const ImageDialog = (props:ImageDialogProps) => {
     const timer = useRef<number>(0);
     const idealLeft = useRef<number>(0);
 
+    const backRef = useRef<HTMLDivElement>(null)
     const listRef = useRef<HTMLDivElement>(null);
 
     const isHorizontalAction = () => {
@@ -144,11 +145,6 @@ const ImageDialog = (props:ImageDialogProps) => {
 
         if(forceSwipe || swipeState.current.degree > V_THRESHHOLD){
 
-            if(listRef.current){
-                listRef.current.style.transition = "transform 525ms ease"
-                listRef.current.style.transform = `translate(0px, ${props.height}px)`
-            }
-
             closeDialog();
 
         }else{
@@ -159,7 +155,7 @@ const ImageDialog = (props:ImageDialogProps) => {
 
         }
 
-    },[closeDialog, cleanupSwipe, props.height])
+    },[closeDialog, cleanupSwipe])
 
     const onSwipeEnd = useCallback(() => {
 
@@ -365,7 +361,7 @@ const ImageDialog = (props:ImageDialogProps) => {
     useEffect( () => () =>  {document.body.style.overflow = ""}, [] );
 
     return (
-        <div css={Backdrop}>
+        <div css={Backdrop} ref={backRef}>
             <List
                 height={props.height}
                 itemCount={props.data.length}
