@@ -45,7 +45,7 @@ const initialSwipeState = {
 
 const H_THRESHHOLD = 0.6
 const H_SWIPE_ELAPSE = 150
-const V_THRESHHOLD = 0.15
+const V_THRESHHOLD = 0.3
 const SCALE = 3;
 const DIRECTION = {
     right:"right",
@@ -82,7 +82,7 @@ const ImageDialog = (props:ImageDialogProps) => {
     const timer = useRef<number>(0);
     const idealLeft = useRef<number>(0);
 
-    const ref = useRef<HTMLDivElement>(null);
+    const listRef = useRef<HTMLDivElement>(null);
 
     const isHorizontalAction = () => {
 
@@ -95,11 +95,11 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     const onSwipeStart = useCallback((e) => {
 
-        swipeState.current.startX = e.touches[0].clientX + ref.current?.scrollLeft
+        swipeState.current.startX = e.touches[0].clientX + listRef.current?.scrollLeft
         swipeState.current.startY = e.touches[0].clientY
         swipeState.current.startTime = new Date().getTime();
         swipeState.current.swiping = true
-        swipeState.current.left = ref.current?.scrollLeft ?? 0
+        swipeState.current.left = listRef.current?.scrollLeft ?? 0
 
     },[])
 
@@ -119,18 +119,18 @@ const ImageDialog = (props:ImageDialogProps) => {
         if(forceSwipe || swipeState.current.degree > H_THRESHHOLD){
 
             idealLeft.current = swipeState.current.direction === DIRECTION.left ? swipeState.current.left + props.width : swipeState.current.left - props.width
-            ref.current?.scrollTo({ left:idealLeft.current, behavior: "smooth" })
+            listRef.current?.scrollTo({ left:idealLeft.current, behavior: "smooth" })
 
         }else{
 
             idealLeft.current = swipeState.current.left
-            if(ref.current) ref.current.scrollLeft = idealLeft.current;
+            if(listRef.current) listRef.current.scrollLeft = idealLeft.current;
 
         }
 
         setTimeout(() => {
-            if(ref.current && ref.current.scrollLeft !== idealLeft.current){
-                ref.current.scrollLeft = idealLeft.current;
+            if(listRef.current && listRef.current.scrollLeft !== idealLeft.current){
+                listRef.current.scrollLeft = idealLeft.current;
             }
         }, 150);
 
@@ -144,17 +144,22 @@ const ImageDialog = (props:ImageDialogProps) => {
 
         if(forceSwipe || swipeState.current.degree > V_THRESHHOLD){
 
+            if(listRef.current){
+                listRef.current.style.transition = "transform 525ms ease"
+                listRef.current.style.transform = `translate(0px, ${props.height}px)`
+            }
+
             closeDialog();
 
         }else{
 
             cleanupSwipe();
 
-            if(ref.current) ref.current.style.transform = `translate(${0}px, ${0}px)`
+            if(listRef.current) listRef.current.style.transform = `translate(${0}px, ${0}px)`
 
         }
 
-    },[closeDialog, cleanupSwipe])
+    },[closeDialog, cleanupSwipe, props.height])
 
     const onSwipeEnd = useCallback(() => {
 
@@ -175,7 +180,7 @@ const ImageDialog = (props:ImageDialogProps) => {
         const degree = (swipeState.current.moveX - swipeState.current.left) / props.width;
         swipeState.current.degree = Math.abs(degree);
         swipeState.current.isMoved = swipeState.current.degree > 0
-        ref.current?.scrollTo({ left: swipeState.current.moveX})
+        listRef.current?.scrollTo({ left: swipeState.current.moveX})
 
         if(swipeState.current.degree > H_THRESHHOLD){
             endSwipeHorizontal();
@@ -186,12 +191,14 @@ const ImageDialog = (props:ImageDialogProps) => {
 
         swipeState.current.degree = Math.abs(swipeState.current.moveY) / props.height;
 
+        swipeState.current.isMoved = swipeState.current.degree > 0
+
         if(swipeState.current.degree > V_THRESHHOLD){
             swipeState.current.close = true;
         }
 
-        if(ref.current){
-            ref.current.style.transform = `translate(0px, ${-swipeState.current.moveY}px)`
+        if(listRef.current){
+            listRef.current.style.transform = `translate(0px, ${-swipeState.current.moveY}px)`
         }
 
     },[props.height])
@@ -222,7 +229,7 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     const changeScale = useCallback( (e:React.MouseEvent<HTMLImageElement>) => {
 
-        if(!ref.current) return;
+        if(!listRef.current) return;
 
         const img = e.currentTarget;
         imageRect.current = img.getBoundingClientRect();
@@ -286,21 +293,21 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     const hideTags = () => {
 
-        if(!ref.current) return;
+        if(!listRef.current) return;
 
-        if(ref.current.classList.contains("tags")){
-            ref.current.classList.remove("tags")
+        if(listRef.current.classList.contains("tags")){
+            listRef.current.classList.remove("tags")
         }
     }
 
     const toggleTags = () => {
 
-        if(!ref.current) return;
+        if(!listRef.current) return;
 
-        if(ref.current.classList.contains("tags")){
+        if(listRef.current.classList.contains("tags")){
             hideTags();
         }else{
-            ref.current.classList.add("tags")
+            listRef.current.classList.add("tags")
         }
 
     }
@@ -315,12 +322,12 @@ const ImageDialog = (props:ImageDialogProps) => {
 
         props.onImageRendered(visibleStartIndex)
 
-        if(!ref.current) return;
+        if(!listRef.current) return;
 
         if(props.data[visibleStartIndex].taggedUsers.length > 0){
-            ref.current.classList.add("has-tags")
+            listRef.current.classList.add("has-tags")
         }else{
-            ref.current.classList.remove("has-tags")
+            listRef.current.classList.remove("has-tags")
         }
 
     }
@@ -343,9 +350,9 @@ const ImageDialog = (props:ImageDialogProps) => {
 
         document.body.style.overflow = "hidden";
 
-        ref.current?.addEventListener("touchstart", onSwipeStart, { passive: true });
-        ref.current?.addEventListener("touchmove", onSwipeMove, { passive: true });
-        ref.current?.addEventListener("touchend", onSwipeEnd, { passive: true });
+        listRef.current?.addEventListener("touchstart", onSwipeStart, { passive: true });
+        listRef.current?.addEventListener("touchmove", onSwipeMove, { passive: true });
+        listRef.current?.addEventListener("touchend", onSwipeEnd, { passive: true });
 
         document.addEventListener("keydown", handleKeydown);
 
@@ -366,7 +373,7 @@ const ImageDialog = (props:ImageDialogProps) => {
                 width={props.width}
                 layout="horizontal"
                 overscanCount={4}
-                outerRef={ref}
+                outerRef={listRef}
                 itemData={props.data}
                 initialScrollOffset={props.width * (props.startIndex * 1)}
                 style={{overflow:"hidden", background:"#121111", WebkitTransform :"translateZ(0px)"}}
