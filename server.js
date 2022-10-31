@@ -89,6 +89,929 @@ const emptyResponse = {
     isAuthenticated: false
 };
 
+;// CONCATENATED MODULE: external "tough-cookie"
+const external_tough_cookie_namespaceObject = require("tough-cookie");
+var external_tough_cookie_default = /*#__PURE__*/__webpack_require__.n(external_tough_cookie_namespaceObject);
+;// CONCATENATED MODULE: ./src/api/util.ts
+
+const baseUrl = "https://www.instagram.com";
+const Cookie = (external_tough_cookie_default()).Cookie;
+const baseRequestHeaders = {
+    "Accept": "*/*",
+    "Accept-Encoding": "gzip, deflate",
+    "Accept-Language": "en-US",
+    "Authority": "www.instagram.com",
+};
+const getSession = (headers) => {
+    try {
+        const session = {
+            isAuthenticated: false,
+            csrfToken: "",
+            userId: "",
+            userAgent: headers["user-agent"],
+            cookies: [],
+            expires: null,
+        };
+        if (!headers.cookie && !headers["set-cookie"]) {
+            return session;
+        }
+        let cookies = [];
+        if (headers.cookie) {
+            cookies = headers.cookie.split(";");
+        }
+        else {
+            cookies = headers["set-cookie"] instanceof Array ? headers["set-cookie"] : [headers["set-cookie"]];
+        }
+        cookies.forEach((cookieString) => {
+            const cookie = Cookie.parse(cookieString);
+            if (!cookie) {
+                return;
+            }
+            if (cookie.key.toLowerCase() === "sessionid") {
+                session.isAuthenticated = true;
+                if (!cookie.expires) {
+                    const expires = new Date();
+                    expires.setTime(expires.getTime() + (8 * 60 * 60 * 1000));
+                    cookie.expires = expires;
+                }
+                if (cookie.expires !== "Infinity") {
+                    session.expires = cookie.expires;
+                }
+            }
+            if (cookie.key.toLowerCase() === "csrftoken") {
+                session.csrfToken = cookie.value;
+            }
+            if (cookie.key.toLowerCase() === "ds_user_id") {
+                session.userId = cookie.value;
+            }
+            session.cookies.push(cookie);
+        });
+        return session;
+    }
+    catch (ex) {
+        console.log(ex.message);
+        throw new Error("cookie error");
+    }
+};
+const updateSession = (currentSession, headers) => {
+    const session = currentSession;
+    session.cookies = [];
+    const cookies = headers["set-cookie"] instanceof Array ? headers["set-cookie"] : [headers["set-cookie"]];
+    cookies.forEach((cookieString) => {
+        const cookie = Cookie.parse(cookieString);
+        if (!cookie)
+            return;
+        session.cookies.push(cookie);
+    });
+    return session;
+};
+const createHeaders = (referer, session) => {
+    const headers = baseRequestHeaders;
+    headers["origin"] = "https://www.instagram.com";
+    headers["referer"] = referer;
+    //headers["x-requested-with"] = "XMLHttpRequest"
+    headers["x-csrftoken"] = session.csrfToken;
+    headers["user-agent"] = session.userAgent;
+    return headers;
+};
+const getAppId = (data) => {
+    const appIds = data.match(/"customHeaders":{"X-IG-App-ID":"(.*)","X-IG-D"/);
+    return appIds[1];
+};
+const getClientVersion = (data) => {
+    const version = data.match(/"client_revision":(.*),"tier"/);
+    return version[1];
+};
+const extractToken = (headers) => {
+    const setCookieHeader = headers["set-cookie"] || [];
+    const cookies = setCookieHeader.map(c => Cookie.parse(c) || new (external_tough_cookie_default()).Cookie());
+    const { value: csrftoken } = cookies.find(({ key }) => key === "csrftoken") || {};
+    if (!csrftoken) {
+        return "";
+    }
+    return csrftoken;
+};
+const getCookieString = (cookies) => {
+    let setCookieString = "";
+    cookies.forEach((cookieString) => {
+        const cookie = Cookie.parse(cookieString);
+        if (!cookie || !cookie.value) {
+            return;
+        }
+        setCookieString += `${cookie.key}=${cookie.value};`;
+    });
+    return setCookieString;
+};
+
+
+;// CONCATENATED MODULE: external "axios"
+const external_axios_namespaceObject = require("axios");
+var external_axios_default = /*#__PURE__*/__webpack_require__.n(external_axios_namespaceObject);
+;// CONCATENATED MODULE: ./src/api/login.ts
+
+
+const login = async (req) => {
+    console.log("----------try login----------");
+    const account = req.data.account;
+    let session = getSession(req.headers);
+    const headers = baseRequestHeaders;
+    headers["user-agent"] = session.userAgent;
+    const options = {
+        url: baseUrl,
+        method: "GET",
+        headers,
+        withCredentials: true
+    };
+    try {
+        headers.Cookie = "ig_cb=1;";
+        headers["x-instagram-ajax"] = 1;
+        const initialPage = await external_axios_default().request(options);
+        const appId = getAppId(initialPage.data);
+        const version = getClientVersion(initialPage.data);
+        headers["x-ig-app-id"] = appId;
+        options.url = "https://i.instagram.com/api/v1/public/landing_info/";
+        const baseResult = await external_axios_default().request(options);
+        const baseCsrftoken = extractToken(baseResult.headers);
+        if (!baseCsrftoken) {
+            throw new Error("Token not found");
+        }
+        const responseCookies = baseResult.headers["set-cookie"] instanceof Array ? baseResult.headers["set-cookie"] : [baseResult.headers["set-cookie"]];
+        headers.Cookie = getCookieString(responseCookies);
+        //headers["x-requested-with"] = "XMLHttpRequest"
+        headers["x-ig-www-claim"] = 0;
+        headers["x-instagram-ajax"] = version;
+        headers["x-csrftoken"] = baseCsrftoken;
+        headers["content-type"] = "application/x-www-form-urlencoded";
+        const createEncPassword = (pwd) => {
+            return `#PWD_INSTAGRAM_BROWSER:0:${Math.floor(Date.now() / 1000)}:${pwd}`;
+        };
+        const params = new URLSearchParams();
+        params.append("enc_password", createEncPassword(req.data.password));
+        params.append("username", account);
+        params.append("queryParams", "{}");
+        params.append("optIntoOneTap", "false");
+        params.append("trustedDeviceRecords", "{}");
+        options.url = "https://i.instagram.com/api/v1/web/accounts/login/ajax/";
+        options.method = "POST";
+        options.data = params;
+        options.headers = headers;
+        const authResponse = await external_axios_default().request(options);
+        console.log("----------auth response-------");
+        console.log(authResponse.data);
+        session = getSession(authResponse.headers);
+        const data = { account, success: session.isAuthenticated, challenge: false, endpoint: "" };
+        return {
+            data,
+            session
+        };
+    }
+    catch (ex) {
+        if (ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required") {
+            return await requestChallenge(account, options, ex.response);
+        }
+        if (ex.response) {
+            console.log(ex.response.data);
+        }
+        else {
+            console.log(ex.message);
+        }
+        throw new Error("Login failed");
+    }
+};
+const requestChallenge = async (account, options, res) => {
+    console.log("---------- challenge start -------");
+    if (!options.headers) {
+        throw new Error("headers empty");
+    }
+    const resToken = extractToken(res.headers);
+    options.headers["x-csrftoken"] = resToken;
+    const responseCookies = res.headers["set-cookie"] instanceof Array ? res.headers["set-cookie"] : [res.headers["set-cookie"]];
+    options.headers.Cookie = getCookieString(responseCookies);
+    const url = baseUrl + res.data.checkpoint_url;
+    options.url = url;
+    options.method = "GET";
+    options.data = "";
+    await external_axios_default().request(options);
+    console.log("---------- challenge post start -------");
+    const params = new URLSearchParams();
+    params.append("choice", "1");
+    options.data = params;
+    options.method = "POST";
+    const nextRes = await external_axios_default().request(options);
+    const session = getSession(res.headers);
+    if (nextRes.data.type && nextRes.data.type === "CHALLENGE") {
+        return {
+            data: { account: account, success: false, challenge: true, endpoint: url },
+            session
+        };
+    }
+    return {
+        data: { account, success: false, challenge: false, endpoint: "" },
+        session
+    };
+};
+const challenge = async (req) => {
+    var _a;
+    const currentSession = getSession(req.headers);
+    try {
+        const url = req.data.endpoint;
+        const headers = createHeaders(url, currentSession);
+        headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
+        //headers["x-requested-with"] = "XMLHttpRequest"
+        headers["content-type"] = "application/x-www-form-urlencoded";
+        const params = new URLSearchParams();
+        params.append("security_code", req.data.code);
+        const options = {
+            url,
+            method: "POST",
+            headers,
+            data: params,
+            withCredentials: true
+        };
+        const response = await external_axios_default().request(options);
+        const session = getSession(response.headers);
+        const data = { account: req.data.account, success: session.isAuthenticated, challenge: !session.isAuthenticated, endpoint: "" };
+        console.log(response.data);
+        return {
+            data,
+            session
+        };
+    }
+    catch (ex) {
+        return {
+            data: { account: req.data.account, success: false, challenge: true, endpoint: req.data.endpoint },
+            session: currentSession
+        };
+    }
+};
+const logout = async (req) => {
+    var _a;
+    const currentSession = getSession(req.headers);
+    if (!currentSession.isAuthenticated)
+        throw new Error("Already logged out");
+    try {
+        const headers = createHeaders(baseUrl, currentSession);
+        headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
+        const options = {
+            url: "https://i.instagram.com/api/v1/web/accounts/logout/ajax/",
+            method: "POST",
+            headers,
+            withCredentials: true
+        };
+        const response = await external_axios_default().request(options);
+        console.log(response.data);
+        const session = getSession(response.headers);
+        const data = { account: "", success: true, challenge: false, endpoint: "" };
+        return {
+            data,
+            session
+        };
+    }
+    catch (ex) {
+        return {
+            data: { account: "", success: true, challenge: false, endpoint: "" },
+            session: currentSession
+        };
+    }
+};
+
+
+;// CONCATENATED MODULE: ./src/api/media.ts
+
+
+
+const GRAPH_QL = "#GRAPH_QL";
+const requestMedia = async (req) => {
+    const session = getSession(req.headers);
+    const access_token = process.env.TOKEN;
+    const userId = process.env.USER_ID;
+    const version = process.env.VERSION;
+    const username = req.data.username;
+    const url = `https://graph.facebook.com/v${version}/${userId}?fields=business_discovery.username(${username}){id,username,name,biography,profile_picture_url,ig_id,media{id,media_url,media_type,children{id,media_url,media_type}}}&access_token=${access_token}`;
+    try {
+        const response = await external_axios_default().get(url);
+        const data = _formatMedia(response.data);
+        return {
+            data,
+            session
+        };
+    }
+    catch (ex) {
+        return await _tryRequestGraph(req, session);
+    }
+};
+const requestMore = async (req) => {
+    const session = getSession(req.headers);
+    if (req.data.next.startsWith(GRAPH_QL)) {
+        return _tryRequestMoreGraph(req, session);
+    }
+    const access_token = process.env.TOKEN;
+    const userId = process.env.USER_ID;
+    const version = process.env.VERSION;
+    const url = `https://graph.facebook.com/v${version}/${userId}?fields=business_discovery.username(${req.data.user.username}){id,username,name,profile_picture_url,ig_id,media.after(${req.data.next}){id,media_url,media_type,children{id,media_url,media_type}}}&access_token=${access_token}`;
+    const response = await external_axios_default().get(url);
+    const data = _formatMedia(response.data);
+    return {
+        data,
+        session
+    };
+};
+const _formatMedia = (data) => {
+    const media = [];
+    const root = data.business_discovery;
+    root.media.data.filter((data) => data.media_type !== "VIDEO").forEach((data) => {
+        if (data.children) {
+            data.children.data.filter((data) => data.media_type !== "VIDEO").forEach((data) => {
+                media.push({
+                    id: data.id,
+                    media_url: data.media_url,
+                    taggedUsers: [],
+                });
+            });
+        }
+        else {
+            media.push({
+                id: data.id,
+                media_url: data.media_url,
+                taggedUsers: []
+            });
+        }
+    });
+    const rowIndex = 0;
+    let next = "";
+    if (root.media.paging) {
+        next = root.media.paging.cursors.after;
+    }
+    const username = root.username;
+    const user = {
+        id: root.ig_id,
+        igId: root.ig_id,
+        username,
+        name: root.name,
+        profileImage: root.profile_picture_url,
+        biography: root.biography,
+        following: false,
+    };
+    const history = { [username]: user };
+    return { username, media, user, rowIndex, next, history, isAuthenticated: true };
+};
+const _tryRequestGraph = async (req, currentSession) => {
+    var _a, _b;
+    if (!currentSession.isAuthenticated) {
+        throw new AuthError("");
+    }
+    try {
+        const username = req.data.username;
+        const pageHeaders = createHeaders(baseUrl + "/" + username + "/", currentSession);
+        pageHeaders.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
+        const pageUrl = `${baseUrl}/${username}/`;
+        const options = {
+            url: pageUrl,
+            method: "GET",
+            headers: pageHeaders,
+            withCredentials: true
+        };
+        const pageResponse = await external_axios_default().request(options);
+        /*
+        const title = pageResponse.data.match(/<title>(.*)\(&#064;(.*)\).*<\/title>/);
+        const profile = pageResponse.data.match(/"props":{"id":"([0-9]*)".*"profile_pic_url":"(.*)","show_suggested_profiles"/);
+        */
+        const profileSession = updateSession(currentSession, pageResponse.headers);
+        const profileHeaders = createHeaders(baseUrl + "/" + username + "/", profileSession);
+        profileHeaders["x-ig-app-id"] = getAppId(pageResponse.data);
+        profileHeaders.Cookie = (_b = req.headers.cookie) !== null && _b !== void 0 ? _b : "";
+        const url = `https://i.instagram.com/api/v1/users/web_profile_info/?username=${username}`;
+        const profileOptions = {
+            url,
+            method: "GET",
+            headers: pageHeaders,
+            withCredentials: true
+        };
+        const profileResponse = await external_axios_default().request(profileOptions);
+        const userData = profileResponse.data.data.user;
+        const user = {
+            id: userData.id,
+            igId: userData.id,
+            username,
+            name: userData.full_name,
+            profileImage: "/media?url=" + userData.profile_pic_url,
+            biography: userData.biography,
+            following: userData.followed_by_viewer,
+        };
+        const requestSession = updateSession(currentSession, pageResponse.headers);
+        const response = await _requestGraph(req, requestSession, user);
+        const session = updateSession(currentSession, response.headers);
+        const data = _formatGraph(response.data.data, session, user);
+        return {
+            data,
+            session
+        };
+    }
+    catch (ex) {
+        console.log(ex.message);
+        throw new Error("User not found");
+    }
+};
+const _tryRequestMoreGraph = async (req, currentSession) => {
+    if (!currentSession.isAuthenticated) {
+        throw new AuthError("");
+    }
+    const response = await _requestMoreByGraphql(req, currentSession);
+    const session = updateSession(currentSession, response.headers);
+    const formatResult = _formatGraph(response.data.data, session, req.data.user);
+    const data = formatResult;
+    return {
+        data,
+        session
+    };
+};
+const _requestGraph = async (req, session, user) => {
+    var _a;
+    const headers = createHeaders(baseUrl + "/" + user.username + "/", session);
+    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
+    const params = JSON.stringify({
+        id: user.id,
+        first: 12,
+    });
+    const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`;
+    const options = {
+        url,
+        method: "GET",
+        headers,
+        withCredentials: true
+    };
+    const response = await external_axios_default().request(options);
+    if (response.headers["content-type"].includes("html")) {
+        throw new Error("Auth error");
+    }
+    if (!response.data.data) {
+        throw new Error("Response error");
+    }
+    return response;
+};
+const _requestMoreByGraphql = async (req, session) => {
+    var _a;
+    const params = JSON.stringify({
+        id: req.data.user.id,
+        first: 12,
+        after: req.data.next.replace(GRAPH_QL, "")
+    });
+    const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`;
+    const headers = createHeaders(baseUrl + "/" + req.data.user.username + "/", session);
+    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
+    const options = {
+        url,
+        method: "GET",
+        headers,
+        withCredentials: true
+    };
+    const response = await external_axios_default().request(options);
+    if (response.headers["content-type"].includes("html")) {
+        throw new Error("Auth error");
+    }
+    if (!response.data.data) {
+        throw new Error("Response error");
+    }
+    return response;
+};
+const _formatGraph = (data, session, user) => {
+    const media = [];
+    const mediaNode = data.user.edge_owner_to_timeline_media;
+    mediaNode.edges.filter((data) => data.node.is_video === false).forEach((data) => {
+        if (data.node.edge_sidecar_to_children) {
+            data.node.edge_sidecar_to_children.edges.filter((data) => data.node.is_video === false).forEach((data) => {
+                media.push({
+                    id: data.node.id,
+                    media_url: "/media?url=" + data.node.display_url,
+                    taggedUsers: data.node.edge_media_to_tagged_user.edges.map((edge) => {
+                        return {
+                            id: edge.node.user.id,
+                            igId: edge.node.user.id,
+                            username: edge.node.user.username,
+                            name: edge.node.user.full_name,
+                            profileImage: edge.node.user.profile_pic_url,
+                            biography: "",
+                        };
+                    })
+                });
+            });
+        }
+        else {
+            media.push({
+                id: data.node.id,
+                media_url: "/media?url=" + data.node.display_url,
+                taggedUsers: data.node.edge_media_to_tagged_user.edges.map((edge) => {
+                    return {
+                        id: edge.node.user.id,
+                        igId: edge.node.user.id,
+                        username: edge.node.user.username,
+                        name: edge.node.user.full_name,
+                        profileImage: edge.node.user.profile_pic_url,
+                        biography: "",
+                    };
+                })
+            });
+        }
+    });
+    const rowIndex = 0;
+    let next = "";
+    if (mediaNode.page_info.has_next_page) {
+        next = GRAPH_QL + mediaNode.page_info.end_cursor;
+    }
+    const username = user.username;
+    const history = { [username]: user };
+    return { username, media, user, rowIndex, next, history, isAuthenticated: session.isAuthenticated };
+};
+const requestImage = async (url) => {
+    const options = {
+        url,
+        method: "GET",
+        headers: baseRequestHeaders,
+        responseType: "stream",
+        withCredentials: true
+    };
+    return await external_axios_default().request(options);
+};
+
+
+;// CONCATENATED MODULE: ./src/api/follow.ts
+
+
+
+const requestFollowings = async (req) => {
+    var _a;
+    const currentSession = getSession(req.headers);
+    const params = req.data.next ? {
+        id: currentSession.userId,
+        first: 20,
+        after: req.data.next
+    } : {
+        id: currentSession.userId,
+        first: 20
+    };
+    //https://i.instagram.com/api/v1/friendships/${userid}/following/?count=12&max_id=1
+    const url = `https://www.instagram.com/graphql/query/?query_hash=58712303d941c6855d4e888c5f0cd22f&variables=${encodeURIComponent(JSON.stringify(params))}`;
+    const headers = createHeaders(baseUrl, currentSession);
+    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
+    const options = {
+        url,
+        method: "GET",
+        headers,
+        withCredentials: true
+    };
+    const response = await external_axios_default().request(options);
+    if (response.headers["content-type"].includes("html")) {
+        throw new Error("Auth error");
+    }
+    const data = _formatFollowings(response.data);
+    const session = updateSession(currentSession, response.headers);
+    return {
+        data,
+        session
+    };
+};
+const _formatFollowings = (data) => {
+    const dataNode = data.data.user.edge_follow;
+    const users = dataNode.edges.map((user) => {
+        return {
+            id: user.node.id,
+            igId: user.node.id,
+            username: user.node.username,
+            name: user.node.full_name,
+            biography: "",
+            profileImage: "/media?url=" + user.node.profile_pic_url,
+            following: true,
+        };
+    });
+    const hasNext = dataNode.page_info.has_next_page;
+    const next = hasNext ? dataNode.page_info.end_cursor : "";
+    return { users, hasNext, next };
+};
+const follow = async (req) => {
+    var _a;
+    const currentSession = getSession(req.headers);
+    if (!currentSession.isAuthenticated) {
+        throw new AuthError("");
+    }
+    const url = `${baseUrl}/web/friendships/${req.data.user.id}/follow/`;
+    const headers = createHeaders(baseUrl, currentSession);
+    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
+    const options = {
+        url,
+        method: "POST",
+        headers,
+        withCredentials: true
+    };
+    const response = await external_axios_default().request(options);
+    const data = response.data;
+    const session = updateSession(currentSession, response.headers);
+    return {
+        data,
+        session
+    };
+};
+const unfollow = async (req) => {
+    var _a;
+    const currentSession = getSession(req.headers);
+    if (!currentSession.isAuthenticated) {
+        throw new AuthError("");
+    }
+    const url = `${baseUrl}/web/friendships/${req.data.user.id}/unfollow/`;
+    const headers = createHeaders(baseUrl, currentSession);
+    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
+    const options = {
+        url,
+        method: "POST",
+        headers,
+        withCredentials: true
+    };
+    const response = await external_axios_default().request(options);
+    const data = response.data;
+    const session = updateSession(currentSession, response.headers);
+    return {
+        data,
+        session
+    };
+};
+
+
+;// CONCATENATED MODULE: ./src/api/instagram.ts
+
+
+
+
+
+
+;// CONCATENATED MODULE: ./src/controller.ts
+
+
+class Controller {
+    constructor(db) {
+        this.db = db;
+        this.db.create();
+    }
+    _convertSameSite(_sameSite) {
+        if (!_sameSite)
+            return undefined;
+        if (_sameSite.toLowerCase() === "lax")
+            return "lax";
+        if (_sameSite.toLowerCase() === "strict")
+            return "strict";
+        if (_sameSite.toLowerCase() === "none")
+            return "none";
+        return false;
+    }
+    async sendResponse(req, res, data, session) {
+        const domain =  true ? req.hostname : 0;
+        session.cookies.forEach((cookie) => {
+            var _a;
+            if (cookie.maxAge <= 0)
+                return;
+            res.cookie(cookie.key, cookie.value, {
+                domain: domain,
+                expires: cookie.expires === "Infinity" ? undefined : cookie.expires,
+                httpOnly: cookie.httpOnly,
+                path: (_a = cookie.path) !== null && _a !== void 0 ? _a : undefined,
+                secure: cookie.secure,
+                sameSite: this._convertSameSite(cookie.sameSite),
+                encode: String
+            });
+        });
+        res.set({ "ig-auth": session.isAuthenticated });
+        res.status(200).send(data);
+    }
+    sendErrorResponse(res, ex, message = "") {
+        let loginRequired = false;
+        let errorMessage;
+        if (message) {
+            errorMessage = message;
+        }
+        else {
+            errorMessage = ex.response ? ex.response.data.message : ex.message;
+        }
+        if (ex.response) {
+            loginRequired = ex.response.data.require_login;
+        }
+        if (ex instanceof AuthError || loginRequired) {
+            res.set({ "ig-auth": false });
+        }
+        else {
+            res.set({ "ig-auth": true });
+        }
+        res.status(400).send(errorMessage);
+    }
+    async tryRestore(req, res) {
+        try {
+            const session = getSession(req.headers);
+            const result = await this.db.restore(req.session.account);
+            result.isAuthenticated = session.isAuthenticated;
+            result.account = req.session.account;
+            await this.sendResponse(req, res, result, session);
+        }
+        catch (ex) {
+            this.sendErrorResponse(res, ex, "Restore failed");
+        }
+    }
+    async restoreBySession(req) {
+        if (!req.session.account) {
+            return emptyResponse;
+        }
+        try {
+            return await this.db.restore(req.session.account);
+        }
+        catch (ex) {
+            return emptyResponse;
+        }
+    }
+    async saveSession(req, account, session) {
+        req.session.account = account;
+        if (session.expires) {
+            const maxAge = session.expires.getTime() - new Date().getTime();
+            req.session.cookie.maxAge = maxAge;
+        }
+    }
+    async tryLogin(req, res, account, password) {
+        if (!account || !password) {
+            return this.sendErrorResponse(res, { message: "Username/password required" });
+        }
+        if (account !== process.env.ACCOUNT) {
+            return this.sendErrorResponse(res, { message: "Unauthorized account" });
+        }
+        try {
+            const result = await login({ data: { account, password }, headers: req.headers });
+            if (result.data.success) {
+                this.saveSession(req, account, result.session);
+            }
+            const media = await this.restoreBySession(req);
+            const authResponse = {
+                status: result.data,
+                media
+            };
+            await this.sendResponse(req, res, authResponse, result.session);
+        }
+        catch (ex) {
+            this.sendErrorResponse(res, ex, "Login failed");
+        }
+    }
+    async tryChallenge(req, res, account, code, endpoint) {
+        try {
+            const result = await challenge({ data: { account, code, endpoint }, headers: req.headers });
+            if (result.data.success) {
+                this.saveSession(req, account, result.session);
+            }
+            const media = await this.restoreBySession(req);
+            const authResponse = {
+                status: result.data,
+                media
+            };
+            await this.sendResponse(req, res, authResponse, result.session);
+        }
+        catch (ex) {
+            this.sendErrorResponse(res, ex, "Challenge failed");
+        }
+    }
+    async tryLogout(req, res) {
+        try {
+            const result = await logout({ data: {}, headers: req.headers });
+            req.session.destroy(_e => { throw new Error("Session not destroyed"); });
+            const authResponse = {
+                status: result.data,
+                media: emptyResponse,
+            };
+            await this.sendResponse(req, res, authResponse, result.session);
+        }
+        catch (ex) {
+            this.sendErrorResponse(res, ex);
+        }
+    }
+    async tryQuery(req, res, username, history, preview) {
+        const newHistory = history;
+        try {
+            const exisitingData = await this.db.queryMedia(req.session.account, username);
+            let session;
+            let igResponse;
+            if (exisitingData.username) {
+                session = getSession(req.headers);
+                igResponse = {
+                    username: exisitingData.username,
+                    media: exisitingData.media,
+                    user: exisitingData.user,
+                    rowIndex: exisitingData.rowIndex,
+                    next: exisitingData.next,
+                    history: newHistory,
+                    isAuthenticated: session.isAuthenticated
+                };
+            }
+            else {
+                const result = await requestMedia({ data: { username }, headers: req.headers });
+                igResponse = result.data;
+                session = result.session;
+            }
+            if (!preview) {
+                newHistory[igResponse.username] = igResponse.user;
+                igResponse.history = newHistory;
+                await this.db.saveHistory(req.session.account, username, newHistory);
+                await this.db.saveMedia(req.session.account, igResponse);
+            }
+            await this.sendResponse(req, res, igResponse, session);
+        }
+        catch (ex) {
+            return this.sendErrorResponse(res, ex);
+        }
+    }
+    async tryQueryMore(req, res, user, next, preview) {
+        try {
+            const historyData = await this.db.queryHistory(req.session.account);
+            const igResponse = await requestMore({ data: { user, next }, headers: req.headers });
+            if (!preview) {
+                igResponse.data.history = historyData.history;
+                await this.db.appendMedia(req.session.account, igResponse.data);
+            }
+            await this.sendResponse(req, res, igResponse.data, igResponse.session);
+        }
+        catch (ex) {
+            return this.sendErrorResponse(res, ex);
+        }
+    }
+    async tryRefresh(req, res, username, history) {
+        try {
+            const igResponse = await requestMedia({ data: { username }, headers: req.headers });
+            history[username] = igResponse.data.history[username];
+            igResponse.data.history = history;
+            await this.db.saveMedia(req.session.account, igResponse.data);
+            await this.sendResponse(req, res, igResponse.data, igResponse.session);
+        }
+        catch (ex) {
+            return this.sendErrorResponse(res, ex);
+        }
+    }
+    async tryGetFollowings(req, res, next) {
+        try {
+            const result = await requestFollowings({ data: { next }, headers: req.headers });
+            await this.sendResponse(req, res, result.data, result.session);
+        }
+        catch (ex) {
+            return this.sendErrorResponse(res, ex);
+        }
+    }
+    async tryFollow(req, res, user) {
+        try {
+            const result = await follow({ data: { user }, headers: req.headers });
+            await this.sendResponse(req, res, result.data, result.session);
+        }
+        catch (ex) {
+            return this.sendErrorResponse(res, ex);
+        }
+    }
+    async tryUnfollow(req, res, user) {
+        try {
+            const result = await unfollow({ data: { user }, headers: req.headers });
+            await this.sendResponse(req, res, result.data, result.session);
+        }
+        catch (ex) {
+            return this.sendErrorResponse(res, ex);
+        }
+    }
+    async trySaveRowIndex(req, res, account, username, rowIndex) {
+        try {
+            await this.db.saveRowIndex(account, username, rowIndex);
+            res.status(200).send({ status: "done" });
+        }
+        catch (ex) {
+            this.sendErrorResponse(res, ex, "Update failed");
+        }
+    }
+    async tryDeleteHistory(_req, res, account, currentUsername, deleteUsername, history) {
+        try {
+            await this.db.deleteMedia(account, deleteUsername);
+            await this.db.saveHistory(account, currentUsername, history);
+            res.status(200).send({ status: "done" });
+        }
+        catch (ex) {
+            this.sendErrorResponse(res, ex, "Delete failed");
+        }
+    }
+    async retrieveImage(req, res) {
+        try {
+            const url = Object.keys(req.query).map((key) => {
+                if (key !== "url") {
+                    return "&" + key + "=" + req.query[key];
+                }
+                else {
+                    return req.query[key];
+                }
+            });
+            const result = await requestImage(url.join(""));
+            Object.entries(result.headers).forEach(([key, value]) => res.setHeader(key, value));
+            result.data.pipe(res);
+        }
+        catch (ex) {
+            this.sendErrorResponse(res, ex, "image not found");
+        }
+    }
+}
+/* harmony default export */ const controller = (Controller);
+
 ;// CONCATENATED MODULE: external "@azure/cosmos"
 const cosmos_namespaceObject = require("@azure/cosmos");
 ;// CONCATENATED MODULE: ./src/db/azureContext.ts
@@ -440,649 +1363,6 @@ class azure {
 const dbprovider =  false ? 0 : new db_azure();
 /* harmony default export */ const model = (dbprovider);
 
-;// CONCATENATED MODULE: external "tough-cookie"
-const external_tough_cookie_namespaceObject = require("tough-cookie");
-var external_tough_cookie_default = /*#__PURE__*/__webpack_require__.n(external_tough_cookie_namespaceObject);
-;// CONCATENATED MODULE: ./src/api/util.ts
-
-const baseUrl = "https://www.instagram.com";
-const Cookie = (external_tough_cookie_default()).Cookie;
-const baseRequestHeaders = {
-    "Accept": "*/*",
-    "Accept-Encoding": "gzip, deflate",
-    "Accept-Language": "en-US",
-    "Authority": "www.instagram.com",
-};
-const getSession = (headers) => {
-    try {
-        const session = {
-            isAuthenticated: false,
-            csrfToken: "",
-            userId: "",
-            userAgent: headers["user-agent"],
-            cookies: [],
-            expires: null,
-        };
-        if (!headers.cookie && !headers["set-cookie"]) {
-            return session;
-        }
-        let cookies = [];
-        if (headers.cookie) {
-            cookies = headers.cookie.split(";");
-        }
-        else {
-            cookies = headers["set-cookie"] instanceof Array ? headers["set-cookie"] : [headers["set-cookie"]];
-        }
-        cookies.forEach((cookieString) => {
-            const cookie = Cookie.parse(cookieString);
-            if (!cookie) {
-                return;
-            }
-            if (cookie.key.toLowerCase() === "sessionid") {
-                session.isAuthenticated = true;
-                if (!cookie.expires) {
-                    const expires = new Date();
-                    expires.setTime(expires.getTime() + (8 * 60 * 60 * 1000));
-                    cookie.expires = expires;
-                }
-                if (cookie.expires !== "Infinity") {
-                    session.expires = cookie.expires;
-                }
-            }
-            if (cookie.key.toLowerCase() === "csrftoken") {
-                session.csrfToken = cookie.value;
-            }
-            if (cookie.key.toLowerCase() === "ds_user_id") {
-                session.userId = cookie.value;
-            }
-            session.cookies.push(cookie);
-        });
-        return session;
-    }
-    catch (ex) {
-        console.log(ex.message);
-        throw new Error("cookie error");
-    }
-};
-const updateSession = (currentSession, headers) => {
-    const session = currentSession;
-    session.cookies = [];
-    const cookies = headers["set-cookie"] instanceof Array ? headers["set-cookie"] : [headers["set-cookie"]];
-    if (!cookies) {
-        return session;
-    }
-    cookies.forEach((cookieString) => {
-        const cookie = Cookie.parse(cookieString);
-        if (!cookie)
-            return;
-        session.cookies.push(cookie);
-    });
-    return session;
-};
-const createHeaders = (referer, session) => {
-    const headers = baseRequestHeaders;
-    headers["origin"] = "https://www.instagram.com";
-    headers["referer"] = referer;
-    headers["x-requested-with"] = "XMLHttpRequest";
-    headers["x-csrftoken"] = session.csrfToken;
-    headers["user-agent"] = session.userAgent;
-    return headers;
-};
-const getAppId = (data) => {
-    const appIds = data.match(/"customHeaders":{"X-IG-App-ID":"(.*)","X-IG-D"/);
-    return appIds[1];
-};
-const extractToken = (headers) => {
-    const setCookieHeader = headers["set-cookie"] || [];
-    const cookies = setCookieHeader.map(c => Cookie.parse(c) || new (external_tough_cookie_default()).Cookie());
-    const { value: csrftoken } = cookies.find(({ key }) => key === "csrftoken") || {};
-    if (!csrftoken) {
-        return "";
-    }
-    return csrftoken;
-};
-const getCookieString = (cookies) => {
-    let setCookieString = "";
-    cookies.forEach((cookieString) => {
-        const cookie = Cookie.parse(cookieString);
-        if (!cookie) {
-            return;
-        }
-        setCookieString += `${cookie.key}=${cookie.value};`;
-    });
-    return setCookieString;
-};
-
-
-;// CONCATENATED MODULE: external "axios"
-const external_axios_namespaceObject = require("axios");
-var external_axios_default = /*#__PURE__*/__webpack_require__.n(external_axios_namespaceObject);
-;// CONCATENATED MODULE: ./src/api/login.ts
-
-
-const login = async (req) => {
-    console.log("----------try login----------");
-    const account = req.data.account;
-    let session = getSession(req.headers);
-    const headers = baseRequestHeaders;
-    headers["user-agent"] = session.userAgent;
-    const options = {
-        url: baseUrl,
-        method: "GET",
-        headers,
-        withCredentials: true
-    };
-    try {
-        headers.Cookie = "ig_cb=1;";
-        headers["x-instagram-ajax"] = 1;
-        const initialPage = await external_axios_default().request(options);
-        headers["x-ig-app-id"] = getAppId(initialPage.data);
-        options.url = "https://i.instagram.com/api/v1/public/landing_info/";
-        const baseResult = await external_axios_default().request(options);
-        const baseCsrftoken = extractToken(baseResult.headers);
-        if (!baseCsrftoken) {
-            throw new Error("Token not found");
-        }
-        headers["x-requested-with"] = "XMLHttpRequest";
-        headers["x-csrftoken"] = baseCsrftoken;
-        headers["content-type"] = "application/x-www-form-urlencoded";
-        const createEncPassword = (pwd) => {
-            return `#PWD_INSTAGRAM_BROWSER:0:${Math.floor(Date.now() / 1000)}:${pwd}`;
-        };
-        const params = new URLSearchParams();
-        params.append("username", account);
-        params.append("enc_password", createEncPassword(req.data.password));
-        params.append("queryParams", "{}");
-        params.append("optIntoOneTap", "false");
-        options.url = "https://www.instagram.com/accounts/login/ajax/";
-        options.method = "POST";
-        options.data = params;
-        options.headers = headers;
-        const authResponse = await external_axios_default().request(options);
-        console.log("----------auth response-------");
-        console.log(authResponse.data);
-        session = getSession(authResponse.headers);
-        const data = { account, success: session.isAuthenticated, challenge: false, endpoint: "" };
-        return {
-            data,
-            session
-        };
-    }
-    catch (ex) {
-        if (ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required") {
-            return await requestChallenge(account, options, ex.response);
-        }
-        if (ex.response) {
-            console.log(ex.response.data);
-        }
-        else {
-            console.log(ex.message);
-        }
-        throw new Error("Login failed");
-    }
-};
-const requestChallenge = async (account, options, res) => {
-    console.log("---------- challenge start -------");
-    if (!options.headers) {
-        throw new Error("headers empty");
-    }
-    const resToken = extractToken(res.headers);
-    options.headers["x-csrftoken"] = resToken;
-    const responseCookies = res.headers["set-cookie"] instanceof Array ? res.headers["set-cookie"] : [res.headers["set-cookie"]];
-    options.headers.Cookie = getCookieString(responseCookies);
-    const url = baseUrl + res.data.checkpoint_url;
-    options.url = url;
-    options.method = "GET";
-    options.data = "";
-    await external_axios_default().request(options);
-    console.log("---------- challenge post start -------");
-    const params = new URLSearchParams();
-    params.append("choice", "1");
-    options.data = params;
-    options.method = "POST";
-    const nextRes = await external_axios_default().request(options);
-    const session = getSession(res.headers);
-    if (nextRes.data.type && nextRes.data.type === "CHALLENGE") {
-        return {
-            data: { account: account, success: false, challenge: true, endpoint: url },
-            session
-        };
-    }
-    return {
-        data: { account, success: false, challenge: false, endpoint: "" },
-        session
-    };
-};
-const challenge = async (req) => {
-    var _a;
-    const currentSession = getSession(req.headers);
-    try {
-        const url = req.data.endpoint;
-        const headers = createHeaders(url, currentSession);
-        headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
-        headers["x-requested-with"] = "XMLHttpRequest";
-        headers["content-type"] = "application/x-www-form-urlencoded";
-        const params = new URLSearchParams();
-        params.append("security_code", req.data.code);
-        const options = {
-            url,
-            method: "POST",
-            headers,
-            data: params,
-            withCredentials: true
-        };
-        const response = await external_axios_default().request(options);
-        const session = getSession(response.headers);
-        const data = { account: req.data.account, success: session.isAuthenticated, challenge: !session.isAuthenticated, endpoint: "" };
-        console.log(response.data);
-        return {
-            data,
-            session
-        };
-    }
-    catch (ex) {
-        return {
-            data: { account: req.data.account, success: false, challenge: true, endpoint: req.data.endpoint },
-            session: currentSession
-        };
-    }
-};
-const logout = async (req) => {
-    var _a;
-    const currentSession = getSession(req.headers);
-    if (!currentSession.isAuthenticated)
-        throw new Error("Already logged out");
-    try {
-        const headers = createHeaders(baseUrl, currentSession);
-        headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
-        const options = {
-            url: `${baseUrl}/accounts/logout/ajax/`,
-            method: "POST",
-            headers,
-            withCredentials: true
-        };
-        const response = await external_axios_default().request(options);
-        const session = getSession(response.headers);
-        const data = { account: "", success: true, challenge: false, endpoint: "" };
-        return {
-            data,
-            session
-        };
-    }
-    catch (ex) {
-        return {
-            data: { account: "", success: true, challenge: false, endpoint: "" },
-            session: currentSession
-        };
-    }
-};
-
-
-;// CONCATENATED MODULE: ./src/api/media.ts
-
-
-
-const GRAPH_QL = "#GRAPH_QL";
-const requestMedia = async (req) => {
-    const session = getSession(req.headers);
-    const access_token = process.env.TOKEN;
-    const userId = process.env.USER_ID;
-    const version = process.env.VERSION;
-    const username = req.data.username;
-    const url = `https://graph.facebook.com/v${version}/${userId}?fields=business_discovery.username(${username}){id,username,name,biography,profile_picture_url,ig_id,media{id,media_url,media_type,children{id,media_url,media_type}}}&access_token=${access_token}`;
-    try {
-        const response = await external_axios_default().get(url);
-        const data = _formatMedia(response.data);
-        return {
-            data,
-            session
-        };
-    }
-    catch (ex) {
-        return await _tryRequestGraph(req, session);
-    }
-};
-const requestMore = async (req) => {
-    const session = getSession(req.headers);
-    if (req.data.next.startsWith(GRAPH_QL)) {
-        return _tryRequestMoreGraph(req, session);
-    }
-    const access_token = process.env.TOKEN;
-    const userId = process.env.USER_ID;
-    const version = process.env.VERSION;
-    const url = `https://graph.facebook.com/v${version}/${userId}?fields=business_discovery.username(${req.data.user.username}){id,username,name,profile_picture_url,ig_id,media.after(${req.data.next}){id,media_url,media_type,children{id,media_url,media_type}}}&access_token=${access_token}`;
-    const response = await external_axios_default().get(url);
-    const data = _formatMedia(response.data);
-    return {
-        data,
-        session
-    };
-};
-const _formatMedia = (data) => {
-    const media = [];
-    const root = data.business_discovery;
-    root.media.data.filter((data) => data.media_type !== "VIDEO").forEach((data) => {
-        if (data.children) {
-            data.children.data.filter((data) => data.media_type !== "VIDEO").forEach((data) => {
-                media.push({
-                    id: data.id,
-                    media_url: data.media_url,
-                    taggedUsers: []
-                });
-            });
-        }
-        else {
-            media.push({
-                id: data.id,
-                media_url: data.media_url,
-                taggedUsers: []
-            });
-        }
-    });
-    const rowIndex = 0;
-    let next = "";
-    if (root.media.paging) {
-        next = root.media.paging.cursors.after;
-    }
-    const username = root.username;
-    const user = {
-        id: root.ig_id,
-        igId: root.ig_id,
-        username,
-        name: root.name,
-        profileImage: root.profile_picture_url,
-        biography: root.biography,
-        following: false,
-    };
-    const history = { [username]: user };
-    return { username, media, user, rowIndex, next, history, isAuthenticated: true };
-};
-const _tryRequestGraph = async (req, currentSession) => {
-    var _a, _b;
-    if (!currentSession.isAuthenticated) {
-        throw new AuthError("");
-    }
-    try {
-        const username = req.data.username;
-        const pageHeaders = createHeaders(baseUrl + "/" + username + "/", currentSession);
-        pageHeaders.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
-        const pageUrl = `${baseUrl}/${username}/`;
-        const options = {
-            url: pageUrl,
-            method: "GET",
-            headers: pageHeaders,
-            withCredentials: true
-        };
-        const pageResponse = await external_axios_default().request(options);
-        /*
-        const title = pageResponse.data.match(/<title>(.*)\(&#064;(.*)\).*<\/title>/);
-        const profile = pageResponse.data.match(/"props":{"id":"([0-9]*)".*"profile_pic_url":"(.*)","show_suggested_profiles"/);
-        */
-        const profileSession = updateSession(currentSession, pageResponse.headers);
-        const profileHeaders = createHeaders(baseUrl + "/" + username + "/", profileSession);
-        profileHeaders["x-ig-app-id"] = getAppId(pageResponse.data);
-        profileHeaders.Cookie = (_b = req.headers.cookie) !== null && _b !== void 0 ? _b : "";
-        const url = `https://i.instagram.com/api/v1/users/web_profile_info/?username=${username}`;
-        const profileOptions = {
-            url,
-            method: "GET",
-            headers: pageHeaders,
-            withCredentials: true
-        };
-        const profileResponse = await external_axios_default().request(profileOptions);
-        const userData = profileResponse.data.data.user;
-        const user = {
-            id: userData.id,
-            igId: userData.id,
-            username,
-            name: userData.full_name,
-            profileImage: "/media?url=" + userData.profile_pic_url,
-            biography: userData.biography,
-            following: userData.followed_by_viewer,
-        };
-        const requestSession = updateSession(currentSession, pageResponse.headers);
-        const response = await _requestGraph(req, requestSession, user);
-        const session = updateSession(currentSession, response.headers);
-        const data = _formatGraph(response.data.data, session, user);
-        return {
-            data,
-            session
-        };
-    }
-    catch (ex) {
-        console.log(ex.message);
-        throw new Error("User not found");
-    }
-};
-const _tryRequestMoreGraph = async (req, currentSession) => {
-    if (!currentSession.isAuthenticated) {
-        throw new AuthError("");
-    }
-    const response = await _requestMoreByGraphql(req, currentSession);
-    const session = updateSession(currentSession, response.headers);
-    const formatResult = _formatGraph(response.data.data, session, req.data.user);
-    const data = formatResult;
-    return {
-        data,
-        session
-    };
-};
-const _requestGraph = async (req, session, user) => {
-    var _a;
-    const headers = createHeaders(baseUrl + "/" + user.username + "/", session);
-    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
-    const params = JSON.stringify({
-        id: user.id,
-        first: 12,
-    });
-    const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`;
-    const options = {
-        url,
-        method: "GET",
-        headers,
-        withCredentials: true
-    };
-    const response = await external_axios_default().request(options);
-    if (response.headers["content-type"].includes("html")) {
-        throw new Error("Auth error");
-    }
-    if (!response.data.data) {
-        throw new Error("Response error");
-    }
-    return response;
-};
-const _requestMoreByGraphql = async (req, session) => {
-    var _a;
-    const params = JSON.stringify({
-        id: req.data.user.id,
-        first: 12,
-        after: req.data.next.replace(GRAPH_QL, "")
-    });
-    const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`;
-    const headers = createHeaders(baseUrl + "/" + req.data.user.username + "/", session);
-    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
-    const options = {
-        url,
-        method: "GET",
-        headers,
-        withCredentials: true
-    };
-    const response = await external_axios_default().request(options);
-    if (response.headers["content-type"].includes("html")) {
-        throw new Error("Auth error");
-    }
-    if (!response.data.data) {
-        throw new Error("Response error");
-    }
-    return response;
-};
-const _formatGraph = (data, session, user) => {
-    const media = [];
-    const mediaNode = data.user.edge_owner_to_timeline_media;
-    mediaNode.edges.filter((data) => data.node.is_video === false).forEach((data) => {
-        if (data.node.edge_sidecar_to_children) {
-            data.node.edge_sidecar_to_children.edges.filter((data) => data.node.is_video === false).forEach((data) => {
-                media.push({
-                    id: data.node.id,
-                    media_url: "/media?url=" + data.node.display_url,
-                    taggedUsers: data.node.edge_media_to_tagged_user.edges.map((edge) => {
-                        return {
-                            id: edge.node.user.id,
-                            igId: edge.node.user.id,
-                            username: edge.node.user.username,
-                            name: edge.node.user.full_name,
-                            profileImage: edge.node.user.profile_pic_url,
-                            biography: "",
-                        };
-                    })
-                });
-            });
-        }
-        else {
-            media.push({
-                id: data.node.id,
-                media_url: "/media?url=" + data.node.display_url,
-                taggedUsers: data.node.edge_media_to_tagged_user.edges.map((edge) => {
-                    return {
-                        id: edge.node.user.id,
-                        igId: edge.node.user.id,
-                        username: edge.node.user.username,
-                        name: edge.node.user.full_name,
-                        profileImage: edge.node.user.profile_pic_url,
-                        biography: "",
-                    };
-                })
-            });
-        }
-    });
-    const rowIndex = 0;
-    let next = "";
-    if (mediaNode.page_info.has_next_page) {
-        next = GRAPH_QL + mediaNode.page_info.end_cursor;
-    }
-    const username = user.username;
-    const history = { [username]: user };
-    return { username, media, user, rowIndex, next, history, isAuthenticated: session.isAuthenticated };
-};
-const requestImage = async (url) => {
-    const options = {
-        url,
-        method: "GET",
-        headers: baseRequestHeaders,
-        responseType: "stream",
-        withCredentials: true
-    };
-    return await external_axios_default().request(options);
-};
-
-
-;// CONCATENATED MODULE: ./src/api/follow.ts
-
-
-
-const requestFollowings = async (req) => {
-    var _a;
-    const currentSession = getSession(req.headers);
-    const params = req.data.next ? {
-        id: currentSession.userId,
-        first: 20,
-        after: req.data.next
-    } : {
-        id: currentSession.userId,
-        first: 20
-    };
-    const url = `https://www.instagram.com/graphql/query/?query_hash=58712303d941c6855d4e888c5f0cd22f&variables=${encodeURIComponent(JSON.stringify(params))}`;
-    const headers = createHeaders(baseUrl, currentSession);
-    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
-    const options = {
-        url,
-        method: "GET",
-        headers,
-        withCredentials: true
-    };
-    const response = await external_axios_default().request(options);
-    if (response.headers["content-type"].includes("html")) {
-        throw new Error("Auth error");
-    }
-    const data = _formatFollowings(response.data);
-    const session = updateSession(currentSession, response.headers);
-    return {
-        data,
-        session
-    };
-};
-const _formatFollowings = (data) => {
-    const dataNode = data.data.user.edge_follow;
-    const users = dataNode.edges.map((user) => {
-        return {
-            id: user.node.id,
-            igId: user.node.id,
-            username: user.node.username,
-            name: user.node.full_name,
-            biography: "",
-            profileImage: "/media?url=" + user.node.profile_pic_url,
-            following: true,
-        };
-    });
-    const hasNext = dataNode.page_info.has_next_page;
-    const next = hasNext ? dataNode.page_info.end_cursor : "";
-    return { users, hasNext, next };
-};
-const follow = async (req) => {
-    var _a;
-    const currentSession = getSession(req.headers);
-    if (!currentSession.isAuthenticated) {
-        throw new AuthError("");
-    }
-    const url = `${baseUrl}/web/friendships/${req.data.user.id}/follow/`;
-    const headers = createHeaders(baseUrl, currentSession);
-    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
-    const options = {
-        url,
-        method: "POST",
-        headers,
-        withCredentials: true
-    };
-    const response = await external_axios_default().request(options);
-    const data = response.data;
-    const session = updateSession(currentSession, response.headers);
-    return {
-        data,
-        session
-    };
-};
-const unfollow = async (req) => {
-    var _a;
-    const currentSession = getSession(req.headers);
-    if (!currentSession.isAuthenticated) {
-        throw new AuthError("");
-    }
-    const url = `${baseUrl}/web/friendships/${req.data.user.id}/unfollow/`;
-    const headers = createHeaders(baseUrl, currentSession);
-    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
-    const options = {
-        url,
-        method: "POST",
-        headers,
-        withCredentials: true
-    };
-    const response = await external_axios_default().request(options);
-    const data = response.data;
-    const session = updateSession(currentSession, response.headers);
-    return {
-        data,
-        session
-    };
-};
-
-
-;// CONCATENATED MODULE: ./src/api/instagram.ts
-
-
-
-
-
-
 ;// CONCATENATED MODULE: ./src/server.ts
 var _a;
 
@@ -1096,8 +1376,8 @@ const port = process.env.PORT || 5000;
 const isProduction = "production" === "production";
 const publicDir = isProduction ? "./public" : "../public";
 const app = external_express_default()();
+const server_controller = new controller(model.db);
 const store = model.store((external_express_session_default()));
-const db = model.db;
 app.enable('trust proxy');
 app.use(external_express_default().json());
 app.use(external_express_default().urlencoded({ extended: true }));
@@ -1115,59 +1395,20 @@ app.use(external_express_session_default()({
         sameSite: isProduction ? "none" : "strict"
     }
 }));
-db.create();
-const sendResponse = async (req, res, data, session) => {
-    const domain = isProduction ? req.hostname : "";
-    session.cookies.forEach((cookie) => {
-        if (cookie.maxAge <= 0)
-            return;
-        res.cookie(cookie.key, cookie.value, {
-            domain: domain,
-            expires: cookie.expires,
-            httpOnly: cookie.httpOnly,
-            path: cookie.path,
-            secure: cookie.secure,
-            sameSite: cookie.sameSite,
-            encode: String
-        });
-    });
-    res.set({ "ig-auth": session.isAuthenticated });
-    res.status(200).send(data);
-};
-const sendErrorResponse = (res, ex, message = "") => {
-    let loginRequired = false;
-    let errorMessage;
-    if (message) {
-        errorMessage = message;
-    }
-    else {
-        errorMessage = ex.response ? ex.response.data.message : ex.message;
-    }
-    if (ex.response) {
-        loginRequired = ex.response.data.require_login;
-    }
-    if (ex instanceof AuthError || loginRequired) {
-        res.set({ "ig-auth": false });
-    }
-    else {
-        res.set({ "ig-auth": true });
-    }
-    res.status(400).send(errorMessage);
-};
 app.use((req, res, next) => {
     const passthru = ["/login", "/logout", "/challenge"];
     if (req.session.account || passthru.includes(req.path) || req.method === "GET") {
         next();
     }
     else {
-        sendErrorResponse(res, new AuthError(""));
+        server_controller.sendErrorResponse(res, new AuthError(""));
     }
 });
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
     res.sendFile(external_path_default().resolve(__dirname, publicDir, "index.html"));
 });
 app.get("/media", async (req, res) => {
-    await retrieveImage(req, res);
+    await server_controller.retrieveImage(req, res);
 });
 app.post("/query", async (req, res) => {
     const username = req.body.username;
@@ -1175,259 +1416,60 @@ app.post("/query", async (req, res) => {
     const forceRequest = req.body.refresh;
     const preview = req.body.preview;
     if (forceRequest) {
-        return await tryRefresh(req, res, username, history);
+        return await server_controller.tryRefresh(req, res, username, history);
     }
     if (!username) {
-        await tryRestore(req, res);
+        await server_controller.tryRestore(req, res);
     }
     else {
-        await tryQuery(req, res, username, history, preview);
+        await server_controller.tryQuery(req, res, username, history, preview);
     }
 });
 app.post("/querymore", async (req, res) => {
     const user = req.body.user;
     const next = req.body.next;
     const preview = req.body.preview;
-    await tryQueryMore(req, res, user, next, preview);
+    await server_controller.tryQueryMore(req, res, user, next, preview);
 });
 app.post("/login", async (req, res) => {
     const account = req.body.account;
     const password = req.body.password;
-    await tryLogin(req, res, account, password);
+    await server_controller.tryLogin(req, res, account, password);
 });
 app.post("/challenge", async (req, res) => {
     const account = req.body.account;
     const code = req.body.code;
     const endpoint = req.body.endpoint;
-    await tryChallenge(req, res, account, code, endpoint);
+    await server_controller.tryChallenge(req, res, account, code, endpoint);
 });
 app.post("/logout", async (req, res) => {
-    await tryLogout(req, res);
-});
-app.post("/follow", async (req, res) => {
-    const user = req.body.user;
-    await tryFollow(req, res, user);
-});
-app.post("/unfollow", async (req, res) => {
-    const user = req.body.user;
-    await tryUnfollow(req, res, user);
-});
-app.post("/save", async (req, res) => {
-    try {
-        await db.saveRowIndex(req.session.account, req.body.username, req.body.rowIndex);
-        res.status(200).send({ status: "done" });
-    }
-    catch (ex) {
-        sendErrorResponse(res, ex, "Update failed");
-    }
-});
-app.post("/remove", async (req, res) => {
-    try {
-        const history = req.body.history;
-        const current = req.body.current;
-        const target = req.body.target;
-        await db.deleteMedia(req.session.account, target);
-        await db.saveHistory(req.session.account, current, history);
-        res.status(200).send({ status: "done" });
-    }
-    catch (ex) {
-        sendErrorResponse(res, ex, "Delete failed");
-    }
+    await server_controller.tryLogout(req, res);
 });
 app.post("/following", async (req, res) => {
     const next = req.body.next;
-    await tryGetFollowings(req, res, next);
+    await server_controller.tryGetFollowings(req, res, next);
 });
-const tryRestore = async (req, res) => {
-    try {
-        const session = getSession(req.headers);
-        const result = await db.restore(req.session.account);
-        result.isAuthenticated = session.isAuthenticated;
-        result.account = req.session.account;
-        await sendResponse(req, res, result, session);
-    }
-    catch (ex) {
-        sendErrorResponse(res, ex, "Restore failed");
-    }
-};
-const restoreBySession = async (req) => {
-    if (!req.session.account) {
-        return emptyResponse;
-    }
-    try {
-        return await db.restore(req.session.account);
-    }
-    catch (ex) {
-        return emptyResponse;
-    }
-};
-const saveSession = (req, account, session) => {
-    req.session.account = account;
-    if (session.expires) {
-        const maxAge = session.expires.getTime() - new Date().getTime();
-        req.session.cookie.maxAge = maxAge;
-    }
-};
-const tryLogin = async (req, res, account, password) => {
-    if (!account || !password) {
-        return sendErrorResponse(res, { message: "Username/password required" });
-    }
-    if (account !== process.env.ACCOUNT) {
-        return sendErrorResponse(res, { message: "Unauthorized account" });
-    }
-    try {
-        const result = await login({ data: { account, password }, headers: req.headers });
-        if (result.data.success) {
-            saveSession(req, account, result.session);
-        }
-        const media = await restoreBySession(req);
-        const authResponse = {
-            status: result.data,
-            media
-        };
-        await sendResponse(req, res, authResponse, result.session);
-    }
-    catch (ex) {
-        sendErrorResponse(res, ex, "Login failed");
-    }
-};
-const tryChallenge = async (req, res, account, code, endpoint) => {
-    try {
-        const result = await challenge({ data: { account, code, endpoint }, headers: req.headers });
-        if (result.data.success) {
-            saveSession(req, account, result.session);
-        }
-        const media = await restoreBySession(req);
-        const authResponse = {
-            status: result.data,
-            media
-        };
-        await sendResponse(req, res, authResponse, result.session);
-    }
-    catch (ex) {
-        sendErrorResponse(res, ex, "Challenge failed");
-    }
-};
-const tryLogout = async (req, res) => {
-    try {
-        const result = await logout({ data: {}, headers: req.headers });
-        req.session.destroy();
-        const authResponse = {
-            status: result.data,
-            media: emptyResponse,
-        };
-        await sendResponse(req, res, authResponse, result.session);
-    }
-    catch (ex) {
-        sendErrorResponse(res, ex);
-    }
-};
-const tryQuery = async (req, res, username, history, preview) => {
-    const newHistory = history;
-    try {
-        const exisitingData = await db.queryMedia(req.session.account, username);
-        let session;
-        let igResponse;
-        if (exisitingData.username) {
-            session = getSession(req.headers);
-            igResponse = {
-                username: exisitingData.username,
-                media: exisitingData.media,
-                user: exisitingData.user,
-                rowIndex: exisitingData.rowIndex,
-                next: exisitingData.next,
-                history: newHistory,
-                isAuthenticated: session.isAuthenticated
-            };
-        }
-        else {
-            const result = await requestMedia({ data: { username }, headers: req.headers });
-            igResponse = result.data;
-            session = result.session;
-        }
-        if (!preview) {
-            newHistory[igResponse.username] = igResponse.user;
-            igResponse.history = newHistory;
-            await db.saveHistory(req.session.account, username, newHistory);
-            await db.saveMedia(req.session.account, igResponse);
-        }
-        await sendResponse(req, res, igResponse, session);
-    }
-    catch (ex) {
-        return sendErrorResponse(res, ex);
-    }
-};
-const tryQueryMore = async (req, res, user, next, preview) => {
-    try {
-        const historyData = await db.queryHistory(req.session.account);
-        const igResponse = await requestMore({ data: { user, next }, headers: req.headers });
-        if (!preview) {
-            igResponse.data.history = historyData.history;
-            await db.appendMedia(req.session.account, igResponse.data);
-        }
-        await sendResponse(req, res, igResponse.data, igResponse.session);
-    }
-    catch (ex) {
-        return sendErrorResponse(res, ex);
-    }
-};
-const tryRefresh = async (req, res, username, history) => {
-    try {
-        const igResponse = await requestMedia({ data: { username }, headers: req.headers });
-        history[username] = igResponse.data.history[username];
-        igResponse.data.history = history;
-        await db.saveMedia(req.session.account, igResponse.data);
-        await sendResponse(req, res, igResponse.data, igResponse.session);
-    }
-    catch (ex) {
-        return sendErrorResponse(res, ex);
-    }
-};
-const tryGetFollowings = async (req, res, next) => {
-    try {
-        const result = await requestFollowings({ data: { next }, headers: req.headers });
-        await sendResponse(req, res, result.data, result.session);
-    }
-    catch (ex) {
-        return sendErrorResponse(res, ex);
-    }
-};
-const tryFollow = async (req, res, user) => {
-    try {
-        const result = await follow({ data: { user }, headers: req.headers });
-        await sendResponse(req, res, result.data, result.session);
-    }
-    catch (ex) {
-        return sendErrorResponse(res, ex);
-    }
-};
-const tryUnfollow = async (req, res, user) => {
-    try {
-        const result = await unfollow({ data: { user }, headers: req.headers });
-        await sendResponse(req, res, result.data, result.session);
-    }
-    catch (ex) {
-        return sendErrorResponse(res, ex);
-    }
-};
-const retrieveImage = async (req, res) => {
-    try {
-        const url = Object.keys(req.query).map((key) => {
-            if (key !== "url") {
-                return "&" + key + "=" + req.query[key];
-            }
-            else {
-                return req.query[key];
-            }
-        });
-        const result = await requestImage(url.join(""));
-        Object.entries(result.headers).forEach(([key, value]) => res.setHeader(key, value));
-        result.data.pipe(res);
-    }
-    catch (ex) {
-        sendErrorResponse(res, ex, "image not found");
-    }
-};
+app.post("/follow", async (req, res) => {
+    const user = req.body.user;
+    await server_controller.tryFollow(req, res, user);
+});
+app.post("/unfollow", async (req, res) => {
+    const user = req.body.user;
+    await server_controller.tryUnfollow(req, res, user);
+});
+app.post("/save", async (req, res) => {
+    const account = req.session.account;
+    const username = req.body.username;
+    const rowIndex = req.body.rowIndex;
+    await server_controller.trySaveRowIndex(req, res, account, username, rowIndex);
+});
+app.post("/remove", async (req, res) => {
+    const account = req.session.account;
+    const history = req.body.history;
+    const current = req.body.current;
+    const target = req.body.target;
+    await server_controller.tryDeleteHistory(req, res, account, current, target, history);
+});
 app.listen(port, () => {
     console.log(`Start server on port ${port}.`);
 });
