@@ -90,10 +90,6 @@ const updateSession = (currentSession:ISession, headers:any) => {
 
     const cookies = headers["set-cookie"] instanceof Array ? headers["set-cookie"] : [headers["set-cookie"]];
 
-    if(!cookies){
-        return session;
-    }
-
     cookies.forEach((cookieString:string) => {
 
         const cookie = Cookie.parse(cookieString);
@@ -113,7 +109,7 @@ const createHeaders = (referer:string, session:ISession) :AxiosRequestHeaders =>
     const headers :AxiosRequestHeaders = baseRequestHeaders;
     headers["origin"] = "https://www.instagram.com"
     headers["referer"] = referer
-    headers["x-requested-with"] = "XMLHttpRequest"
+    //headers["x-requested-with"] = "XMLHttpRequest"
     headers["x-csrftoken"] = session.csrfToken;
     headers["user-agent"] = session.userAgent;
 
@@ -123,6 +119,11 @@ const createHeaders = (referer:string, session:ISession) :AxiosRequestHeaders =>
 const getAppId = (data:any) => {
     const appIds = data.match(/"customHeaders":{"X-IG-App-ID":"(.*)","X-IG-D"/)
     return appIds[1]
+}
+
+const getClientVersion = (data:any) => {
+    const version = data.match(/"client_revision":(.*),"tier"/)
+    return version[1]
 }
 
 const extractToken = (headers:AxiosResponseHeaders) => {
@@ -148,7 +149,7 @@ const getCookieString = (cookies:string[] | undefined[]) => {
 
         const cookie = Cookie.parse(cookieString);
 
-        if(!cookie){
+        if(!cookie || !cookie.value){
             return
         }
 
@@ -159,4 +160,4 @@ const getCookieString = (cookies:string[] | undefined[]) => {
     return setCookieString;
 }
 
-export {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, getAppId, getCookieString, extractToken}
+export {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, getAppId, getClientVersion, getCookieString, extractToken}

@@ -14,7 +14,7 @@ const requestFollowings = async (req:IgRequest) : Promise<IgResponse<IFollowing>
         id: currentSession.userId,
         first:20
     }
-
+    //https://i.instagram.com/api/v1/friendships/${userid}/following/?count=12&max_id=1
     const url = `https://www.instagram.com/graphql/query/?query_hash=58712303d941c6855d4e888c5f0cd22f&variables=${encodeURIComponent(JSON.stringify(params))}`
 
     const headers = createHeaders(baseUrl, currentSession);

@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
-import { baseRequestHeaders, baseUrl, createHeaders, extractToken, getAppId, getCookieString, getSession } from "./util";
+import { baseRequestHeaders, baseUrl, createHeaders, extractToken, getAppId, getClientVersion, getCookieString, getSession } from "./util";
 import { IgRequest, IgResponse, ILoginResponse } from "@shared";
 
 const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
@@ -26,8 +26,10 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         headers["x-instagram-ajax"] = 1;
         const initialPage = await axios.request(options);
 
+        const appId = getAppId(initialPage.data);
+        const version = getClientVersion(initialPage.data);
 
-        headers["x-ig-app-id"] = getAppId(initialPage.data);
+        headers["x-ig-app-id"] = appId
         options.url = "https://i.instagram.com/api/v1/public/landing_info/"
         const baseResult = await axios.request(options);
 
@@ -37,9 +39,14 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
             throw new Error("Token not found")
         }
 
-        headers["x-requested-with"] = "XMLHttpRequest"
-        headers["x-csrftoken"] = baseCsrftoken;
+        const responseCookies = baseResult.headers["set-cookie"] instanceof Array ? baseResult.headers["set-cookie"] : [baseResult.headers["set-cookie"]]
 
+        headers.Cookie = getCookieString(responseCookies);
+
+        //headers["x-requested-with"] = "XMLHttpRequest"
+        headers["x-ig-www-claim"] = 0
+        headers["x-instagram-ajax"] = version
+        headers["x-csrftoken"] = baseCsrftoken;
         headers["content-type"] = "application/x-www-form-urlencoded"
 
         const createEncPassword = (pwd:string) => {
@@ -47,12 +54,13 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         }
 
         const params = new URLSearchParams();
-        params.append("username", account)
         params.append("enc_password", createEncPassword(req.data.password))
+        params.append("username", account)
         params.append("queryParams", "{}")
         params.append("optIntoOneTap", "false")
+        params.append("trustedDeviceRecords", "{}")
 
-        options.url = "https://www.instagram.com/accounts/login/ajax/";
+        options.url = "https://i.instagram.com/api/v1/web/accounts/login/ajax/"
         options.method = "POST"
         options.data = params;
         options.headers = headers;
@@ -145,7 +153,7 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =>
 
         const headers = createHeaders(url, currentSession);
         headers.Cookie = req.headers.cookie ?? "";
-        headers["x-requested-with"] = "XMLHttpRequest"
+        //headers["x-requested-with"] = "XMLHttpRequest"
         headers["content-type"] = "application/x-www-form-urlencoded"
 
         const params = new URLSearchParams();
@@ -187,17 +195,20 @@ const logout = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>>  => {
     if(!currentSession.isAuthenticated) throw new Error("Already logged out")
 
     try{
+
         const headers = createHeaders(baseUrl, currentSession);
         headers.Cookie = req.headers.cookie ?? "";
 
         const options :AxiosRequestConfig = {
-            url: `${baseUrl}/accounts/logout/ajax/`,
+            url: "https://i.instagram.com/api/v1/web/accounts/logout/ajax/",
             method: "POST",
             headers,
             withCredentials:true
         }
 
         const response = await axios.request(options);
+
+        console.log(response.data)
 
         const session = getSession(response.headers);
 

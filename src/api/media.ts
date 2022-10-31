@@ -69,7 +69,7 @@ const _formatMedia = (data:any) :IMediaResponse =>{
                 media.push({
                     id:data.id,
                     media_url: data.media_url,
-                    taggedUsers:[]
+                    taggedUsers:[],
                 })
             })
 

@@ -18,7 +18,7 @@ class sqlite implements IDatabaseProvider{
         return new SqliteStore({
             driver: sqlite3.Database,
             path: "../media.db",
-            ttl: 60000 * 60 * 24,
+            ttl: 60000 * 60 * 24 * 365,
         })
 
     }
