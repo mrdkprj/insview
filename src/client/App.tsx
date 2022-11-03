@@ -14,7 +14,7 @@ import InstagramIcon from "@mui/icons-material/Instagram";
 import LoginIcon from "@mui/icons-material/Login";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import Grid, {GridHandler} from "./component/Grid"
-import {query, save, queryMore, login, challenge, logout, getFollowings, deleteHistory, follow, unfollow, refresh} from "./request";
+import {query, save, queryMore, login, challenge, logout, getFollowings, deleteHistory, follow, unfollow} from "./request";
 import useWindowDimensions from "./dimensions";
 import {appStateReducer, initialAppState, AppAction} from "./state/appStateReducer";
 import {mediaStateReducer, initialMediaState, MediaAction} from "./state/mediaStateReducer";
@@ -147,33 +147,6 @@ function App(){
 
 
     },[handleError, mediaState.locked, mediaState.previewUser, mediaState.previewNext])
-
-    /*
-    * refreshMedia
-    */
-    const refreshMedia = useCallback(async ( username:string, history:IHistory) => {
-
-        dispatchAppState({type:AppAction.start})
-
-        try{
-
-            const result = await refresh(username, history);
-            dispatchAuthState({type:AuthAction.toggleAuth, value:{success:result.status, account:result.data.account}})
-            dispatchAppState({type:AppAction.toggleSearchModal, value:false})
-            dispatchMediaState({type:MediaAction.update, value: result.data})
-            gridRef.current?.scrollTo(result.data.rowIndex)
-
-        }catch(ex:any){
-
-            handleError(ex);
-
-        }finally{
-
-            dispatchAppState({type:AppAction.end})
-
-        }
-
-    },[handleError]);
 
     /*
     * Delete history
@@ -457,7 +430,6 @@ function App(){
                     open={appState.openSearchModal}
                     username={mediaState.user.username}
                     onSubmit={onUsernameSubmit}
-                    onRefresh={refreshMedia}
                     onClose={onSearchDialogClose}
                     onUsernameDelete={requestDeleteHistory}
                     history={mediaState.history}

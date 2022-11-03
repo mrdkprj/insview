@@ -87,15 +87,6 @@ app.post("/querymore", async (req:Request, res:Response) => {
 
 });
 
-app.post("/refresh", async (req:Request, res:Response) => {
-
-    const username = req.body.username;
-    const history = req.body.history;
-
-    await controller.tryRefresh(req, res, username, history);
-
-});
-
 app.post("/login", async (req:Request, res:Response) => {
 
     const account = req.body.account;

@@ -72,28 +72,6 @@ const queryMore = async (user:IUser, next:string, preview:boolean) : Promise<IRe
 
 }
 
-const refresh = async (username: string, history:IHistory) : Promise<IResponse<IMediaResponse>> => {
-
-    const url = "/refresh";
-    const method = "POST";
-    const data = {username, history};
-
-    const options = createOptions(url, method, data);
-
-    try{
-        const result :AxiosResponse<IMediaResponse> = await axios.request(options);
-
-        return {
-            status: getState(result.headers),
-            data: result.data,
-        }
-
-    }catch(ex:any){
-        return throwError(ex)
-    }
-
-}
-
 const login = async (account:string, password:string) : Promise<IAuthResponse> => {
 
     const url = "/login";
@@ -233,4 +211,4 @@ const unfollow = async (user:IUser) => {
 
 }
 
-export { login, challenge, logout, query, queryMore, refresh, getFollowings, save, deleteHistory, follow, unfollow}
+export { login, challenge, logout, query, queryMore, getFollowings, save, deleteHistory, follow, unfollow}
