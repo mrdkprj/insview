@@ -276,11 +276,11 @@ const _formatGraph = (data:any, session:ISession, user:IUser) : IMediaResponse =
 
     const mediaNode = data.user.edge_owner_to_timeline_media;
 
-    mediaNode.edges.forEach( (data:any) => {
+    mediaNode.edges.filter( (data:any) => data.node.is_video === false).forEach( (data:any) => {
 
         if(data.node.edge_sidecar_to_children){
 
-            data.node.edge_sidecar_to_children.edges.forEach((crData:any) =>{
+            data.node.edge_sidecar_to_children.edges.filter((data:any) => data.node.is_video === false).forEach((crData:any) =>{
 
                 const isVideo = crData.node.is_video
                 const mediaUrl = isVideo ? "/video?url=" : "/image?url="
