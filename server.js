@@ -975,7 +975,7 @@ class Controller {
             const exisitingData = await this.db.queryMedia(req.session.account, username);
             if (!exisitingData.username)
                 throw new Error("No data found");
-            const targetRowIndex = 10; //exisitingData.rowIndex;
+            const targetRowIndex = exisitingData.rowIndex;
             let currentIndex = 0;
             const initialIgResponse = await requestMedia({ data: { username }, headers: req.headers });
             const refreshedMediaResponse = emptyResponse;
@@ -990,19 +990,24 @@ class Controller {
             refreshedHistory[username] = initialIgResponse.data.history[username];
             refreshedMediaResponse.history = refreshedHistory;
             currentIndex += Math.ceil((initialIgResponse.data.media.length - 1) / 3);
+            console.log(`target:${targetRowIndex}`);
+            console.log(`index:${currentIndex}, media:${initialIgResponse.data.media.length}`);
             if (currentIndex < targetRowIndex) {
-                await this._queryMoreUntil(targetRowIndex, currentIndex, refreshedMediaResponse, req.headers);
+                await this.queryMoreUntil(targetRowIndex, currentIndex, refreshedMediaResponse, req.headers);
             }
-            await this.db.saveHistory(req.session.account, username, refreshedHistory);
-            await this.db.saveMedia(req.session.account, refreshedMediaResponse);
+            console.log(`media:${initialIgResponse.data.media.length}`);
+            //await this.db.saveHistory(req.session.account, username, refreshedHistory);
+            //await this.db.saveMedia(req.session.account, refreshedMediaResponse);
             await this.sendResponse(req, res, refreshedMediaResponse, initialIgResponse.session);
         }
         catch (ex) {
             return this.sendErrorResponse(res, ex);
         }
     }
-    async _queryMoreUntil(targetRowIndex, currentIndex, refreshedMediaResponse, headers) {
+    async queryMoreUntil(targetRowIndex, currentIndex, refreshedMediaResponse, headers) {
+        console.log(`ender:${new Date()}`);
         await new Promise(s => setTimeout(s, 1000));
+        console.log(`start:${new Date()}`);
         const params = {
             data: {
                 user: refreshedMediaResponse.user,
@@ -1011,11 +1016,13 @@ class Controller {
             headers
         };
         const igResponse = await requestMore(params);
+        console.log(`await end:${new Date()}`);
         refreshedMediaResponse.media = refreshedMediaResponse.media.concat(igResponse.data.media);
         refreshedMediaResponse.next = igResponse.data.next;
         currentIndex += Math.ceil((igResponse.data.media.length - 1) / 3);
+        console.log(`index:${currentIndex}, media:${refreshedMediaResponse.media.length}`);
         if (currentIndex < targetRowIndex) {
-            this._queryMoreUntil(targetRowIndex, currentIndex, refreshedMediaResponse, headers);
+            this.queryMoreUntil(targetRowIndex, currentIndex, refreshedMediaResponse, headers);
         }
         else {
             return refreshedMediaResponse;
