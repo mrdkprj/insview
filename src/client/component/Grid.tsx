@@ -1,4 +1,5 @@
 import { FixedSizeGrid } from "react-window";
+import SmartDisplayIcon from '@mui/icons-material/SmartDisplay';
 import { css } from "@emotion/react";
 import {RefObject, memo, createRef, useEffect, Fragment, useState, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
 import {IMedia, IUser} from "@shared";
@@ -27,14 +28,14 @@ const Grid = forwardRef<GridHandler, GridProps>((props, ref) => {
     const rowCount = Math.ceil((props.data.length  / columnCount));
 
     const gridRef :RefObject<FixedSizeGrid> = createRef();
-    const gridScrollTop = useRef(0);
-    const prevScrolllTop = useRef(0);
+    const gridVisibleRowIndex = useRef(0);
+    const prevVisibleRowIndex = useRef(0);
     const startIndex = useRef(0);
     const [_open, _setOpen] = useState(false);
 
     useImperativeHandle(ref, () => ({
-        scrollTo: (scrollTop:number) => {
-            gridRef.current?.scrollTo({scrollLeft:0 , scrollTop:scrollTop})
+        scrollTo: (rowIndex:number) => {
+            gridRef.current?.scrollToItem({align:"start", columnIndex:0, rowIndex})
         }
     }));
 
@@ -55,24 +56,23 @@ const Grid = forwardRef<GridHandler, GridProps>((props, ref) => {
         props.onUserTagClick && props.onUserTagClick(user)
     }
 
-    const onGridScroll = ({scrollTop}: {scrollTop: number}) => {
-        gridScrollTop.current = scrollTop;
-    }
-
-    const onItemsRendered = ({visibleRowStopIndex}:{visibleRowStopIndex:number}) => {
+    const onItemsRendered = ({visibleRowStartIndex, visibleRowStopIndex}:{visibleRowStartIndex:number, visibleRowStopIndex:number}) => {
         if(visibleRowStopIndex === rowCount - 1){
             props.onLastItemRenrered && props.onLastItemRenrered()
         }
+
+        gridVisibleRowIndex.current = visibleRowStartIndex;
+
     }
 
     const checkScrollTop = useCallback(() => {
 
         if(rowCount <= 0) return;
 
-        if(gridScrollTop.current === prevScrolllTop.current){
-            props.onIdle && props.onIdle(gridScrollTop.current)
+        if(gridVisibleRowIndex.current === prevVisibleRowIndex.current){
+            props.onIdle && props.onIdle(gridVisibleRowIndex.current)
         }else{
-            prevScrolllTop.current = gridScrollTop.current;
+            prevVisibleRowIndex.current = gridVisibleRowIndex.current;
         }
 
     },[props, rowCount])
@@ -84,9 +84,10 @@ const Grid = forwardRef<GridHandler, GridProps>((props, ref) => {
         return (
             <div style={style}>
                 {data[index]
-                    ? <img css={Image} alt={data[index].id} src={data[index].media_url} onClick={() => onImageClick(index)}/>
+                    ? <img css={Image} alt={data[index].id} src={data[index].thumbnail_url ? data[index].thumbnail_url : data[index].media_url} onClick={() => onImageClick(index)}/>
                     : <div></div>
                 }
+                {data[index] && data[index].isVideo && <SmartDisplayIcon fontSize="small" style={{position:"absolute", right:"5px", color:"rgba(255,255,255)"}}/>}
             </div>
         )
     }
@@ -129,7 +130,7 @@ const Grid = forwardRef<GridHandler, GridProps>((props, ref) => {
                     width={props.width}
                     itemData={props.data}
                     overscanRowCount={0}
-                    onScroll={onGridScroll}
+                    //onScroll={onGridScroll}
                     onItemsRendered={onItemsRendered}
                 >
                     {renderRow}

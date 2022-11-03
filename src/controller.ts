@@ -1,7 +1,6 @@
 import {Request, Response} from "express";
 import type { Cookie } from "tough-cookie";
 import { IAuthResponse, IHistory, IMediaResponse, ISession, IUser, emptyResponse, AuthError } from "@shared"
-import { IMediaTable } from "./types/IDatabase";
 import { IDatabase } from "types/IDatabase";
 import * as api from "./api/instagram"
 
@@ -216,14 +215,14 @@ class Controller{
 
         try{
 
-            const exisitingData :IMediaTable = await this.db.queryMedia(req.session.account, username);
+            const exisitingData = await this.db.queryMedia(req.session.account, username);
 
             let session;
-            let igResponse:IMediaResponse;
+            let mediaResponse:IMediaResponse;
 
             if(exisitingData.username){
                 session = api.getSession(req.headers);
-                igResponse = {
+                mediaResponse = {
                     username: exisitingData.username,
                     media: exisitingData.media,
                     user: exisitingData.user,
@@ -235,18 +234,18 @@ class Controller{
 
             }else{
                 const result = await api.requestMedia({data:{username}, headers: req.headers});
-                igResponse = result.data
+                mediaResponse = result.data
                 session = result.session
             }
 
             if(!preview){
-                newHistory[igResponse.username] = igResponse.user;
-                igResponse.history = newHistory;
+                newHistory[mediaResponse.username] = mediaResponse.user;
+                mediaResponse.history = newHistory;
                 await this.db.saveHistory(req.session.account, username, newHistory);
-                await this.db.saveMedia(req.session.account, igResponse);
+                await this.db.saveMedia(req.session.account, mediaResponse);
             }
 
-            await this.sendResponse(req, res, igResponse, session);
+            await this.sendResponse(req, res, mediaResponse, session);
 
         }catch(ex:any){
 
@@ -278,7 +277,7 @@ class Controller{
 
     }
 
-    async tryRefresh(req:any, res:any, username:string, history:IHistory){
+    async tryReload(req:any, res:any, username:string, history:IHistory){
 
         try{
 
@@ -296,6 +295,78 @@ class Controller{
 
             return this.sendErrorResponse(res, ex);
 
+        }
+
+    }
+
+    async tryRefresh(req:any, res:any, username:string, history:IHistory){
+
+        try{
+
+            const exisitingData = await this.db.queryMedia(req.session.account, username);
+
+            if(!exisitingData.username) throw new Error("No data found");
+
+            const targetRowIndex = 10//exisitingData.rowIndex;
+            let currentIndex = 0;
+
+            const initialIgResponse = await api.requestMedia({data:{username},headers:req.headers});
+
+            const refreshedMediaResponse :IMediaResponse = emptyResponse;
+            refreshedMediaResponse.username = username;
+            refreshedMediaResponse.rowIndex = targetRowIndex;
+            refreshedMediaResponse.account = req.session.account;
+            refreshedMediaResponse.media = initialIgResponse.data.media
+            refreshedMediaResponse.user = initialIgResponse.data.user;
+            refreshedMediaResponse.next = initialIgResponse.data.next;
+            refreshedMediaResponse.isAuthenticated = initialIgResponse.session.isAuthenticated
+
+            const refreshedHistory = history;
+            refreshedHistory[username] = initialIgResponse.data.history[username];
+            refreshedMediaResponse.history = refreshedHistory;
+
+            currentIndex += Math.ceil((initialIgResponse.data.media.length - 1) / 3)
+
+            if(currentIndex < targetRowIndex){
+                await this._queryMoreUntil(targetRowIndex, currentIndex, refreshedMediaResponse, req.headers)
+            }
+
+            await this.db.saveHistory(req.session.account, username, refreshedHistory);
+            await this.db.saveMedia(req.session.account, refreshedMediaResponse);
+
+            await this.sendResponse(req, res, refreshedMediaResponse, initialIgResponse.session);
+
+        }catch(ex:any){
+
+            return this.sendErrorResponse(res, ex);
+
+        }
+
+    }
+
+    async _queryMoreUntil(targetRowIndex:number, currentIndex:number, refreshedMediaResponse:IMediaResponse, headers:any){
+
+        await new Promise(s => setTimeout(s, 1000))
+
+        const params = {
+            data: {
+                user:refreshedMediaResponse.user,
+                next:refreshedMediaResponse.next,
+            },
+            headers
+        }
+
+        const igResponse = await api.requestMore(params);
+
+        refreshedMediaResponse.media = refreshedMediaResponse.media.concat(igResponse.data.media)
+        refreshedMediaResponse.next = igResponse.data.next;
+
+        currentIndex += Math.ceil((igResponse.data.media.length - 1) / 3)
+
+        if(currentIndex < targetRowIndex){
+            this._queryMoreUntil(targetRowIndex, currentIndex, refreshedMediaResponse, headers)
+        }else{
+            return refreshedMediaResponse;
         }
 
     }
@@ -382,15 +453,11 @@ class Controller{
 
         try{
 
-            const url = Object.keys(req.query).map((key:any) => {
-                if(key !== "url"){
-                    return "&" + key + "=" + req.query[key]
-                }else{
-                    return req.query[key]
-                }
-            })
+            if(!req.query.url || typeof req.query.url !== "string"){
+                throw new Error("no url specified")
+            }
 
-            const result = await api.requestImage(url.join(""));
+            const result = await api.requestImage(decodeURIComponent(req.query.url))
 
             Object.entries(result.headers).forEach(([key, value]) => res.setHeader(key, value));
 

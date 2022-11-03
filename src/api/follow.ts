@@ -53,7 +53,7 @@ const _formatFollowings = (data:any) :IFollowing => {
             username:user.node.username,
             name:user.node.full_name,
             biography:"",
-            profileImage: "/media?url=" + user.node.profile_pic_url,
+            profileImage: "/image?url=" + encodeURIComponent(user.node.profile_pic_url),
             following: true,
         }
     })

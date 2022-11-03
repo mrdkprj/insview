@@ -52,7 +52,7 @@ app.get("/", (_req:Request, res:Response) => {
     res.sendFile(path.resolve(__dirname, publicDir, "index.html"));
 });
 
-app.get("/media", async (req:Request, res:Response) => {
+app.get("/image", async (req:Request, res:Response) => {
 
     await controller.retrieveImage(req, res)
 
@@ -62,11 +62,11 @@ app.post("/query", async (req:Request, res:Response) => {
 
     const username = req.body.username;
     const history = req.body.history;
-    const forceRequest = req.body.refresh;
+    const reload = req.body.reload;
     const preview = req.body.preview;
 
-    if(forceRequest){
-        return await controller.tryRefresh(req, res, username, history);
+    if(reload){
+        return await controller.tryReload(req, res, username, history);
     }
 
     if(!username){
@@ -84,6 +84,15 @@ app.post("/querymore", async (req:Request, res:Response) => {
     const preview = req.body.preview
 
     await controller.tryQueryMore(req, res, user, next, preview);
+
+});
+
+app.post("/refresh", async (req:Request, res:Response) => {
+
+    const username = req.body.username;
+    const history = req.body.history;
+
+    await controller.tryRefresh(req, res, username, history);
 
 });
 

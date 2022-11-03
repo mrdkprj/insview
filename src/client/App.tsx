@@ -14,12 +14,13 @@ import InstagramIcon from "@mui/icons-material/Instagram";
 import LoginIcon from "@mui/icons-material/Login";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import Grid, {GridHandler} from "./component/Grid"
-import {query, save, queryMore, login, challenge, logout, getFollowings, deleteHistory, follow, unfollow} from "./request";
+import {query, save, queryMore, login, challenge, logout, getFollowings, deleteHistory, follow, unfollow, refresh} from "./request";
 import useWindowDimensions from "./dimensions";
 import {appStateReducer, initialAppState, AppAction} from "./state/appStateReducer";
 import {mediaStateReducer, initialMediaState, MediaAction} from "./state/mediaStateReducer";
 import {authStateReducer, initialAuthState, AuthAction} from "./state/authStateReducer";
 import { IHistory, IUser } from "@shared";
+
 
 function App(){
 
@@ -61,13 +62,13 @@ function App(){
     /*
     * loadImages
     */
-    const loadImages = useCallback(async ( {username, history, refresh = false, preview = false}:{username:string, history:IHistory, refresh?:boolean, preview?:boolean}) => {
+    const loadImages = useCallback(async ( {username, history, reload = false, preview = false}:{username:string, history:IHistory, reload?:boolean, preview?:boolean}) => {
 
         dispatchAppState({type:AppAction.start})
 
         try{
 
-            const result = await query(username, history, refresh, preview);
+            const result = await query(username, history, reload, preview);
             dispatchAuthState({type:AuthAction.toggleAuth, value:{success:result.status, account:result.data.account}})
 
             if(!preview){
@@ -146,6 +147,33 @@ function App(){
 
 
     },[handleError, mediaState.locked, mediaState.previewUser, mediaState.previewNext])
+
+    /*
+    * refreshMedia
+    */
+    const refreshMedia = useCallback(async ( username:string, history:IHistory) => {
+
+        dispatchAppState({type:AppAction.start})
+
+        try{
+
+            const result = await refresh(username, history);
+            dispatchAuthState({type:AuthAction.toggleAuth, value:{success:result.status, account:result.data.account}})
+            dispatchAppState({type:AppAction.toggleSearchModal, value:false})
+            dispatchMediaState({type:MediaAction.update, value: result.data})
+            gridRef.current?.scrollTo(result.data.rowIndex)
+
+        }catch(ex:any){
+
+            handleError(ex);
+
+        }finally{
+
+            dispatchAppState({type:AppAction.end})
+
+        }
+
+    },[handleError]);
 
     /*
     * Delete history
@@ -330,7 +358,7 @@ function App(){
             return;
         }
 
-        await loadImages({username:mediaState.user.username, history:mediaState.history, refresh:true});
+        await loadImages({username:mediaState.user.username, history:mediaState.history, reload:true});
 
     },[loadImages, mediaState.user.username, mediaState.history])
 
@@ -365,18 +393,18 @@ function App(){
     /*
     * SearchDialog
     */
-    const onUsernameDialogClose = (history:IHistory) => {
+    const onSearchDialogClose = (history:IHistory) => {
         dispatchMediaState({type:MediaAction.history, value: history})
-        dispatchAppState({type:AppAction.toggleUsernameModal, value:false})
+        dispatchAppState({type:AppAction.toggleSearchModal, value:false})
     }
 
     const onUsernameSubmit = async (username: string, history:IHistory) => {
-        dispatchAppState({type:AppAction.toggleUsernameModal, value:false})
+        dispatchAppState({type:AppAction.toggleSearchModal, value:false})
         await loadImages({username, history});
     }
 
     const openUsernameDialog = () => {
-        dispatchAppState({type:AppAction.toggleUsernameModal, value:true})
+        dispatchAppState({type:AppAction.toggleSearchModal, value:true})
     }
 
     /*
@@ -424,12 +452,13 @@ function App(){
                 <CircularProgress/>
             </Backdrop>
 
-            {appState.openUsernameModal &&
+            {appState.openSearchModal &&
                 <SearchDialog
-                    open={appState.openUsernameModal}
+                    open={appState.openSearchModal}
                     username={mediaState.user.username}
                     onSubmit={onUsernameSubmit}
-                    onClose={onUsernameDialogClose}
+                    onRefresh={refreshMedia}
+                    onClose={onSearchDialogClose}
                     onUsernameDelete={requestDeleteHistory}
                     history={mediaState.history}
                 />

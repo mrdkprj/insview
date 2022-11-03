@@ -28,11 +28,11 @@ const throwError = (ex:any) => {
 
 }
 
-const query = async (username: string, history:IHistory, refresh:boolean, preview:boolean) : Promise<IResponse<IMediaResponse>> => {
+const query = async (username: string, history:IHistory, reload:boolean, preview:boolean) : Promise<IResponse<IMediaResponse>> => {
 
     const url = "/query";
     const method = "POST";
-    const data = {username, history, refresh, preview};
+    const data = {username, history, reload, preview};
 
     const options = createOptions(url, method, data);
 
@@ -55,6 +55,28 @@ const queryMore = async (user:IUser, next:string, preview:boolean) : Promise<IRe
     const url = "/querymore";
     const method = "POST";
     const data = {user, next, preview};
+
+    const options = createOptions(url, method, data);
+
+    try{
+        const result :AxiosResponse<IMediaResponse> = await axios.request(options);
+
+        return {
+            status: getState(result.headers),
+            data: result.data,
+        }
+
+    }catch(ex:any){
+        return throwError(ex)
+    }
+
+}
+
+const refresh = async (username: string, history:IHistory) : Promise<IResponse<IMediaResponse>> => {
+
+    const url = "/refresh";
+    const method = "POST";
+    const data = {username, history};
 
     const options = createOptions(url, method, data);
 
@@ -211,4 +233,4 @@ const unfollow = async (user:IUser) => {
 
 }
 
-export { login, challenge, logout, query, queryMore, getFollowings, save, deleteHistory, follow, unfollow}
+export { login, challenge, logout, query, queryMore, refresh, getFollowings, save, deleteHistory, follow, unfollow}

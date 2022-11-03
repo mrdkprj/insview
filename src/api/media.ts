@@ -61,15 +61,17 @@ const _formatMedia = (data:any) :IMediaResponse =>{
 
     const root = data.business_discovery;
 
-    root.media.data.filter( (data:any) => data.media_type !== "VIDEO").forEach( (data:any) => {
+    root.media.data.forEach( (data:any) => {
 
         if(data.children){
 
-            data.children.data.filter((data:any) => data.media_type !== "VIDEO").forEach((data:any) =>{
+            data.children.data.forEach((data:any) =>{
                 media.push({
                     id:data.id,
                     media_url: data.media_url,
                     taggedUsers:[],
+                    thumbnail_url: data.thumbnail_url,
+                    isVideo: data.media_type === "VIDEO"
                 })
             })
 
@@ -78,7 +80,9 @@ const _formatMedia = (data:any) :IMediaResponse =>{
             media.push({
                 id:data.id,
                 media_url: data.media_url,
-                taggedUsers:[]
+                taggedUsers:[],
+                thumbnail_url: data.thumbnail_url,
+                isVideo: data.media_type === "VIDEO"
             })
 
         }
@@ -157,7 +161,7 @@ const _tryRequestGraph = async (req:IgRequest, currentSession:ISession) : Promis
             igId: userData.id,
             username,
             name: userData.full_name,
-            profileImage: "/media?url=" + userData.profile_pic_url,
+            profileImage: "/image?url=" + encodeURIComponent(userData.profile_pic_url),
             biography:userData.biography,
             following:userData.followed_by_viewer,
         }
@@ -272,43 +276,55 @@ const _formatGraph = (data:any, session:ISession, user:IUser) : IMediaResponse =
 
     const mediaNode = data.user.edge_owner_to_timeline_media;
 
-    mediaNode.edges.filter( (data:any) => data.node.is_video === false).forEach( (data:any) => {
+    mediaNode.edges.forEach( (data:any) => {
 
         if(data.node.edge_sidecar_to_children){
 
-            data.node.edge_sidecar_to_children.edges.filter((data:any) => data.node.is_video === false).forEach((data:any) =>{
+            data.node.edge_sidecar_to_children.edges.forEach((crData:any) =>{
+
+                const isVideo = crData.node.is_video
+                const mediaUrl = isVideo ? "/video?url=" : "/image?url="
+                const thumbnail_url = isVideo ? "/image?url=" + encodeURIComponent(data.node.thumbnail_src) : undefined
 
                 media.push({
-                    id:data.node.id,
-                    media_url: "/media?url=" + data.node.display_url,
-                    taggedUsers: data.node.edge_media_to_tagged_user.edges.map((edge:any) => {
+                    id:crData.node.id,
+                    media_url: mediaUrl + encodeURIComponent(crData.node.display_url),
+                    taggedUsers: crData.node.edge_media_to_tagged_user.edges.map((edge:any) => {
                         return {
                             id:edge.node.user.id,
                             igId:edge.node.user.id,
                             username:edge.node.user.username,
                             name:edge.node.user.full_name,
-                            profileImage:edge.node.user.profile_pic_url,
+                            profileImage: "/image?url=" + encodeURIComponent(edge.node.user.profile_pic_url),
                             biography:"",
                         }
-                    })
+                    }),
+                    thumbnail_url,
+                    isVideo
                 })
 
             })
 
         }else{
+
+            const isVideo = data.node.is_video
+            const mediaUrl = isVideo ? "/video?url=" : "/image?url="
+
             media.push({
                 id:data.node.id,
-                media_url: "/media?url=" + data.node.display_url,
+                media_url: mediaUrl + encodeURIComponent(data.node.display_url),
                 taggedUsers: data.node.edge_media_to_tagged_user.edges.map((edge:any) => {
                     return {
                         id:edge.node.user.id,
                         igId:edge.node.user.id,
                         username:edge.node.user.username,
                         name:edge.node.user.full_name,
-                        profileImage:edge.node.user.profile_pic_url,
+                        profileImage: "/image?url=" + encodeURIComponent(edge.node.user.profile_pic_url),
                         biography:"",
                     }
-                })
+                }),
+                thumbnail_url: data.node.thumbnail_src ? "/image?url=" + encodeURIComponent(data.node.thumbnail_src) : undefined,
+                isVideo
             })
 
         }
@@ -329,6 +345,20 @@ const _formatGraph = (data:any, session:ISession, user:IUser) : IMediaResponse =
 
 }
 
+const requestVideo = async (url:string) => {
+
+    const options :AxiosRequestConfig = {
+        url,
+        method: "GET",
+        headers:baseRequestHeaders,
+        responseType: "stream",
+        withCredentials:true
+    }
+
+    return await axios.request(options);
+
+}
+
 const requestImage = async (url:string) => {
 
     const options :AxiosRequestConfig = {
@@ -343,4 +373,4 @@ const requestImage = async (url:string) => {
 
 }
 
-export {requestMore, requestMedia, requestImage}
+export {requestMore, requestMedia, requestImage, requestVideo}

@@ -25,7 +25,9 @@ export class RequestError extends Error {
 export const emptyMedia :IMedia = {
     id: "",
     media_url: "",
-    taggedUsers:[]
+    taggedUsers:[],
+    thumbnail_url:"",
+    isVideo: false,
 }
 
 export const emptyUser :IUser = {
@@ -58,6 +60,8 @@ export interface IMedia {
     id: string;
     media_url: string;
     taggedUsers: IUser[];
+    thumbnail_url?:string;
+    isVideo:boolean;
 }
 
 export interface IUser{

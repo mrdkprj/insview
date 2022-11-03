@@ -68,7 +68,9 @@ class RequestError extends Error {
 const emptyMedia = {
     id: "",
     media_url: "",
-    taggedUsers: []
+    taggedUsers: [],
+    thumbnail_url: "",
+    isVideo: false,
 };
 const emptyUser = {
     id: "",
@@ -96,7 +98,7 @@ var external_tough_cookie_default = /*#__PURE__*/__webpack_require__.n(external_
 
 const baseUrl = "https://www.instagram.com";
 const Cookie = (external_tough_cookie_default()).Cookie;
-const baseRequestHeaders = {
+const util_baseRequestHeaders = {
     "Accept": "*/*",
     "Accept-Encoding": "gzip, deflate",
     "Accept-Language": "en-US",
@@ -166,7 +168,7 @@ const updateSession = (currentSession, headers) => {
     return session;
 };
 const createHeaders = (referer, session) => {
-    const headers = baseRequestHeaders;
+    const headers = util_baseRequestHeaders;
     headers["origin"] = "https://www.instagram.com";
     headers["referer"] = referer;
     //headers["x-requested-with"] = "XMLHttpRequest"
@@ -214,7 +216,7 @@ const login = async (req) => {
     console.log("----------try login----------");
     const account = req.data.account;
     let session = getSession(req.headers);
-    const headers = baseRequestHeaders;
+    const headers = util_baseRequestHeaders;
     headers["user-agent"] = session.userAgent;
     const options = {
         url: baseUrl,
@@ -419,13 +421,15 @@ const requestMore = async (req) => {
 const _formatMedia = (data) => {
     const media = [];
     const root = data.business_discovery;
-    root.media.data.filter((data) => data.media_type !== "VIDEO").forEach((data) => {
+    root.media.data.forEach((data) => {
         if (data.children) {
-            data.children.data.filter((data) => data.media_type !== "VIDEO").forEach((data) => {
+            data.children.data.forEach((data) => {
                 media.push({
                     id: data.id,
                     media_url: data.media_url,
                     taggedUsers: [],
+                    thumbnail_url: data.thumbnail_url,
+                    isVideo: data.media_type === "VIDEO"
                 });
             });
         }
@@ -433,7 +437,9 @@ const _formatMedia = (data) => {
             media.push({
                 id: data.id,
                 media_url: data.media_url,
-                taggedUsers: []
+                taggedUsers: [],
+                thumbnail_url: data.thumbnail_url,
+                isVideo: data.media_type === "VIDEO"
             });
         }
     });
@@ -494,7 +500,7 @@ const _tryRequestGraph = async (req, currentSession) => {
             igId: userData.id,
             username,
             name: userData.full_name,
-            profileImage: "/media?url=" + userData.profile_pic_url,
+            profileImage: "/image?url=" + encodeURIComponent(userData.profile_pic_url),
             biography: userData.biography,
             following: userData.followed_by_viewer,
         };
@@ -577,39 +583,48 @@ const _requestMoreByGraphql = async (req, session) => {
 const _formatGraph = (data, session, user) => {
     const media = [];
     const mediaNode = data.user.edge_owner_to_timeline_media;
-    mediaNode.edges.filter((data) => data.node.is_video === false).forEach((data) => {
+    mediaNode.edges.forEach((data) => {
         if (data.node.edge_sidecar_to_children) {
-            data.node.edge_sidecar_to_children.edges.filter((data) => data.node.is_video === false).forEach((data) => {
+            data.node.edge_sidecar_to_children.edges.forEach((crData) => {
+                const isVideo = crData.node.is_video;
+                const mediaUrl = isVideo ? "/video?url=" : "/image?url=";
+                const thumbnail_url = isVideo ? "/image?url=" + encodeURIComponent(data.node.thumbnail_src) : undefined;
                 media.push({
-                    id: data.node.id,
-                    media_url: "/media?url=" + data.node.display_url,
-                    taggedUsers: data.node.edge_media_to_tagged_user.edges.map((edge) => {
+                    id: crData.node.id,
+                    media_url: mediaUrl + encodeURIComponent(crData.node.display_url),
+                    taggedUsers: crData.node.edge_media_to_tagged_user.edges.map((edge) => {
                         return {
                             id: edge.node.user.id,
                             igId: edge.node.user.id,
                             username: edge.node.user.username,
                             name: edge.node.user.full_name,
-                            profileImage: edge.node.user.profile_pic_url,
+                            profileImage: "/image?url=" + encodeURIComponent(edge.node.user.profile_pic_url),
                             biography: "",
                         };
-                    })
+                    }),
+                    thumbnail_url,
+                    isVideo
                 });
             });
         }
         else {
+            const isVideo = data.node.is_video;
+            const mediaUrl = isVideo ? "/video?url=" : "/image?url=";
             media.push({
                 id: data.node.id,
-                media_url: "/media?url=" + data.node.display_url,
+                media_url: mediaUrl + encodeURIComponent(data.node.display_url),
                 taggedUsers: data.node.edge_media_to_tagged_user.edges.map((edge) => {
                     return {
                         id: edge.node.user.id,
                         igId: edge.node.user.id,
                         username: edge.node.user.username,
                         name: edge.node.user.full_name,
-                        profileImage: edge.node.user.profile_pic_url,
+                        profileImage: "/image?url=" + encodeURIComponent(edge.node.user.profile_pic_url),
                         biography: "",
                     };
-                })
+                }),
+                thumbnail_url: data.node.thumbnail_src ? "/image?url=" + encodeURIComponent(data.node.thumbnail_src) : undefined,
+                isVideo
             });
         }
     });
@@ -622,11 +637,21 @@ const _formatGraph = (data, session, user) => {
     const history = { [username]: user };
     return { username, media, user, rowIndex, next, history, isAuthenticated: session.isAuthenticated };
 };
-const requestImage = async (url) => {
+const requestVideo = async (url) => {
     const options = {
         url,
         method: "GET",
         headers: baseRequestHeaders,
+        responseType: "stream",
+        withCredentials: true
+    };
+    return await axios.request(options);
+};
+const requestImage = async (url) => {
+    const options = {
+        url,
+        method: "GET",
+        headers: util_baseRequestHeaders,
         responseType: "stream",
         withCredentials: true
     };
@@ -679,7 +704,7 @@ const _formatFollowings = (data) => {
             username: user.node.username,
             name: user.node.full_name,
             biography: "",
-            profileImage: "/media?url=" + user.node.profile_pic_url,
+            profileImage: "/image?url=" + encodeURIComponent(user.node.profile_pic_url),
             following: true,
         };
     });
@@ -889,10 +914,10 @@ class Controller {
         try {
             const exisitingData = await this.db.queryMedia(req.session.account, username);
             let session;
-            let igResponse;
+            let mediaResponse;
             if (exisitingData.username) {
                 session = getSession(req.headers);
-                igResponse = {
+                mediaResponse = {
                     username: exisitingData.username,
                     media: exisitingData.media,
                     user: exisitingData.user,
@@ -904,16 +929,16 @@ class Controller {
             }
             else {
                 const result = await requestMedia({ data: { username }, headers: req.headers });
-                igResponse = result.data;
+                mediaResponse = result.data;
                 session = result.session;
             }
             if (!preview) {
-                newHistory[igResponse.username] = igResponse.user;
-                igResponse.history = newHistory;
+                newHistory[mediaResponse.username] = mediaResponse.user;
+                mediaResponse.history = newHistory;
                 await this.db.saveHistory(req.session.account, username, newHistory);
-                await this.db.saveMedia(req.session.account, igResponse);
+                await this.db.saveMedia(req.session.account, mediaResponse);
             }
-            await this.sendResponse(req, res, igResponse, session);
+            await this.sendResponse(req, res, mediaResponse, session);
         }
         catch (ex) {
             return this.sendErrorResponse(res, ex);
@@ -933,7 +958,7 @@ class Controller {
             return this.sendErrorResponse(res, ex);
         }
     }
-    async tryRefresh(req, res, username, history) {
+    async tryReload(req, res, username, history) {
         try {
             const igResponse = await requestMedia({ data: { username }, headers: req.headers });
             history[username] = igResponse.data.history[username];
@@ -943,6 +968,57 @@ class Controller {
         }
         catch (ex) {
             return this.sendErrorResponse(res, ex);
+        }
+    }
+    async tryRefresh(req, res, username, history) {
+        try {
+            const exisitingData = await this.db.queryMedia(req.session.account, username);
+            if (!exisitingData.username)
+                throw new Error("No data found");
+            const targetRowIndex = 10; //exisitingData.rowIndex;
+            let currentIndex = 0;
+            const initialIgResponse = await requestMedia({ data: { username }, headers: req.headers });
+            const refreshedMediaResponse = emptyResponse;
+            refreshedMediaResponse.username = username;
+            refreshedMediaResponse.rowIndex = targetRowIndex;
+            refreshedMediaResponse.account = req.session.account;
+            refreshedMediaResponse.media = initialIgResponse.data.media;
+            refreshedMediaResponse.user = initialIgResponse.data.user;
+            refreshedMediaResponse.next = initialIgResponse.data.next;
+            refreshedMediaResponse.isAuthenticated = initialIgResponse.session.isAuthenticated;
+            const refreshedHistory = history;
+            refreshedHistory[username] = initialIgResponse.data.history[username];
+            refreshedMediaResponse.history = refreshedHistory;
+            currentIndex += Math.ceil((initialIgResponse.data.media.length - 1) / 3);
+            if (currentIndex < targetRowIndex) {
+                await this._queryMoreUntil(targetRowIndex, currentIndex, refreshedMediaResponse, req.headers);
+            }
+            await this.db.saveHistory(req.session.account, username, refreshedHistory);
+            await this.db.saveMedia(req.session.account, refreshedMediaResponse);
+            await this.sendResponse(req, res, refreshedMediaResponse, initialIgResponse.session);
+        }
+        catch (ex) {
+            return this.sendErrorResponse(res, ex);
+        }
+    }
+    async _queryMoreUntil(targetRowIndex, currentIndex, refreshedMediaResponse, headers) {
+        await new Promise(s => setTimeout(s, 1000));
+        const params = {
+            data: {
+                user: refreshedMediaResponse.user,
+                next: refreshedMediaResponse.next,
+            },
+            headers
+        };
+        const igResponse = await requestMore(params);
+        refreshedMediaResponse.media = refreshedMediaResponse.media.concat(igResponse.data.media);
+        refreshedMediaResponse.next = igResponse.data.next;
+        currentIndex += Math.ceil((igResponse.data.media.length - 1) / 3);
+        if (currentIndex < targetRowIndex) {
+            this._queryMoreUntil(targetRowIndex, currentIndex, refreshedMediaResponse, headers);
+        }
+        else {
+            return refreshedMediaResponse;
         }
     }
     async tryGetFollowings(req, res, next) {
@@ -993,15 +1069,10 @@ class Controller {
     }
     async retrieveImage(req, res) {
         try {
-            const url = Object.keys(req.query).map((key) => {
-                if (key !== "url") {
-                    return "&" + key + "=" + req.query[key];
-                }
-                else {
-                    return req.query[key];
-                }
-            });
-            const result = await requestImage(url.join(""));
+            if (!req.query.url || typeof req.query.url !== "string") {
+                throw new Error("no url specified");
+            }
+            const result = await requestImage(decodeURIComponent(req.query.url));
             Object.entries(result.headers).forEach(([key, value]) => res.setHeader(key, value));
             result.data.pipe(res);
         }
@@ -1407,16 +1478,16 @@ app.use((req, res, next) => {
 app.get("/", (_req, res) => {
     res.sendFile(external_path_default().resolve(__dirname, publicDir, "index.html"));
 });
-app.get("/media", async (req, res) => {
+app.get("/image", async (req, res) => {
     await server_controller.retrieveImage(req, res);
 });
 app.post("/query", async (req, res) => {
     const username = req.body.username;
     const history = req.body.history;
-    const forceRequest = req.body.refresh;
+    const reload = req.body.reload;
     const preview = req.body.preview;
-    if (forceRequest) {
-        return await server_controller.tryRefresh(req, res, username, history);
+    if (reload) {
+        return await server_controller.tryReload(req, res, username, history);
     }
     if (!username) {
         await server_controller.tryRestore(req, res);
@@ -1430,6 +1501,11 @@ app.post("/querymore", async (req, res) => {
     const next = req.body.next;
     const preview = req.body.preview;
     await server_controller.tryQueryMore(req, res, user, next, preview);
+});
+app.post("/refresh", async (req, res) => {
+    const username = req.body.username;
+    const history = req.body.history;
+    await server_controller.tryRefresh(req, res, username, history);
 });
 app.post("/login", async (req, res) => {
     const account = req.body.account;

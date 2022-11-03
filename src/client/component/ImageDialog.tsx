@@ -336,7 +336,10 @@ const ImageDialog = (props:ImageDialogProps) => {
                 <div css={edge}>
                     {tags.map((tag:IUser) => (<div key={tag.id} onClick={() => onTagClick(tag)}>{tag.username}</div>))}
                 </div>
-                <img css={ImageViewer} alt={props.data[index].id} src={props.data[index].media_url} onClick={onImageClick}/>
+                {props.data[index].isVideo
+                    ? <video css={ImageViewer} src={props.data[index].media_url} controls/>
+                    : <img css={ImageViewer} alt={props.data[index].id} src={props.data[index].media_url} onClick={onImageClick}/>
+                }
             </div>
         )
 

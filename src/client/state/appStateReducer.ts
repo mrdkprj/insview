@@ -1,6 +1,6 @@
 interface IAppState {
     isLoading: boolean;
-    openUsernameModal: boolean;
+    openSearchModal: boolean;
     openImageModal: boolean;
     openLoginModal: boolean;
     openAccountModal: boolean;
@@ -16,7 +16,7 @@ interface IAppAction {
 
 export const initialAppState : IAppState = {
     isLoading: false,
-    openUsernameModal: false,
+    openSearchModal: false,
     openImageModal: false,
     openLoginModal: false,
     openAccountModal: false,
@@ -29,7 +29,7 @@ export const initialAppState : IAppState = {
 export const AppAction = {
     start: "start",
     end: "end",
-    toggleUsernameModal: "toggleUsernameModal",
+    toggleSearchModal: "toggleSearchModal",
     toggleImageModal: "toggleImageModal",
     toggleLoginModal: "toggleLoginModal",
     toggleAccountModal: "toggleAccountModal",
@@ -46,8 +46,8 @@ export const appStateReducer = (state: IAppState, action: IAppAction): IAppState
         case AppAction.end:
             return {...state, isLoading:false};
 
-        case AppAction.toggleUsernameModal:
-            return {...state, openUsernameModal:action.value};
+        case AppAction.toggleSearchModal:
+            return {...state, openSearchModal:action.value};
 
         case AppAction.toggleImageModal:
             return {...state, openImageModal:action.value};

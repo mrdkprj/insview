@@ -19,6 +19,7 @@ interface UsernameDialogProps {
     username: string;
     history:IHistory;
     onSubmit: (username:string, history:IHistory) => void;
+    onRefresh: (username:string, history:IHistory) => void;
     onUsernameDelete: (history:IHistory, target:string) => Promise<void>;
     onClose: (history:IHistory) => void;
 }
@@ -50,6 +51,17 @@ const SearchDialog = (props:UsernameDialogProps) => {
         }else{
             setHasError(true);
         }
+    }
+
+    const onRefresh = () => {
+
+        if(username && history[username]){
+            setHasError(false);
+            props.onRefresh(username, history)
+        }else{
+            setHasError(true);
+        }
+
     }
 
     const clearText = () => {
@@ -130,8 +142,8 @@ const SearchDialog = (props:UsernameDialogProps) => {
                     helperText={hasError ? errorMessage : ""}
                 />
                 <div style={{display:"flex", justifyContent:"center", marginTop:"30px"}}>
-                    <Button onClick={closeDialog}>Cancel</Button>
                     <Button onClick={onSubmit}>Submit</Button>
+                    <Button onClick={onRefresh}>Refresh</Button>
                 </div>
                 <div style={{marginTop:"30px"}}>
                     <List>
