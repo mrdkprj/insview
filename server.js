@@ -583,9 +583,9 @@ const _requestMoreByGraphql = async (req, session) => {
 const _formatGraph = (data, session, user) => {
     const media = [];
     const mediaNode = data.user.edge_owner_to_timeline_media;
-    mediaNode.edges.forEach((data) => {
+    mediaNode.edges.filter((data) => data.node.is_video === false).forEach((data) => {
         if (data.node.edge_sidecar_to_children) {
-            data.node.edge_sidecar_to_children.edges.forEach((crData) => {
+            data.node.edge_sidecar_to_children.edges.filter((data) => data.node.is_video === false).forEach((crData) => {
                 const isVideo = crData.node.is_video;
                 const mediaUrl = isVideo ? "/video?url=" : "/image?url=";
                 const thumbnail_url = isVideo ? "/image?url=" + encodeURIComponent(data.node.thumbnail_src) : undefined;
