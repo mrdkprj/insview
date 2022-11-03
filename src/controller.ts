@@ -326,11 +326,13 @@ class Controller{
             refreshedMediaResponse.history = refreshedHistory;
 
             currentIndex += Math.ceil((initialIgResponse.data.media.length - 1) / 3)
-
+console.log(`target:${targetRowIndex}`)
+console.log(`index:${currentIndex}, media:${initialIgResponse.data.media.length}`)
             if(currentIndex < targetRowIndex){
-                await this._queryMoreUntil(targetRowIndex, currentIndex, refreshedMediaResponse, req.headers)
+                await this.queryMoreUntil(targetRowIndex, currentIndex, refreshedMediaResponse, req.headers)
             }
 
+            console.log(`media:${initialIgResponse.data.media.length}`)
             await this.db.saveHistory(req.session.account, username, refreshedHistory);
             await this.db.saveMedia(req.session.account, refreshedMediaResponse);
 
@@ -344,9 +346,13 @@ class Controller{
 
     }
 
-    async _queryMoreUntil(targetRowIndex:number, currentIndex:number, refreshedMediaResponse:IMediaResponse, headers:any){
+    async queryMoreUntil(targetRowIndex:number, currentIndex:number, refreshedMediaResponse:IMediaResponse, headers:any){
+
+        console.log(`ender:${new Date()}`)
 
         await new Promise(s => setTimeout(s, 1000))
+
+        console.log(`start:${new Date()}`)
 
         const params = {
             data: {
@@ -358,13 +364,16 @@ class Controller{
 
         const igResponse = await api.requestMore(params);
 
+        console.log(`await end:${new Date()}`)
+
         refreshedMediaResponse.media = refreshedMediaResponse.media.concat(igResponse.data.media)
         refreshedMediaResponse.next = igResponse.data.next;
 
         currentIndex += Math.ceil((igResponse.data.media.length - 1) / 3)
 
+        console.log(`index:${currentIndex}, media:${refreshedMediaResponse.media.length}`)
         if(currentIndex < targetRowIndex){
-            this._queryMoreUntil(targetRowIndex, currentIndex, refreshedMediaResponse, headers)
+            this.queryMoreUntil(targetRowIndex, currentIndex, refreshedMediaResponse, headers)
         }else{
             return refreshedMediaResponse;
         }
