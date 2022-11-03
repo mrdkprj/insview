@@ -307,7 +307,7 @@ class Controller{
 
             if(!exisitingData.username) throw new Error("No data found");
 
-            const targetRowIndex = 10//exisitingData.rowIndex;
+            const targetRowIndex = exisitingData.rowIndex;
             let currentIndex = 0;
 
             const initialIgResponse = await api.requestMedia({data:{username},headers:req.headers});
@@ -333,8 +333,8 @@ console.log(`index:${currentIndex}, media:${initialIgResponse.data.media.length}
             }
 
             console.log(`media:${initialIgResponse.data.media.length}`)
-            await this.db.saveHistory(req.session.account, username, refreshedHistory);
-            await this.db.saveMedia(req.session.account, refreshedMediaResponse);
+            //await this.db.saveHistory(req.session.account, username, refreshedHistory);
+            //await this.db.saveMedia(req.session.account, refreshedMediaResponse);
 
             await this.sendResponse(req, res, refreshedMediaResponse, initialIgResponse.session);
 
