@@ -47,6 +47,7 @@ const _formatFollowings = (data:any) :IFollowing => {
     const dataNode = data.data.user.edge_follow;
 
     const users :IUser[] = dataNode.edges.map((user:any) :IUser => {
+
         return {
             id:user.node.id,
             igId:user.node.id,
@@ -55,6 +56,7 @@ const _formatFollowings = (data:any) :IFollowing => {
             biography:"",
             profileImage: "/image?url=" + encodeURIComponent(user.node.profile_pic_url),
             following: true,
+            isPro:false,
         }
     })
 

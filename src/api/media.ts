@@ -3,6 +3,10 @@ import {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, g
 import { IMedia, IMediaResponse, IUser, IgRequest, IgResponse, ISession, AuthError} from "@shared";
 
 const GRAPH_QL = "#GRAPH_QL";
+const IMAGE_URL = "/image?url="
+const VIDEO_URL = "/video?url="
+const IMAGE_PERMALINK_URL = "https://www.instagram.com/p/"
+const VIDEO_PERMALINK_URL = "https://www.instagram.com/reel/"
 
 const requestMedia = async (req:IgRequest) : Promise<IgResponse<IMediaResponse>> => {
 
@@ -12,7 +16,7 @@ const requestMedia = async (req:IgRequest) : Promise<IgResponse<IMediaResponse>>
     const userId = process.env.USER_ID
     const version = process.env.VERSION;
     const username = req.data.username;
-    const url = `https://graph.facebook.com/v${version}/${userId}?fields=business_discovery.username(${username}){id,username,name,biography,profile_picture_url,ig_id,media{id,media_url,media_type,children{id,media_url,media_type}}}&access_token=${access_token}`;
+    const url = `https://graph.facebook.com/v${version}/${userId}?fields=business_discovery.username(${username}){id,username,name,biography,profile_picture_url,ig_id,media{id,media_url,media_type,permalink,children{id,media_url,media_type,permalink}}}&access_token=${access_token}`;
 
     try{
 
@@ -43,7 +47,7 @@ const requestMore = async (req:IgRequest) : Promise<IgResponse<IMediaResponse>> 
     const access_token = process.env.TOKEN
     const userId = process.env.USER_ID
     const version = process.env.VERSION;
-    const url = `https://graph.facebook.com/v${version}/${userId}?fields=business_discovery.username(${req.data.user.username}){id,username,name,profile_picture_url,ig_id,media.after(${req.data.next}){id,media_url,media_type,children{id,media_url,media_type}}}&access_token=${access_token}`;
+    const url = `https://graph.facebook.com/v${version}/${userId}?fields=business_discovery.username(${req.data.user.username}){id,username,name,profile_picture_url,ig_id,media.after(${req.data.next}){id,media_url,media_type,permalink,children{id,media_url,media_type,permalink}}}&access_token=${access_token}`;
 
     const response = await axios.get(url);
 
@@ -65,24 +69,30 @@ const _formatMedia = (data:any) :IMediaResponse =>{
 
         if(data.children){
 
-            data.children.data.forEach((data:any) =>{
+            data.children.data.forEach((child:any) =>{
                 media.push({
-                    id:data.id,
-                    media_url: data.media_url,
+                    id:child.id,
+                    media_url: child.media_url,
                     taggedUsers:[],
-                    thumbnail_url: data.thumbnail_url,
-                    isVideo: data.media_type === "VIDEO"
+                    thumbnail_url: `${IMAGE_URL}${child.permalink}media?size=t`,
+                    isVideo: child.media_type === "VIDEO",
+                    permalink: child.permalink
                 })
+
             })
 
         }else{
+
+            const isVideo = data.media_type === "VIDEO"
+            const permalink = isVideo ? data.permalink.replace(/\/reel\//, "/p/") : data.permalink
 
             media.push({
                 id:data.id,
                 media_url: data.media_url,
                 taggedUsers:[],
-                thumbnail_url: data.thumbnail_url,
-                isVideo: data.media_type === "VIDEO"
+                thumbnail_url: `${IMAGE_URL}${permalink}media?size=t`,
+                isVideo,
+                permalink
             })
 
         }
@@ -105,6 +115,7 @@ const _formatMedia = (data:any) :IMediaResponse =>{
         profileImage: root.profile_picture_url,
         biography: root.biography,
         following:false,
+        isPro:true,
     }
 
     const history = {[username]: user}
@@ -161,9 +172,10 @@ const _tryRequestGraph = async (req:IgRequest, currentSession:ISession) : Promis
             igId: userData.id,
             username,
             name: userData.full_name,
-            profileImage: "/image?url=" + encodeURIComponent(userData.profile_pic_url),
+            profileImage: IMAGE_URL + encodeURIComponent(userData.profile_pic_url),
             biography:userData.biography,
             following:userData.followed_by_viewer,
+            isPro:false,
         }
 
         const requestSession = updateSession(currentSession, pageResponse.headers)
@@ -276,31 +288,32 @@ const _formatGraph = (data:any, session:ISession, user:IUser) : IMediaResponse =
 
     const mediaNode = data.user.edge_owner_to_timeline_media;
 
-    mediaNode.edges.filter( (data:any) => data.node.is_video === false).forEach( (data:any) => {
+    mediaNode.edges.forEach( (data:any) => {
 
         if(data.node.edge_sidecar_to_children){
 
-            data.node.edge_sidecar_to_children.edges.filter((data:any) => data.node.is_video === false).forEach((crData:any) =>{
+            data.node.edge_sidecar_to_children.edges.forEach((child:any) =>{
 
-                const isVideo = crData.node.is_video
-                const mediaUrl = isVideo ? "/video?url=" : "/image?url="
-                const thumbnail_url = isVideo ? "/image?url=" + encodeURIComponent(data.node.thumbnail_src) : undefined
+                const isVideo = child.node.is_video
+                const mediaUrl = isVideo ? VIDEO_URL + encodeURIComponent(child.node.video_url) : IMAGE_URL + encodeURIComponent(child.node.display_url)
+                const thumbnail_url = isVideo ? IMAGE_URL + encodeURIComponent(data.node.thumbnail_src) : undefined
 
                 media.push({
-                    id:crData.node.id,
-                    media_url: mediaUrl + encodeURIComponent(crData.node.display_url),
-                    taggedUsers: crData.node.edge_media_to_tagged_user.edges.map((edge:any) => {
+                    id:child.node.id,
+                    media_url: mediaUrl,
+                    taggedUsers: child.node.edge_media_to_tagged_user.edges.map((edge:any) => {
                         return {
                             id:edge.node.user.id,
                             igId:edge.node.user.id,
                             username:edge.node.user.username,
                             name:edge.node.user.full_name,
-                            profileImage: "/image?url=" + encodeURIComponent(edge.node.user.profile_pic_url),
+                            profileImage: IMAGE_URL + encodeURIComponent(edge.node.user.profile_pic_url),
                             biography:"",
                         }
                     }),
                     thumbnail_url,
-                    isVideo
+                    isVideo,
+                    permalink: isVideo ? `${VIDEO_PERMALINK_URL}${child.node.shortcode}` : `${IMAGE_PERMALINK_URL}${child.node.shortcode}`
                 })
 
             })
@@ -308,23 +321,24 @@ const _formatGraph = (data:any, session:ISession, user:IUser) : IMediaResponse =
         }else{
 
             const isVideo = data.node.is_video
-            const mediaUrl = isVideo ? "/video?url=" : "/image?url="
+            const mediaUrl = isVideo ? VIDEO_URL + encodeURIComponent(data.node.video_url) : IMAGE_URL + encodeURIComponent(data.node.display_url)
 
             media.push({
                 id:data.node.id,
-                media_url: mediaUrl + encodeURIComponent(data.node.display_url),
+                media_url: mediaUrl,
                 taggedUsers: data.node.edge_media_to_tagged_user.edges.map((edge:any) => {
                     return {
                         id:edge.node.user.id,
                         igId:edge.node.user.id,
                         username:edge.node.user.username,
                         name:edge.node.user.full_name,
-                        profileImage: "/image?url=" + encodeURIComponent(edge.node.user.profile_pic_url),
+                        profileImage: IMAGE_URL + encodeURIComponent(edge.node.user.profile_pic_url),
                         biography:"",
                     }
                 }),
-                thumbnail_url: data.node.thumbnail_src ? "/image?url=" + encodeURIComponent(data.node.thumbnail_src) : undefined,
-                isVideo
+                thumbnail_url: IMAGE_URL + encodeURIComponent(data.node.thumbnail_src),
+                isVideo,
+                permalink: isVideo ? `${VIDEO_PERMALINK_URL}${data.node.shortcode}` : `${IMAGE_PERMALINK_URL}${data.node.shortcode}`
             })
 
         }
@@ -345,7 +359,7 @@ const _formatGraph = (data:any, session:ISession, user:IUser) : IMediaResponse =
 
 }
 
-const requestVideo = async (url:string) => {
+const downloadMedia = async (headers:any, url:string) => {
 
     const options :AxiosRequestConfig = {
         url,
@@ -359,18 +373,4 @@ const requestVideo = async (url:string) => {
 
 }
 
-const requestImage = async (url:string) => {
-
-    const options :AxiosRequestConfig = {
-        url,
-        method: "GET",
-        headers:baseRequestHeaders,
-        responseType: "stream",
-        withCredentials:true
-    }
-
-    return await axios.request(options);
-
-}
-
-export {requestMore, requestMedia, requestImage, requestVideo}
+export {requestMore, requestMedia, downloadMedia}

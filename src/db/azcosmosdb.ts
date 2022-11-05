@@ -1,5 +1,5 @@
 import {emptyResponse, IHistory, IMediaResponse} from "@shared";
-import {IDatabase, IMediaTable} from "../types/IDatabase";
+import {IDatabase, IHistoryTable, IMediaTable} from "../types/IDatabase";
 import {CosmosClient, Database} from "@azure/cosmos";
 import {create, IContainerConfig} from "./azureContext"
 
@@ -30,7 +30,7 @@ class azcosmosdb implements IDatabase{
 
     }
 
-    async restore(account:string){
+    async restore(account:string) : Promise<IMediaResponse>{
 
         try{
             const history = await this.queryHistory(account);
@@ -57,7 +57,7 @@ class azcosmosdb implements IDatabase{
         }
     }
 
-    async queryHistory(account:string){
+    async queryHistory(account:string) : Promise<IHistoryTable>{
 
         try{
 

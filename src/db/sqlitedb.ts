@@ -1,6 +1,6 @@
 import sqlite3 from "sqlite3";
 import {emptyResponse, IHistory, IMediaResponse} from "@shared";
-import {IDatabase, IMediaTable} from "../types/IDatabase";
+import {IDatabase, IHistoryTable, IMediaTable} from "../types/IDatabase";
 
 class sqlitedb implements IDatabase{
 
@@ -69,7 +69,7 @@ class sqlitedb implements IDatabase{
 
     }
 
-    async restore(account:string){
+    async restore(account:string) : Promise<IMediaResponse>{
 
         try{
             const history = await this.queryHistory(account);
@@ -96,7 +96,7 @@ class sqlitedb implements IDatabase{
         }
     }
 
-    async queryHistory(account:string){
+    async queryHistory(account:string) : Promise<IHistoryTable>{
 
         const stm = "select username, history from history where account = ?";
 
@@ -118,7 +118,7 @@ class sqlitedb implements IDatabase{
 
     }
 
-    async queryMedia(account:string, username:string) {
+    async queryMedia(account:string, username:string) :Promise<IMediaTable> {
 
         const stm = "SELECT username, media, user, row_index, next FROM media where username = ? and account = ?";
 
@@ -140,7 +140,7 @@ class sqlitedb implements IDatabase{
 
     }
 
-    async query(queryString:string, params:any[]){
+    async query(queryString:string, params:any[]) : Promise<any>{
 
         const call = () => {
             return new Promise((resolve, reject) => {

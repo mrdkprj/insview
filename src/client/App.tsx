@@ -13,6 +13,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import InstagramIcon from "@mui/icons-material/Instagram";
 import LoginIcon from "@mui/icons-material/Login";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import Grid, {GridHandler} from "./component/Grid"
 import {query, save, queryMore, login, challenge, logout, getFollowings, deleteHistory, follow, unfollow} from "./request";
 import useWindowDimensions from "./dimensions";
@@ -490,7 +491,10 @@ function App(){
                 </LinkButton>
                 <LinkButton style={{padding: 0}} type="button" onClick={openUsernameDialog}>
                     <div style={{flex:1,display:"flex", justifyContent:"center", alignItems:"center"}}>
-                        <AccountCircleIcon sx={{ color: 'action.active', mr: 1, my: 0.5 }} />
+                        {mediaState.user.isPro
+                            ? <AdminPanelSettingsIcon sx={{ color: 'action.active', mr: 1, my: 0.5 }} />
+                            : <AccountCircleIcon sx={{ color: 'action.active', mr: 1, my: 0.5 }} />
+                        }
                         <Typography variant="subtitle1" style={{ flexGrow: 1, color:"#888" }}>{mediaState.user.username ? mediaState.user.username : "User not found"}</Typography>
                     </div>
                 </LinkButton>

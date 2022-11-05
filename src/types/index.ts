@@ -28,11 +28,13 @@ export const emptyMedia :IMedia = {
     taggedUsers:[],
     thumbnail_url:"",
     isVideo: false,
+    permalink: "",
 }
 
 export const emptyUser :IUser = {
     id:"",
     igId:"",
+    isPro:false,
     username:"",
     name:"",
     profileImage:"",
@@ -62,11 +64,13 @@ export interface IMedia {
     taggedUsers: IUser[];
     thumbnail_url?:string;
     isVideo:boolean;
+    permalink:string;
 }
 
 export interface IUser{
     id:string;
     igId:string;
+    isPro:boolean;
     username:string;
     name:string;
     profileImage:string;

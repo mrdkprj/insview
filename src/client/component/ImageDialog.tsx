@@ -84,6 +84,7 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     const backRef = useRef<HTMLDivElement>(null)
     const listRef = useRef<HTMLDivElement>(null);
+    const videoRef = useRef<HTMLVideoElement | null>(null);
 
     const isHorizontalAction = () => {
 
@@ -101,6 +102,12 @@ const ImageDialog = (props:ImageDialogProps) => {
         swipeState.current.startTime = new Date().getTime();
         swipeState.current.swiping = true
         swipeState.current.left = listRef.current?.scrollLeft ?? 0
+
+        if(e.target.tagName === "VIDEO"){
+            videoRef.current = e.target;
+        }else{
+            videoRef.current = null;
+        }
 
     },[])
 
@@ -203,6 +210,7 @@ const ImageDialog = (props:ImageDialogProps) => {
 
         if(!swipeState.current.swiping || zoomed.current) return;
 
+        pauseVideo();
         hideTags();
 
         const xDiff = swipeState.current.startX - e.touches[0].clientX;
@@ -287,6 +295,12 @@ const ImageDialog = (props:ImageDialogProps) => {
 
     },[closeDialog]);
 
+    const pauseVideo = () => {
+        if(videoRef.current){
+            videoRef.current.pause();
+        }
+    }
+
     const hideTags = () => {
 
         if(!listRef.current) return;
@@ -337,7 +351,7 @@ const ImageDialog = (props:ImageDialogProps) => {
                     {tags.map((tag:IUser) => (<div key={tag.id} onClick={() => onTagClick(tag)}>{tag.username}</div>))}
                 </div>
                 {props.data[index].isVideo
-                    ? <video css={ImageViewer} src={props.data[index].media_url} controls/>
+                    ? <video css={VideoViewer} src={props.data[index].media_url} controls muted preload="none" poster={props.data[index].thumbnail_url}/>
                     : <img css={ImageViewer} alt={props.data[index].id} src={props.data[index].media_url} onClick={onImageClick}/>
                 }
             </div>
@@ -396,9 +410,17 @@ const ImageContainer = css({
     alignItems:"center",
 
 })
+
 const ImageViewer = css({
     maxHeight: "100%",
     maxWidth: "100%",
+    transition: "transform 0.7s",
+    willChange: "transform"
+});
+
+const VideoViewer = css({
+    height: "100%",
+    width: "100%",
     transition: "transform 0.7s",
     willChange: "transform"
 });

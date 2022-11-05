@@ -39,7 +39,7 @@ app.use(session({
 app.use((req:Request, res:Response, next) => {
 
     const passthru = ["/login", "/logout", "/challenge"]
-    req.session.account = process.env.ACCOUNT;
+    //req.session.account = process.env.ACCOUNT;
     if(req.session.account || passthru.includes(req.path) || req.method === "GET"){
         next()
     }else{
@@ -54,7 +54,13 @@ app.get("/", (_req:Request, res:Response) => {
 
 app.get("/image", async (req:Request, res:Response) => {
 
-    await controller.retrieveImage(req, res)
+    await controller.retrieveMedia(req, res)
+
+})
+
+app.get("/video", async (req:Request, res:Response) => {
+
+    await controller.retrieveMedia(req, res)
 
 })
 

@@ -17,7 +17,7 @@ class sqlite implements IDatabaseProvider{
         const SqliteStore = sqliteStoreFactory(session);
         return new SqliteStore({
             driver: sqlite3.Database,
-            path: "../media.db",
+            path: "session.db",
             ttl: 60000 * 60 * 24 * 365,
         })
 

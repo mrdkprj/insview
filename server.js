@@ -71,10 +71,12 @@ const emptyMedia = {
     taggedUsers: [],
     thumbnail_url: "",
     isVideo: false,
+    permalink: "",
 };
 const emptyUser = {
     id: "",
     igId: "",
+    isPro: false,
     username: "",
     name: "",
     profileImage: "",
@@ -98,7 +100,7 @@ var external_tough_cookie_default = /*#__PURE__*/__webpack_require__.n(external_
 
 const baseUrl = "https://www.instagram.com";
 const Cookie = (external_tough_cookie_default()).Cookie;
-const util_baseRequestHeaders = {
+const baseRequestHeaders = {
     "Accept": "*/*",
     "Accept-Encoding": "gzip, deflate",
     "Accept-Language": "en-US",
@@ -168,7 +170,7 @@ const updateSession = (currentSession, headers) => {
     return session;
 };
 const createHeaders = (referer, session) => {
-    const headers = util_baseRequestHeaders;
+    const headers = baseRequestHeaders;
     headers["origin"] = "https://www.instagram.com";
     headers["referer"] = referer;
     //headers["x-requested-with"] = "XMLHttpRequest"
@@ -216,7 +218,7 @@ const login = async (req) => {
     console.log("----------try login----------");
     const account = req.data.account;
     let session = getSession(req.headers);
-    const headers = util_baseRequestHeaders;
+    const headers = baseRequestHeaders;
     headers["user-agent"] = session.userAgent;
     const options = {
         url: baseUrl,
@@ -383,13 +385,17 @@ const logout = async (req) => {
 
 
 const GRAPH_QL = "#GRAPH_QL";
+const IMAGE_URL = "/image?url=";
+const VIDEO_URL = "/video?url=";
+const IMAGE_PERMALINK_URL = "https://www.instagram.com/p/";
+const VIDEO_PERMALINK_URL = "https://www.instagram.com/reel/";
 const requestMedia = async (req) => {
     const session = getSession(req.headers);
     const access_token = process.env.TOKEN;
     const userId = process.env.USER_ID;
     const version = process.env.VERSION;
     const username = req.data.username;
-    const url = `https://graph.facebook.com/v${version}/${userId}?fields=business_discovery.username(${username}){id,username,name,biography,profile_picture_url,ig_id,media{id,media_url,media_type,children{id,media_url,media_type}}}&access_token=${access_token}`;
+    const url = `https://graph.facebook.com/v${version}/${userId}?fields=business_discovery.username(${username}){id,username,name,biography,profile_picture_url,ig_id,media{id,media_url,media_type,permalink,children{id,media_url,media_type,permalink}}}&access_token=${access_token}`;
     try {
         const response = await external_axios_default().get(url);
         const data = _formatMedia(response.data);
@@ -410,7 +416,7 @@ const requestMore = async (req) => {
     const access_token = process.env.TOKEN;
     const userId = process.env.USER_ID;
     const version = process.env.VERSION;
-    const url = `https://graph.facebook.com/v${version}/${userId}?fields=business_discovery.username(${req.data.user.username}){id,username,name,profile_picture_url,ig_id,media.after(${req.data.next}){id,media_url,media_type,children{id,media_url,media_type}}}&access_token=${access_token}`;
+    const url = `https://graph.facebook.com/v${version}/${userId}?fields=business_discovery.username(${req.data.user.username}){id,username,name,profile_picture_url,ig_id,media.after(${req.data.next}){id,media_url,media_type,permalink,children{id,media_url,media_type,permalink}}}&access_token=${access_token}`;
     const response = await external_axios_default().get(url);
     const data = _formatMedia(response.data);
     return {
@@ -423,23 +429,27 @@ const _formatMedia = (data) => {
     const root = data.business_discovery;
     root.media.data.forEach((data) => {
         if (data.children) {
-            data.children.data.forEach((data) => {
+            data.children.data.forEach((child) => {
                 media.push({
-                    id: data.id,
-                    media_url: data.media_url,
+                    id: child.id,
+                    media_url: child.media_url,
                     taggedUsers: [],
-                    thumbnail_url: data.thumbnail_url,
-                    isVideo: data.media_type === "VIDEO"
+                    thumbnail_url: `${IMAGE_URL}${child.permalink}media?size=t`,
+                    isVideo: child.media_type === "VIDEO",
+                    permalink: child.permalink
                 });
             });
         }
         else {
+            const isVideo = data.media_type === "VIDEO";
+            const permalink = isVideo ? data.permalink.replace(/\/reel\//, "/p/") : data.permalink;
             media.push({
                 id: data.id,
                 media_url: data.media_url,
                 taggedUsers: [],
-                thumbnail_url: data.thumbnail_url,
-                isVideo: data.media_type === "VIDEO"
+                thumbnail_url: `${IMAGE_URL}${permalink}media?size=t`,
+                isVideo,
+                permalink
             });
         }
     });
@@ -457,6 +467,7 @@ const _formatMedia = (data) => {
         profileImage: root.profile_picture_url,
         biography: root.biography,
         following: false,
+        isPro: true,
     };
     const history = { [username]: user };
     return { username, media, user, rowIndex, next, history, isAuthenticated: true };
@@ -500,9 +511,10 @@ const _tryRequestGraph = async (req, currentSession) => {
             igId: userData.id,
             username,
             name: userData.full_name,
-            profileImage: "/image?url=" + encodeURIComponent(userData.profile_pic_url),
+            profileImage: IMAGE_URL + encodeURIComponent(userData.profile_pic_url),
             biography: userData.biography,
             following: userData.followed_by_viewer,
+            isPro: false,
         };
         const requestSession = updateSession(currentSession, pageResponse.headers);
         const response = await _requestGraph(req, requestSession, user);
@@ -583,33 +595,37 @@ const _requestMoreByGraphql = async (req, session) => {
 const _formatGraph = (data, session, user) => {
     const media = [];
     const mediaNode = data.user.edge_owner_to_timeline_media;
-    mediaNode.edges.filter((data) => data.node.is_video === false).forEach((data) => {
+    mediaNode.edges.forEach((data) => {
         if (data.node.edge_sidecar_to_children) {
-            data.node.edge_sidecar_to_children.edges.filter((data) => data.node.is_video === false).forEach((crData) => {
-                const isVideo = crData.node.is_video;
-                const mediaUrl = isVideo ? "/video?url=" : "/image?url=";
-                const thumbnail_url = isVideo ? "/image?url=" + encodeURIComponent(data.node.thumbnail_src) : undefined;
+            data.node.edge_sidecar_to_children.edges.forEach((child) => {
+                const isVideo = child.node.is_video;
+                const mediaUrl = isVideo ? VIDEO_URL : IMAGE_URL;
+                const thumbnail_url = isVideo ? IMAGE_URL + encodeURIComponent(data.node.thumbnail_src) : undefined;
                 media.push({
-                    id: crData.node.id,
-                    media_url: mediaUrl + encodeURIComponent(crData.node.display_url),
-                    taggedUsers: crData.node.edge_media_to_tagged_user.edges.map((edge) => {
+                    id: child.node.id,
+                    media_url: mediaUrl + encodeURIComponent(child.node.display_url),
+                    taggedUsers: child.node.edge_media_to_tagged_user.edges.map((edge) => {
                         return {
                             id: edge.node.user.id,
                             igId: edge.node.user.id,
                             username: edge.node.user.username,
                             name: edge.node.user.full_name,
-                            profileImage: "/image?url=" + encodeURIComponent(edge.node.user.profile_pic_url),
+                            profileImage: IMAGE_URL + encodeURIComponent(edge.node.user.profile_pic_url),
                             biography: "",
                         };
                     }),
                     thumbnail_url,
-                    isVideo
+                    isVideo,
+                    permalink: isVideo ? `${VIDEO_PERMALINK_URL}${child.node.shortcode}` : `${IMAGE_PERMALINK_URL}${child.node.shortcode}`
                 });
             });
         }
         else {
             const isVideo = data.node.is_video;
-            const mediaUrl = isVideo ? "/video?url=" : "/image?url=";
+            const mediaUrl = isVideo ? VIDEO_URL : IMAGE_URL;
+            if (isVideo) {
+                console.log(data.node);
+            }
             media.push({
                 id: data.node.id,
                 media_url: mediaUrl + encodeURIComponent(data.node.display_url),
@@ -619,12 +635,13 @@ const _formatGraph = (data, session, user) => {
                         igId: edge.node.user.id,
                         username: edge.node.user.username,
                         name: edge.node.user.full_name,
-                        profileImage: "/image?url=" + encodeURIComponent(edge.node.user.profile_pic_url),
+                        profileImage: IMAGE_URL + encodeURIComponent(edge.node.user.profile_pic_url),
                         biography: "",
                     };
                 }),
-                thumbnail_url: data.node.thumbnail_src ? "/image?url=" + encodeURIComponent(data.node.thumbnail_src) : undefined,
-                isVideo
+                thumbnail_url: data.node.thumbnail_src ? IMAGE_URL + encodeURIComponent(data.node.thumbnail_src) : undefined,
+                isVideo,
+                permalink: isVideo ? `${VIDEO_PERMALINK_URL}${data.node.shortcode}` : `${IMAGE_PERMALINK_URL}${data.node.shortcode}`
             });
         }
     });
@@ -637,21 +654,11 @@ const _formatGraph = (data, session, user) => {
     const history = { [username]: user };
     return { username, media, user, rowIndex, next, history, isAuthenticated: session.isAuthenticated };
 };
-const requestVideo = async (url) => {
+const downloadMedia = async (url) => {
     const options = {
         url,
         method: "GET",
         headers: baseRequestHeaders,
-        responseType: "stream",
-        withCredentials: true
-    };
-    return await axios.request(options);
-};
-const requestImage = async (url) => {
-    const options = {
-        url,
-        method: "GET",
-        headers: util_baseRequestHeaders,
         responseType: "stream",
         withCredentials: true
     };
@@ -706,6 +713,7 @@ const _formatFollowings = (data) => {
             biography: "",
             profileImage: "/image?url=" + encodeURIComponent(user.node.profile_pic_url),
             following: true,
+            isPro: false,
         };
     });
     const hasNext = dataNode.page_info.has_next_page;
@@ -1016,12 +1024,12 @@ class Controller {
             this.sendErrorResponse(res, ex, "Delete failed");
         }
     }
-    async retrieveImage(req, res) {
+    async retrieveMedia(req, res) {
         try {
             if (!req.query.url || typeof req.query.url !== "string") {
                 throw new Error("no url specified");
             }
-            const result = await requestImage(decodeURIComponent(req.query.url));
+            const result = await downloadMedia(decodeURIComponent(req.query.url));
             Object.entries(result.headers).forEach(([key, value]) => res.setHeader(key, value));
             result.data.pipe(res);
         }
@@ -1429,7 +1437,10 @@ app.get("/", (_req, res) => {
     res.sendFile(external_path_default().resolve(__dirname, publicDir, "index.html"));
 });
 app.get("/image", async (req, res) => {
-    await server_controller.retrieveImage(req, res);
+    await server_controller.retrieveMedia(req, res);
+});
+app.get("/video", async (req, res) => {
+    await server_controller.retrieveMedia(req, res);
 });
 app.post("/query", async (req, res) => {
     const username = req.body.username;
