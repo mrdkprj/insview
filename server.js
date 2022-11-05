@@ -599,11 +599,11 @@ const _formatGraph = (data, session, user) => {
         if (data.node.edge_sidecar_to_children) {
             data.node.edge_sidecar_to_children.edges.forEach((child) => {
                 const isVideo = child.node.is_video;
-                const mediaUrl = isVideo ? VIDEO_URL : IMAGE_URL;
+                const mediaUrl = isVideo ? VIDEO_URL + encodeURIComponent(child.node.video_url) : IMAGE_URL + encodeURIComponent(child.node.display_url);
                 const thumbnail_url = isVideo ? IMAGE_URL + encodeURIComponent(data.node.thumbnail_src) : undefined;
                 media.push({
                     id: child.node.id,
-                    media_url: mediaUrl + encodeURIComponent(child.node.display_url),
+                    media_url: mediaUrl,
                     taggedUsers: child.node.edge_media_to_tagged_user.edges.map((edge) => {
                         return {
                             id: edge.node.user.id,
@@ -622,13 +622,10 @@ const _formatGraph = (data, session, user) => {
         }
         else {
             const isVideo = data.node.is_video;
-            const mediaUrl = isVideo ? VIDEO_URL : IMAGE_URL;
-            if (isVideo) {
-                console.log(data.node);
-            }
+            const mediaUrl = isVideo ? VIDEO_URL + encodeURIComponent(data.node.video_url) : IMAGE_URL + encodeURIComponent(data.node.display_url);
             media.push({
                 id: data.node.id,
-                media_url: mediaUrl + encodeURIComponent(data.node.display_url),
+                media_url: mediaUrl,
                 taggedUsers: data.node.edge_media_to_tagged_user.edges.map((edge) => {
                     return {
                         id: edge.node.user.id,
@@ -639,7 +636,7 @@ const _formatGraph = (data, session, user) => {
                         biography: "",
                     };
                 }),
-                thumbnail_url: data.node.thumbnail_src ? IMAGE_URL + encodeURIComponent(data.node.thumbnail_src) : undefined,
+                thumbnail_url: IMAGE_URL + encodeURIComponent(data.node.thumbnail_src),
                 isVideo,
                 permalink: isVideo ? `${VIDEO_PERMALINK_URL}${data.node.shortcode}` : `${IMAGE_PERMALINK_URL}${data.node.shortcode}`
             });
@@ -654,7 +651,7 @@ const _formatGraph = (data, session, user) => {
     const history = { [username]: user };
     return { username, media, user, rowIndex, next, history, isAuthenticated: session.isAuthenticated };
 };
-const downloadMedia = async (url) => {
+const downloadMedia = async (headers, url) => {
     const options = {
         url,
         method: "GET",
@@ -1029,7 +1026,7 @@ class Controller {
             if (!req.query.url || typeof req.query.url !== "string") {
                 throw new Error("no url specified");
             }
-            const result = await downloadMedia(decodeURIComponent(req.query.url));
+            const result = await downloadMedia(req.headers, req.query.url);
             Object.entries(result.headers).forEach(([key, value]) => res.setHeader(key, value));
             result.data.pipe(res);
         }
@@ -1425,7 +1422,7 @@ app.use(external_express_session_default()({
 }));
 app.use((req, res, next) => {
     const passthru = ["/login", "/logout", "/challenge"];
-    req.session.account = process.env.ACCOUNT;
+    //req.session.account = process.env.ACCOUNT;
     if (req.session.account || passthru.includes(req.path) || req.method === "GET") {
         next();
     }
