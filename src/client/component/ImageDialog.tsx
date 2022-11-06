@@ -352,7 +352,7 @@ const ImageDialog = (props:ImageDialogProps) => {
                     {tags.map((tag:IUser) => (<div key={tag.id} onClick={() => onTagClick(tag)}>{tag.username}</div>))}
                 </div>
                 {props.data[index].isVideo &&
-                    <div style={{position:"absolute", width:"100%", height:"20px",top:"5px"}}>
+                    <div style={{position:"absolute", width:"100%", height:"20px",top:"5px",zIndex:999999}}>
                         <a href={"/video?url=" + encodeURIComponent(props.data[index].media_url)} download style={{color:"#ccc", width:"100%", height:"100%", display:"flex", justifyContent:"flex-end"}}>
                             <DownloadForOfflineIcon fontSize="small" color="inherit" style={{ marginRight:"5px"}}/>
                         </a>
