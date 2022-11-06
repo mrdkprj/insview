@@ -377,7 +377,7 @@ class Controller{
 
     }
 
-    async retrieveMedia(req:Request, res:Response){
+    async retrieveMedia(req:Request, res:Response, isVideo:boolean){
 
         try{
 
@@ -385,10 +385,13 @@ class Controller{
                 throw new Error("no url specified")
             }
 
-            const result = await api.downloadMedia(req.headers, req.query.url)
+            const result = await api.downloadMedia(req.query.url)
 
             Object.entries(result.headers).forEach(([key, value]) => res.setHeader(key, value));
 
+            if(isVideo){
+                //res.attachment("abc.mp4")
+            }
             result.data.pipe(res);
 
         }catch(ex:any){

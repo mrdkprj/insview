@@ -651,7 +651,7 @@ const _formatGraph = (data, session, user) => {
     const history = { [username]: user };
     return { username, media, user, rowIndex, next, history, isAuthenticated: session.isAuthenticated };
 };
-const downloadMedia = async (headers, url) => {
+const downloadMedia = async (url) => {
     const options = {
         url,
         method: "GET",
@@ -1021,13 +1021,16 @@ class Controller {
             this.sendErrorResponse(res, ex, "Delete failed");
         }
     }
-    async retrieveMedia(req, res) {
+    async retrieveMedia(req, res, isVideo) {
         try {
             if (!req.query.url || typeof req.query.url !== "string") {
                 throw new Error("no url specified");
             }
-            const result = await downloadMedia(req.headers, req.query.url);
+            const result = await downloadMedia(req.query.url);
             Object.entries(result.headers).forEach(([key, value]) => res.setHeader(key, value));
+            if (isVideo) {
+                //res.attachment("abc.mp4")
+            }
             result.data.pipe(res);
         }
         catch (ex) {
@@ -1434,10 +1437,10 @@ app.get("/", (_req, res) => {
     res.sendFile(external_path_default().resolve(__dirname, publicDir, "index.html"));
 });
 app.get("/image", async (req, res) => {
-    await server_controller.retrieveMedia(req, res);
+    await server_controller.retrieveMedia(req, res, false);
 });
 app.get("/video", async (req, res) => {
-    await server_controller.retrieveMedia(req, res);
+    await server_controller.retrieveMedia(req, res, true);
 });
 app.post("/query", async (req, res) => {
     const username = req.body.username;

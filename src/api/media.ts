@@ -359,7 +359,7 @@ const _formatGraph = (data:any, session:ISession, user:IUser) : IMediaResponse =
 
 }
 
-const downloadMedia = async (headers:any, url:string) => {
+const downloadMedia = async (url:string) => {
 
     const options :AxiosRequestConfig = {
         url,

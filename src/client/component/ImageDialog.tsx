@@ -1,6 +1,7 @@
 import React, { memo, useEffect,useCallback, useRef } from "react"
 import { FixedSizeList as List } from 'react-window';
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import DownloadForOfflineIcon from '@mui/icons-material/DownloadForOffline';
 import { css } from "@emotion/react";
 import { IMedia, IUser } from "@shared";
 import LinkButton from "@parts/LinkButton";
@@ -350,8 +351,15 @@ const ImageDialog = (props:ImageDialogProps) => {
                 <div css={edge}>
                     {tags.map((tag:IUser) => (<div key={tag.id} onClick={() => onTagClick(tag)}>{tag.username}</div>))}
                 </div>
+                {props.data[index].isVideo &&
+                    <div style={{position:"absolute", width:"100%", height:"20px",top:"5px"}}>
+                        <a href={"/video?url=" + encodeURIComponent(props.data[index].media_url)} download style={{color:"#ccc", width:"100%", height:"100%", display:"flex", justifyContent:"flex-end"}}>
+                            <DownloadForOfflineIcon fontSize="small" color="inherit" style={{ marginRight:"5px"}}/>
+                        </a>
+                    </div>
+                }
                 {props.data[index].isVideo
-                    ? <video css={VideoViewer} src={props.data[index].media_url} controls muted preload="none" poster={props.data[index].thumbnail_url}/>
+                    ? <video css={VideoViewer} src={props.data[index].media_url} controls muted playsInline preload="none" poster={props.data[index].thumbnail_url}/>
                     : <img css={ImageViewer} alt={props.data[index].id} src={props.data[index].media_url} onClick={onImageClick}/>
                 }
             </div>
@@ -419,10 +427,8 @@ const ImageViewer = css({
 });
 
 const VideoViewer = css({
-    height: "100%",
+    maxHeight: "100%",
     width: "100%",
-    transition: "transform 0.7s",
-    willChange: "transform"
 });
 
 const Backdrop = css({

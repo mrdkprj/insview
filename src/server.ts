@@ -54,13 +54,13 @@ app.get("/", (_req:Request, res:Response) => {
 
 app.get("/image", async (req:Request, res:Response) => {
 
-    await controller.retrieveMedia(req, res)
+    await controller.retrieveMedia(req, res, false)
 
 })
 
 app.get("/video", async (req:Request, res:Response) => {
 
-    await controller.retrieveMedia(req, res)
+    await controller.retrieveMedia(req, res, true)
 
 })
 
