@@ -359,7 +359,7 @@ const ImageDialog = (props:ImageDialogProps) => {
                     </div>
                 }
                 {props.data[index].isVideo
-                    ? <video css={VideoViewer} src={props.data[index].media_url} controls muted playsInline preload="none" poster={props.data[index].thumbnail_url}/>
+                    ? <video css={VideoViewer} src={props.data[index].media_url} controls muted playsInline preload="none" poster={props.data[index].thumbnail_url} style={{backgroundColor:"#fff"}}/>
                     : <img css={ImageViewer} alt={props.data[index].id} src={props.data[index].media_url} onClick={onImageClick}/>
                 }
             </div>
