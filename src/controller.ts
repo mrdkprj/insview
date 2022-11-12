@@ -377,7 +377,7 @@ class Controller{
 
     }
 
-    async retrieveMedia(req:Request, res:Response, isVideo:boolean){
+    async retrieveMedia(req:Request, res:Response){
 
         try{
 
@@ -389,9 +389,6 @@ class Controller{
 
             Object.entries(result.headers).forEach(([key, value]) => res.setHeader(key, value));
 
-            if(isVideo){
-                //res.attachment("abc.mp4")
-            }
             result.data.pipe(res);
 
         }catch(ex:any){

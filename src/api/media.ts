@@ -59,6 +59,14 @@ const requestMore = async (req:IgRequest) : Promise<IgResponse<IMediaResponse>> 
     }
 }
 
+const _getVideoUrl = (url:string) => {
+    return `${VIDEO_URL}${encodeURIComponent(url)}`
+}
+
+const _getImageUrl = (url:string) => {
+    return `${IMAGE_URL}${encodeURIComponent(url)}`
+}
+
 const _formatMedia = (data:any) :IMediaResponse =>{
 
     const media :IMedia[] = [];
@@ -69,16 +77,18 @@ const _formatMedia = (data:any) :IMediaResponse =>{
 
         if(data.children){
 
-            data.children.data.forEach((child:any) =>{
+            data.children.data.forEach((child:any) => {
+
+                const isVideo = child.media_type === "VIDEO"
+
                 media.push({
                     id:child.id,
                     media_url: child.media_url,
                     taggedUsers:[],
                     thumbnail_url: `${IMAGE_URL}${child.permalink}media?size=t`,
-                    isVideo: child.media_type === "VIDEO",
+                    isVideo,
                     permalink: child.permalink
                 })
-
             })
 
         }else{
@@ -195,7 +205,6 @@ const _tryRequestGraph = async (req:IgRequest, currentSession:ISession) : Promis
     }
 }
 
-
 const _tryRequestMoreGraph = async (req:IgRequest, currentSession:ISession) : Promise<IgResponse<IMediaResponse>> => {
 
     if(!currentSession.isAuthenticated){
@@ -214,7 +223,6 @@ const _tryRequestMoreGraph = async (req:IgRequest, currentSession:ISession) : Pr
         session
     }
 }
-
 
 const _requestGraph = async (req:IgRequest, session:ISession, user:IUser) : Promise<AxiosResponse<any, any>> => {
 
@@ -295,8 +303,9 @@ const _formatGraph = (data:any, session:ISession, user:IUser) : IMediaResponse =
             data.node.edge_sidecar_to_children.edges.forEach((child:any) =>{
 
                 const isVideo = child.node.is_video
-                const mediaUrl = isVideo ? VIDEO_URL + encodeURIComponent(child.node.video_url) : IMAGE_URL + encodeURIComponent(child.node.display_url)
-                const thumbnail_url = isVideo ? IMAGE_URL + encodeURIComponent(data.node.thumbnail_src) : undefined
+                const mediaUrl = isVideo ? _getVideoUrl(child.node.video_url) : _getImageUrl(child.node.display_url)
+                const thumbnail_url = _getImageUrl(child.node.display_url)
+                const permalink = isVideo ? `${VIDEO_PERMALINK_URL}${child.node.shortcode}` : `${IMAGE_PERMALINK_URL}${child.node.shortcode}`
 
                 media.push({
                     id:child.node.id,
@@ -307,13 +316,13 @@ const _formatGraph = (data:any, session:ISession, user:IUser) : IMediaResponse =
                             igId:edge.node.user.id,
                             username:edge.node.user.username,
                             name:edge.node.user.full_name,
-                            profileImage: IMAGE_URL + encodeURIComponent(edge.node.user.profile_pic_url),
+                            profileImage: _getImageUrl(edge.node.user.profile_pic_url),
                             biography:"",
                         }
                     }),
                     thumbnail_url,
                     isVideo,
-                    permalink: isVideo ? `${VIDEO_PERMALINK_URL}${child.node.shortcode}` : `${IMAGE_PERMALINK_URL}${child.node.shortcode}`
+                    permalink
                 })
 
             })
@@ -321,7 +330,8 @@ const _formatGraph = (data:any, session:ISession, user:IUser) : IMediaResponse =
         }else{
 
             const isVideo = data.node.is_video
-            const mediaUrl = isVideo ? VIDEO_URL + encodeURIComponent(data.node.video_url) : IMAGE_URL + encodeURIComponent(data.node.display_url)
+            const mediaUrl = isVideo ? _getVideoUrl(data.node.video_url) : _getImageUrl(data.node.display_url)
+            const permalink = isVideo ? `${VIDEO_PERMALINK_URL}${data.node.shortcode}` : `${IMAGE_PERMALINK_URL}${data.node.shortcode}`
 
             media.push({
                 id:data.node.id,
@@ -332,13 +342,13 @@ const _formatGraph = (data:any, session:ISession, user:IUser) : IMediaResponse =
                         igId:edge.node.user.id,
                         username:edge.node.user.username,
                         name:edge.node.user.full_name,
-                        profileImage: IMAGE_URL + encodeURIComponent(edge.node.user.profile_pic_url),
+                        profileImage: _getImageUrl(edge.node.user.profile_pic_url),
                         biography:"",
                     }
                 }),
-                thumbnail_url: IMAGE_URL + encodeURIComponent(data.node.thumbnail_src),
+                thumbnail_url: _getImageUrl(data.node.thumbnail_src),
                 isVideo,
-                permalink: isVideo ? `${VIDEO_PERMALINK_URL}${data.node.shortcode}` : `${IMAGE_PERMALINK_URL}${data.node.shortcode}`
+                permalink
             })
 
         }
