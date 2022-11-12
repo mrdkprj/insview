@@ -424,18 +424,25 @@ const requestMore = async (req) => {
         session
     };
 };
+const _getVideoUrl = (url) => {
+    return `${VIDEO_URL}${encodeURIComponent(url)}`;
+};
+const _getImageUrl = (url) => {
+    return `${IMAGE_URL}${encodeURIComponent(url)}`;
+};
 const _formatMedia = (data) => {
     const media = [];
     const root = data.business_discovery;
     root.media.data.forEach((data) => {
         if (data.children) {
             data.children.data.forEach((child) => {
+                const isVideo = child.media_type === "VIDEO";
                 media.push({
                     id: child.id,
                     media_url: child.media_url,
                     taggedUsers: [],
                     thumbnail_url: `${IMAGE_URL}${child.permalink}media?size=t`,
-                    isVideo: child.media_type === "VIDEO",
+                    isVideo,
                     permalink: child.permalink
                 });
             });
@@ -599,8 +606,9 @@ const _formatGraph = (data, session, user) => {
         if (data.node.edge_sidecar_to_children) {
             data.node.edge_sidecar_to_children.edges.forEach((child) => {
                 const isVideo = child.node.is_video;
-                const mediaUrl = isVideo ? VIDEO_URL + encodeURIComponent(child.node.video_url) : IMAGE_URL + encodeURIComponent(child.node.display_url);
-                const thumbnail_url = isVideo ? IMAGE_URL + encodeURIComponent(data.node.thumbnail_src) : undefined;
+                const mediaUrl = isVideo ? _getVideoUrl(child.node.video_url) : _getImageUrl(child.node.display_url);
+                const thumbnail_url = _getImageUrl(child.node.display_url);
+                const permalink = isVideo ? `${VIDEO_PERMALINK_URL}${child.node.shortcode}` : `${IMAGE_PERMALINK_URL}${child.node.shortcode}`;
                 media.push({
                     id: child.node.id,
                     media_url: mediaUrl,
@@ -610,19 +618,20 @@ const _formatGraph = (data, session, user) => {
                             igId: edge.node.user.id,
                             username: edge.node.user.username,
                             name: edge.node.user.full_name,
-                            profileImage: IMAGE_URL + encodeURIComponent(edge.node.user.profile_pic_url),
+                            profileImage: _getImageUrl(edge.node.user.profile_pic_url),
                             biography: "",
                         };
                     }),
                     thumbnail_url,
                     isVideo,
-                    permalink: isVideo ? `${VIDEO_PERMALINK_URL}${child.node.shortcode}` : `${IMAGE_PERMALINK_URL}${child.node.shortcode}`
+                    permalink
                 });
             });
         }
         else {
             const isVideo = data.node.is_video;
-            const mediaUrl = isVideo ? VIDEO_URL + encodeURIComponent(data.node.video_url) : IMAGE_URL + encodeURIComponent(data.node.display_url);
+            const mediaUrl = isVideo ? _getVideoUrl(data.node.video_url) : _getImageUrl(data.node.display_url);
+            const permalink = isVideo ? `${VIDEO_PERMALINK_URL}${data.node.shortcode}` : `${IMAGE_PERMALINK_URL}${data.node.shortcode}`;
             media.push({
                 id: data.node.id,
                 media_url: mediaUrl,
@@ -632,13 +641,13 @@ const _formatGraph = (data, session, user) => {
                         igId: edge.node.user.id,
                         username: edge.node.user.username,
                         name: edge.node.user.full_name,
-                        profileImage: IMAGE_URL + encodeURIComponent(edge.node.user.profile_pic_url),
+                        profileImage: _getImageUrl(edge.node.user.profile_pic_url),
                         biography: "",
                     };
                 }),
-                thumbnail_url: IMAGE_URL + encodeURIComponent(data.node.thumbnail_src),
+                thumbnail_url: _getImageUrl(data.node.thumbnail_src),
                 isVideo,
-                permalink: isVideo ? `${VIDEO_PERMALINK_URL}${data.node.shortcode}` : `${IMAGE_PERMALINK_URL}${data.node.shortcode}`
+                permalink
             });
         }
     });
@@ -1021,16 +1030,13 @@ class Controller {
             this.sendErrorResponse(res, ex, "Delete failed");
         }
     }
-    async retrieveMedia(req, res, isVideo) {
+    async retrieveMedia(req, res) {
         try {
             if (!req.query.url || typeof req.query.url !== "string") {
                 throw new Error("no url specified");
             }
             const result = await downloadMedia(req.query.url);
             Object.entries(result.headers).forEach(([key, value]) => res.setHeader(key, value));
-            if (isVideo) {
-                //res.attachment("abc.mp4")
-            }
             result.data.pipe(res);
         }
         catch (ex) {
@@ -1425,7 +1431,8 @@ app.use(external_express_session_default()({
 }));
 app.use((req, res, next) => {
     const passthru = ["/login", "/logout", "/challenge"];
-    //req.session.account = process.env.ACCOUNT;
+    if (!isProduction)
+        req.session.account = process.env.ACCOUNT;
     if (req.session.account || passthru.includes(req.path) || req.method === "GET") {
         next();
     }
@@ -1437,10 +1444,10 @@ app.get("/", (_req, res) => {
     res.sendFile(external_path_default().resolve(__dirname, publicDir, "index.html"));
 });
 app.get("/image", async (req, res) => {
-    await server_controller.retrieveMedia(req, res, false);
+    await server_controller.retrieveMedia(req, res);
 });
 app.get("/video", async (req, res) => {
-    await server_controller.retrieveMedia(req, res, true);
+    await server_controller.retrieveMedia(req, res);
 });
 app.post("/query", async (req, res) => {
     const username = req.body.username;
