@@ -389,14 +389,19 @@ class Controller{
 
             Object.entries(result.headers).forEach(([key, value]) => res.setHeader(key, value));
 
+            if(req.query.id){
+                res.attachment(`${req.query.id}.mp4`)
+            }
+
             result.data.pipe(res);
 
         }catch(ex:any){
 
-            this.sendErrorResponse(res, ex, "image not found");
+            this.sendErrorResponse(res, ex, "Media not found");
 
         }
     }
+
 }
 
 export default Controller

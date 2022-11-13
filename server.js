@@ -1037,10 +1037,13 @@ class Controller {
             }
             const result = await downloadMedia(req.query.url);
             Object.entries(result.headers).forEach(([key, value]) => res.setHeader(key, value));
+            if (req.query.id) {
+                res.attachment(`${req.query.id}.mp4`);
+            }
             result.data.pipe(res);
         }
         catch (ex) {
-            this.sendErrorResponse(res, ex, "image not found");
+            this.sendErrorResponse(res, ex, "Media not found");
         }
     }
 }

@@ -353,7 +353,7 @@ const ImageDialog = (props:ImageDialogProps) => {
                 </div>
                 {props.data[index].isVideo &&
                     <div style={{position:"absolute", width:"100%",top:"5px"}}>
-                        <a href={"/video?url=" + encodeURIComponent(props.data[index].media_url)} download style={{color:"#ccc", width:"100%", height:"100%", display:"flex", justifyContent:"flex-end"}}>
+                        <a href={`/video?url=${encodeURIComponent(props.data[index].media_url)}&id=${props.data[index].id}`} download style={{color:"#ccc", width:"100%", height:"100%", display:"flex", justifyContent:"flex-end"}}>
                             <DownloadForOfflineIcon color="inherit" style={{ marginRight:"5px"}}/>
                         </a>
                     </div>
