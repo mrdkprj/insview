@@ -80,12 +80,13 @@ const _formatMedia = (data:any) :IMediaResponse =>{
             data.children.data.forEach((child:any) => {
 
                 const isVideo = child.media_type === "VIDEO"
+                const thumbnailUrl = isVideo ? `${IMAGE_URL}${child.permalink}media?size=t` : child.media_url
 
                 media.push({
                     id:child.id,
                     media_url: child.media_url,
                     taggedUsers:[],
-                    thumbnail_url: `${IMAGE_URL}${child.permalink}media?size=t`,
+                    thumbnail_url: thumbnailUrl,
                     isVideo,
                     permalink: child.permalink
                 })
@@ -95,12 +96,13 @@ const _formatMedia = (data:any) :IMediaResponse =>{
 
             const isVideo = data.media_type === "VIDEO"
             const permalink = isVideo ? data.permalink.replace(/\/reel\//, "/p/") : data.permalink
+            const thumbnailUrl = isVideo ? `${IMAGE_URL}${permalink}media?size=t` : data.media_url
 
             media.push({
                 id:data.id,
                 media_url: data.media_url,
                 taggedUsers:[],
-                thumbnail_url: `${IMAGE_URL}${permalink}media?size=t`,
+                thumbnail_url: thumbnailUrl,
                 isVideo,
                 permalink
             })
@@ -110,10 +112,7 @@ const _formatMedia = (data:any) :IMediaResponse =>{
 
     const rowIndex = 0;
 
-    let next = "";
-    if(root.media.paging){
-        next = root.media.paging.cursors.after;
-    }
+    const next = root.media.paging ? root.media.paging.cursors.after : "";
 
     const username = root.username;
 
@@ -331,6 +330,7 @@ const _formatGraph = (data:any, session:ISession, user:IUser) : IMediaResponse =
 
             const isVideo = data.node.is_video
             const mediaUrl = isVideo ? _getVideoUrl(data.node.video_url) : _getImageUrl(data.node.display_url)
+            const thumbnailUrl = isVideo ? _getImageUrl(data.node.thumbnail_src) : mediaUrl
             const permalink = isVideo ? `${VIDEO_PERMALINK_URL}${data.node.shortcode}` : `${IMAGE_PERMALINK_URL}${data.node.shortcode}`
 
             media.push({
@@ -346,7 +346,7 @@ const _formatGraph = (data:any, session:ISession, user:IUser) : IMediaResponse =
                         biography:"",
                     }
                 }),
-                thumbnail_url: _getImageUrl(data.node.thumbnail_src),
+                thumbnail_url: thumbnailUrl,
                 isVideo,
                 permalink
             })
@@ -356,10 +356,7 @@ const _formatGraph = (data:any, session:ISession, user:IUser) : IMediaResponse =
 
     const rowIndex = 0;
 
-    let next = "";
-    if(mediaNode.page_info.has_next_page){
-        next = GRAPH_QL + mediaNode.page_info.end_cursor;
-    }
+    const next = mediaNode.page_info.has_next_page ? GRAPH_QL + mediaNode.page_info.end_cursor : "";
 
     const username = user.username;
 
