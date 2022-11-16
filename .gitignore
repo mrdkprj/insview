@@ -10,10 +10,13 @@
 /src/test
 
 # production
-/build
+/dist
+/src/client/exp
 \.env
 media.db
-release.zip
+session.db
+.eslintignore
+.eslintrc.js
 
 # misc
 .DS_Store
