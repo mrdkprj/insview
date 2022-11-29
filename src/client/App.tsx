@@ -113,7 +113,9 @@ function App(){
 
         }finally{
 
-            dispatchMediaState({type:MediaAction.toggleLock, value: false})
+            setTimeout(() => {
+                dispatchMediaState({type:MediaAction.toggleLock, value: false})
+            },3000);
 
         }
 

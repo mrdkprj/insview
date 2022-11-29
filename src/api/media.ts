@@ -150,7 +150,6 @@ const _tryRequestGraph = async (req:IgRequest, currentSession:ISession) : Promis
             url:pageUrl,
             method: "GET",
             headers:pageHeaders,
-            withCredentials:true
         }
 
         const pageResponse = await axios.request(options);
@@ -169,7 +168,6 @@ const _tryRequestGraph = async (req:IgRequest, currentSession:ISession) : Promis
             url,
             method: "GET",
             headers:pageHeaders,
-            withCredentials:true
         }
 
         const profileResponse = await axios.request(profileOptions);
@@ -239,7 +237,6 @@ const _requestGraph = async (req:IgRequest, session:ISession, user:IUser) : Prom
         url,
         method: "GET",
         headers,
-        withCredentials:true
     }
 
     const response = await axios.request(options);
@@ -272,7 +269,6 @@ const _requestMoreByGraphql = async (req:IgRequest, session:ISession) : Promise<
         url,
         method: "GET",
         headers,
-        withCredentials:true
     }
 
     const response = await axios.request(options);
@@ -373,7 +369,6 @@ const downloadMedia = async (url:string) => {
         method: "GET",
         headers:baseRequestHeaders,
         responseType: "stream",
-        withCredentials:true
     }
 
     return await axios.request(options);
