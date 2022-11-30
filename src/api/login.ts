@@ -129,8 +129,30 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     const pageToken = extractToken(nres.headers);
     options.headers["x-csrftoken"] = pageToken;
-    const nresCookies = nres.headers["set-cookie"] instanceof Array ? nres.headers["set-cookie"] : [nres.headers["set-cookie"]]
-    options.headers.Cookie = getCookieString(nresCookies);
+
+    const nextRes1 = await axios.request(options);
+
+    console.log("----------first challenge response-------")
+    console.log(nextRes1.data)
+
+    const nextRes1Token = extractToken(nextRes1.headers);
+    options.headers["x-csrftoken"] = nextRes1Token;
+
+    const url2 = baseUrl;
+    options.url = url2;
+    options.method = "GET"
+    options.data = "";
+
+    const res2 = await axios.request(options)
+
+    const res2token = extractToken(res2.headers);
+    options.headers["x-csrftoken"] = res2token;
+
+    const params2 = new URLSearchParams();
+    params2.append("choice", "0")
+    options.url = "https://www.instagram.com/challenge/"
+    options.data = params;
+    options.method = "POST"
 
     const nextRes = await axios.request(options);
 
