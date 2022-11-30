@@ -113,13 +113,13 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     options.headers.Cookie = getCookieString(responseCookies);
 
-    const url = "https://i.instagram.com" + res.data.checkpoint_url;
+    const url = baseUrl + res.data.checkpoint_url;
     options.url = url;
     options.method = "GET"
     options.data = "";
 
     const nres = await axios.request(options)
-    console.log(nres.data)
+    console.log(nres.headers)
 
     console.log("---------- challenge post start -------")
 
@@ -133,7 +133,8 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
     const session = getSession(res.headers);
 
     console.log("----------challenge response-------")
-    console.log(nextRes?.data)
+    console.log(nextRes.data)
+    console.log(nextRes.headers)
 
     if(nextRes.data.type && nextRes.data.type === "CHALLENGE"){
 
