@@ -47,6 +47,8 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         headers["x-ig-www-claim"] = 0
         headers["x-instagram-ajax"] = version
         headers["x-csrftoken"] = baseCsrftoken;
+        headers["x-asbd-id: 198387"]
+        headers["x-requested-with"] = "XMLHttpRequest"
         headers["content-type"] = "application/x-www-form-urlencoded"
 
         const createEncPassword = (pwd:string) => {
@@ -127,10 +129,6 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
     let nextRes
     try{
         nextRes = await axios.request(options);
-    }catch(ex:any){
-        console.log("error")
-        console.log(ex.response.data)
-    }
 
 
     const session = getSession(res.headers);
@@ -150,6 +148,11 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
         data:{account, success:false, challenge: false, endpoint: ""},
         session
     }
+    }catch(ex:any){
+    console.log("error")
+    console.log(ex.response.data)
+    throw new Error("error")
+}
 
 }
 
