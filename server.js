@@ -294,38 +294,31 @@ const requestChallenge = async (account, options, res) => {
     options.headers["x-csrftoken"] = resToken;
     const responseCookies = res.headers["set-cookie"] instanceof Array ? res.headers["set-cookie"] : [res.headers["set-cookie"]];
     options.headers.Cookie = getCookieString(responseCookies);
-    const url = baseUrl + res.data.checkpoint_url;
+    const url = "https://i.instagram.com" + res.data.checkpoint_url;
     options.url = url;
     options.method = "GET";
     options.data = "";
-    await external_axios_default().request(options);
+    const nres = await external_axios_default().request(options);
+    console.log(nres.data);
     console.log("---------- challenge post start -------");
     const params = new URLSearchParams();
     params.append("choice", "1");
     options.data = params;
     options.method = "POST";
-    let nextRes;
-    try {
-        nextRes = await external_axios_default().request(options);
-        const session = getSession(res.headers);
-        console.log("----------challenge response-------");
-        console.log(nextRes === null || nextRes === void 0 ? void 0 : nextRes.data);
-        if ((nextRes === null || nextRes === void 0 ? void 0 : nextRes.data.type) && nextRes.data.type === "CHALLENGE") {
-            return {
-                data: { account: account, success: false, challenge: true, endpoint: url },
-                session
-            };
-        }
+    const nextRes = await external_axios_default().request(options);
+    const session = getSession(res.headers);
+    console.log("----------challenge response-------");
+    console.log(nextRes === null || nextRes === void 0 ? void 0 : nextRes.data);
+    if (nextRes.data.type && nextRes.data.type === "CHALLENGE") {
         return {
-            data: { account, success: false, challenge: false, endpoint: "" },
+            data: { account: account, success: false, challenge: true, endpoint: url },
             session
         };
     }
-    catch (ex) {
-        console.log("error");
-        console.log(ex.response.data);
-        throw new Error("error");
-    }
+    return {
+        data: { account, success: false, challenge: false, endpoint: "" },
+        session
+    };
 };
 const challenge = async (req) => {
     var _a;

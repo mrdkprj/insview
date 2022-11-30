@@ -113,12 +113,13 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     options.headers.Cookie = getCookieString(responseCookies);
 
-    const url = baseUrl + res.data.checkpoint_url;
+    const url = "https://i.instagram.com" + res.data.checkpoint_url;
     options.url = url;
     options.method = "GET"
     options.data = "";
 
-    await axios.request(options)
+    const nres = await axios.request(options)
+    console.log(nres.data)
 
     console.log("---------- challenge post start -------")
 
@@ -127,17 +128,14 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
     options.data = params;
     options.method = "POST"
 
-    let nextRes
-    try{
-        nextRes = await axios.request(options);
-
+    const nextRes = await axios.request(options);
 
     const session = getSession(res.headers);
 
     console.log("----------challenge response-------")
     console.log(nextRes?.data)
 
-    if(nextRes?.data.type && nextRes.data.type === "CHALLENGE"){
+    if(nextRes.data.type && nextRes.data.type === "CHALLENGE"){
 
         return {
             data:{account:account, success:false, challenge: true, endpoint:url},
@@ -149,11 +147,6 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
         data:{account, success:false, challenge: false, endpoint: ""},
         session
     }
-    }catch(ex:any){
-    console.log("error")
-    console.log(ex.response.data)
-    throw new Error("error")
-}
 
 }
 
