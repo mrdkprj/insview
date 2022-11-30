@@ -124,14 +124,21 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
     options.data = params;
     options.method = "POST"
 
-    const nextRes = await axios.request(options)
+    let nextRes
+    try{
+        nextRes = await axios.request(options);
+    }catch(ex:any){
+        console.log("error")
+        console.log(ex.response.data)
+    }
+
 
     const session = getSession(res.headers);
 
     console.log("----------challenge response-------")
-    console.log(nextRes.data)
+    console.log(nextRes?.data)
 
-    if(nextRes.data.type && nextRes.data.type === "CHALLENGE"){
+    if(nextRes?.data.type && nextRes.data.type === "CHALLENGE"){
 
         return {
             data:{account:account, success:false, challenge: true, endpoint:url},
