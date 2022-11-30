@@ -245,7 +245,6 @@ const login = async (req) => {
         headers["x-ig-www-claim"] = 0;
         headers["x-instagram-ajax"] = version;
         headers["x-csrftoken"] = baseCsrftoken;
-        headers["x-asbd-id"] = 198387;
         headers["x-requested-with"] = "XMLHttpRequest";
         headers["content-type"] = "application/x-www-form-urlencoded";
         const createEncPassword = (pwd) => {
@@ -305,6 +304,10 @@ const requestChallenge = async (account, options, res) => {
     params.append("choice", "1");
     options.data = params;
     options.method = "POST";
+    const pageToken = extractToken(nres.headers);
+    options.headers["x-csrftoken"] = pageToken;
+    const nresCookies = nres.headers["set-cookie"] instanceof Array ? nres.headers["set-cookie"] : [nres.headers["set-cookie"]];
+    options.headers.Cookie = getCookieString(nresCookies);
     const nextRes = await external_axios_default().request(options);
     const session = getSession(res.headers);
     console.log("----------challenge response-------");
