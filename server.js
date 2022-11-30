@@ -245,6 +245,8 @@ const login = async (req) => {
         headers["x-ig-www-claim"] = 0;
         headers["x-instagram-ajax"] = version;
         headers["x-csrftoken"] = baseCsrftoken;
+        headers["x-asbd-id"] = 198387;
+        headers["x-requested-with"] = "XMLHttpRequest";
         headers["content-type"] = "application/x-www-form-urlencoded";
         const createEncPassword = (pwd) => {
             return `#PWD_INSTAGRAM_BROWSER:0:${Math.floor(Date.now() / 1000)}:${pwd}`;
@@ -284,6 +286,7 @@ const login = async (req) => {
 };
 const requestChallenge = async (account, options, res) => {
     console.log("---------- challenge start -------");
+    console.log(res.data);
     if (!options.headers) {
         throw new Error("headers empty");
     }
@@ -301,18 +304,28 @@ const requestChallenge = async (account, options, res) => {
     params.append("choice", "1");
     options.data = params;
     options.method = "POST";
-    const nextRes = await external_axios_default().request(options);
-    const session = getSession(res.headers);
-    if (nextRes.data.type && nextRes.data.type === "CHALLENGE") {
+    let nextRes;
+    try {
+        nextRes = await external_axios_default().request(options);
+        const session = getSession(res.headers);
+        console.log("----------challenge response-------");
+        console.log(nextRes === null || nextRes === void 0 ? void 0 : nextRes.data);
+        if ((nextRes === null || nextRes === void 0 ? void 0 : nextRes.data.type) && nextRes.data.type === "CHALLENGE") {
+            return {
+                data: { account: account, success: false, challenge: true, endpoint: url },
+                session
+            };
+        }
         return {
-            data: { account: account, success: false, challenge: true, endpoint: url },
+            data: { account, success: false, challenge: false, endpoint: "" },
             session
         };
     }
-    return {
-        data: { account, success: false, challenge: false, endpoint: "" },
-        session
-    };
+    catch (ex) {
+        console.log("error");
+        console.log(ex.response.data);
+        throw new Error("error");
+    }
 };
 const challenge = async (req) => {
     var _a;
@@ -492,7 +505,6 @@ const _tryRequestGraph = async (req, currentSession) => {
             url: pageUrl,
             method: "GET",
             headers: pageHeaders,
-            withCredentials: true
         };
         const pageResponse = await external_axios_default().request(options);
         /*
@@ -508,7 +520,6 @@ const _tryRequestGraph = async (req, currentSession) => {
             url,
             method: "GET",
             headers: pageHeaders,
-            withCredentials: true
         };
         const profileResponse = await external_axios_default().request(profileOptions);
         const userData = profileResponse.data.data.user;
@@ -562,7 +573,6 @@ const _requestGraph = async (req, session, user) => {
         url,
         method: "GET",
         headers,
-        withCredentials: true
     };
     const response = await external_axios_default().request(options);
     if (response.headers["content-type"].includes("html")) {
@@ -587,7 +597,6 @@ const _requestMoreByGraphql = async (req, session) => {
         url,
         method: "GET",
         headers,
-        withCredentials: true
     };
     const response = await external_axios_default().request(options);
     if (response.headers["content-type"].includes("html")) {
@@ -663,7 +672,6 @@ const downloadMedia = async (url) => {
         method: "GET",
         headers: baseRequestHeaders,
         responseType: "stream",
-        withCredentials: true
     };
     return await external_axios_default().request(options);
 };

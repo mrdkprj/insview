@@ -99,7 +99,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 const requestChallenge = async (account:string, options:AxiosRequestConfig, res:AxiosResponse<any, any>) :Promise<IgResponse<ILoginResponse>> => {
 
     console.log("---------- challenge start -------")
-    console.log(JSON.stringify(res.data));
+    console.log(res.data);
 
     if(!options.headers){
         throw new Error("headers empty");
@@ -135,7 +135,7 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
     const session = getSession(res.headers);
 
     console.log("----------challenge response-------")
-    console.log(JSON.stringify(nextRes?.data))
+    console.log(nextRes?.data)
 
     if(nextRes?.data.type && nextRes.data.type === "CHALLENGE"){
 
@@ -151,7 +151,7 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
     }
     }catch(ex:any){
     console.log("error")
-    console.log(JSON.stringify(ex.response.data))
+    console.log(ex.response.data)
     throw new Error("error")
 }
 
