@@ -128,6 +128,9 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     const session = getSession(res.headers);
 
+    console.log("----------challenge response-------")
+    console.log(nextRes.data)
+
     if(nextRes.data.type && nextRes.data.type === "CHALLENGE"){
 
         return {
