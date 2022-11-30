@@ -47,7 +47,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         headers["x-ig-www-claim"] = 0
         headers["x-instagram-ajax"] = version
         headers["x-csrftoken"] = baseCsrftoken;
-        headers["x-asbd-id: 198387"]
+        headers["x-asbd-id"] = 198387;
         headers["x-requested-with"] = "XMLHttpRequest"
         headers["content-type"] = "application/x-www-form-urlencoded"
 
@@ -99,6 +99,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 const requestChallenge = async (account:string, options:AxiosRequestConfig, res:AxiosResponse<any, any>) :Promise<IgResponse<ILoginResponse>> => {
 
     console.log("---------- challenge start -------")
+    console.log(JSON.stringify(res.data));
 
     if(!options.headers){
         throw new Error("headers empty");
@@ -134,7 +135,7 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
     const session = getSession(res.headers);
 
     console.log("----------challenge response-------")
-    console.log(nextRes?.data)
+    console.log(JSON.stringify(nextRes?.data))
 
     if(nextRes?.data.type && nextRes.data.type === "CHALLENGE"){
 
@@ -150,7 +151,7 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
     }
     }catch(ex:any){
     console.log("error")
-    console.log(ex.response.data)
+    console.log(JSON.stringify(ex.response.data))
     throw new Error("error")
 }
 
