@@ -111,7 +111,7 @@ const LoginDialog = (props:ILoginDialogProps) => {
                             helperText={hasError ? EMPTY_ID : ""}
                         />
                         <TextField
-                            type="text"
+                            type="password"
                             error={hasError}
                             label="Password"
                             value={password}
