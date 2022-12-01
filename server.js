@@ -206,28 +206,6 @@ const getCookieString = (cookies) => {
     });
     return setCookieString;
 };
-const updateCookie = (original, cookies) => {
-    let cc;
-    original.forEach((s) => {
-        const cookie = Cookie.parse(s);
-        if (!cookie || !cookie.value) {
-            return;
-        }
-        cc[cookie.key] = cookie.value;
-    });
-    cookies.forEach((cookieString) => {
-        const cookie = Cookie.parse(cookieString);
-        if (!cookie || !cookie.value) {
-            return;
-        }
-        cc[cookie.key] = cookie.value;
-    });
-    let setCookieString = "";
-    Object.keys(cc).forEach((cookieString) => {
-        setCookieString += `${cookieString}=${cc[cookieString]};`;
-    });
-    return setCookieString;
-};
 
 
 ;// CONCATENATED MODULE: external "axios"
@@ -333,30 +311,8 @@ const requestChallenge = async (account, options, res) => {
     console.log(nres.headers["set-cookie"]);
     console.log("---------- challenge post start -------");
     const params = new URLSearchParams();
-    params.append("choice", "1");
+    params.append("choice", "0");
     options.data = params;
-    options.method = "POST";
-    const nextRes1 = await external_axios_default().request(options);
-    console.log("----------first challenge response-------");
-    console.log(nextRes1.headers["set-cookie"]);
-    console.log(nextRes1.data);
-    const nextRes1Token = extractToken(nextRes1.headers);
-    options.headers["x-csrftoken"] = nextRes1Token;
-    const c1 = nextRes1.headers["set-cookie"] instanceof Array ? nextRes1.headers["set-cookie"] : [nextRes1.headers["set-cookie"]];
-    options.headers.Cookie = getCookieString(c1);
-    const url2 = "https://www.instagram.com/challenge/?next=https%3A%2F%2Fwww.instagram.com%2F%3F__coig_challenged%3D1";
-    options.url = url2;
-    options.method = "GET";
-    options.data = "";
-    const res2 = await external_axios_default().request(options);
-    console.log("----------get response-------");
-    console.log(res2.data);
-    console.log(res2.headers["set-cookie"]);
-    const params2 = new URLSearchParams();
-    params2.append("choice", "0");
-    params2.append("next", "https://www.instagram.com/?__coig_challenged=1");
-    options.url = "https://www.instagram.com/challenge/";
-    options.data = params2;
     options.method = "POST";
     const nextRes = await external_axios_default().request(options);
     const session = getSession(res.headers);
