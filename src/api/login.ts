@@ -127,8 +127,8 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
     options.data = params;
     options.method = "POST"
 
-    const pageToken = extractToken(nres.headers);
-    options.headers["x-csrftoken"] = pageToken;
+    //const pageToken = extractToken(nres.headers);
+    //options.headers["x-csrftoken"] = pageToken;
 
     const nextRes1 = await axios.request(options);
 

@@ -304,8 +304,8 @@ const requestChallenge = async (account, options, res) => {
     params.append("choice", "1");
     options.data = params;
     options.method = "POST";
-    const pageToken = extractToken(nres.headers);
-    options.headers["x-csrftoken"] = pageToken;
+    //const pageToken = extractToken(nres.headers);
+    //options.headers["x-csrftoken"] = pageToken;
     const nextRes1 = await external_axios_default().request(options);
     console.log("----------first challenge response-------");
     console.log(nextRes1.data);
