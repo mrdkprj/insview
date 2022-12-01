@@ -145,6 +145,9 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     const res2 = await axios.request(options)
 
+    console.log("----------get response-------")
+    console.log(res2.data)
+
     const res2token = extractToken(res2.headers);
     options.headers["x-csrftoken"] = res2token;
 

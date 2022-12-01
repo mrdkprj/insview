@@ -316,6 +316,8 @@ const requestChallenge = async (account, options, res) => {
     options.method = "GET";
     options.data = "";
     const res2 = await external_axios_default().request(options);
+    console.log("----------get response-------");
+    console.log(res2.data);
     const res2token = extractToken(res2.headers);
     options.headers["x-csrftoken"] = res2token;
     const params2 = new URLSearchParams();
