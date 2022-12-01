@@ -82,7 +82,15 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     }catch(ex:any){
 
         if(ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required"){
-            return await requestChallenge(account, options, ex.response)
+            try{
+                return await requestChallenge(account, options, ex.response)
+            }catch(ex:any){
+                if(ex.response){
+                    console.log(ex.response.data)
+                }else{
+                    console.log(ex.message)
+                }
+            }
         }
 
         if(ex.response){
@@ -127,17 +135,18 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
     options.data = params;
     options.method = "POST"
 
-    //const pageToken = extractToken(nres.headers);
-    //options.headers["x-csrftoken"] = pageToken;
-
     const nextRes1 = await axios.request(options);
 
-    console.log(nextRes1.headers)
     console.log("----------first challenge response-------")
+    console.log(nextRes1.headers)
     console.log(nextRes1.data)
 
     const nextRes1Token = extractToken(nextRes1.headers);
     options.headers["x-csrftoken"] = nextRes1Token;
+
+    const c1 = nextRes1.headers["set-cookie"] instanceof Array ? nextRes1.headers["set-cookie"] : [nextRes1.headers["set-cookie"]]
+
+    options.headers.Cookie = getCookieString(c1);
 
     const url2 = baseUrl;
     options.url = url2;
@@ -145,12 +154,9 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
     options.data = "";
 
     const res2 = await axios.request(options)
-    console.log(res2.headers)
-    console.log("----------get response-------")
-    console.log(res2.data)
 
-    const res2token = extractToken(res2.headers);
-    options.headers["x-csrftoken"] = res2token;
+    console.log("----------get response-------")
+    console.log(res2.headers)
 
     const params2 = new URLSearchParams();
     params2.append("choice", "0")

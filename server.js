@@ -206,6 +206,28 @@ const getCookieString = (cookies) => {
     });
     return setCookieString;
 };
+const updateCookie = (original, cookies) => {
+    let cc;
+    original.forEach((s) => {
+        const cookie = Cookie.parse(s);
+        if (!cookie || !cookie.value) {
+            return;
+        }
+        cc[cookie.key] = cookie.value;
+    });
+    cookies.forEach((cookieString) => {
+        const cookie = Cookie.parse(cookieString);
+        if (!cookie || !cookie.value) {
+            return;
+        }
+        cc[cookie.key] = cookie.value;
+    });
+    let setCookieString = "";
+    Object.keys(cc).forEach((cookieString) => {
+        setCookieString += `${cookieString}=${cc[cookieString]};`;
+    });
+    return setCookieString;
+};
 
 
 ;// CONCATENATED MODULE: external "axios"
@@ -272,7 +294,17 @@ const login = async (req) => {
     }
     catch (ex) {
         if (ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required") {
-            return await requestChallenge(account, options, ex.response);
+            try {
+                return await requestChallenge(account, options, ex.response);
+            }
+            catch (ex) {
+                if (ex.response) {
+                    console.log(ex.response.data);
+                }
+                else {
+                    console.log(ex.message);
+                }
+            }
         }
         if (ex.response) {
             console.log(ex.response.data);
@@ -304,24 +336,21 @@ const requestChallenge = async (account, options, res) => {
     params.append("choice", "1");
     options.data = params;
     options.method = "POST";
-    //const pageToken = extractToken(nres.headers);
-    //options.headers["x-csrftoken"] = pageToken;
     const nextRes1 = await external_axios_default().request(options);
-    console.log(nextRes1.headers);
     console.log("----------first challenge response-------");
+    console.log(nextRes1.headers);
     console.log(nextRes1.data);
     const nextRes1Token = extractToken(nextRes1.headers);
     options.headers["x-csrftoken"] = nextRes1Token;
+    const c1 = nextRes1.headers["set-cookie"] instanceof Array ? nextRes1.headers["set-cookie"] : [nextRes1.headers["set-cookie"]];
+    options.headers.Cookie = getCookieString(c1);
     const url2 = baseUrl;
     options.url = url2;
     options.method = "GET";
     options.data = "";
     const res2 = await external_axios_default().request(options);
-    console.log(res2.headers);
     console.log("----------get response-------");
-    console.log(res2.data);
-    const res2token = extractToken(res2.headers);
-    options.headers["x-csrftoken"] = res2token;
+    console.log(res2.headers);
     const params2 = new URLSearchParams();
     params2.append("choice", "0");
     options.url = "https://www.instagram.com/challenge/";
