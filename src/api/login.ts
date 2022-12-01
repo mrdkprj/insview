@@ -132,6 +132,7 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     const nextRes1 = await axios.request(options);
 
+    console.log(nextRes1.headers)
     console.log("----------first challenge response-------")
     console.log(nextRes1.data)
 
@@ -144,7 +145,7 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
     options.data = "";
 
     const res2 = await axios.request(options)
-
+    console.log(res2.headers)
     console.log("----------get response-------")
     console.log(res2.data)
 
@@ -154,7 +155,7 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
     const params2 = new URLSearchParams();
     params2.append("choice", "0")
     options.url = "https://www.instagram.com/challenge/"
-    options.data = params;
+    options.data = params2;
     options.method = "POST"
 
     const nextRes = await axios.request(options);

@@ -307,6 +307,7 @@ const requestChallenge = async (account, options, res) => {
     //const pageToken = extractToken(nres.headers);
     //options.headers["x-csrftoken"] = pageToken;
     const nextRes1 = await external_axios_default().request(options);
+    console.log(nextRes1.headers);
     console.log("----------first challenge response-------");
     console.log(nextRes1.data);
     const nextRes1Token = extractToken(nextRes1.headers);
@@ -316,6 +317,7 @@ const requestChallenge = async (account, options, res) => {
     options.method = "GET";
     options.data = "";
     const res2 = await external_axios_default().request(options);
+    console.log(res2.headers);
     console.log("----------get response-------");
     console.log(res2.data);
     const res2token = extractToken(res2.headers);
@@ -323,7 +325,7 @@ const requestChallenge = async (account, options, res) => {
     const params2 = new URLSearchParams();
     params2.append("choice", "0");
     options.url = "https://www.instagram.com/challenge/";
-    options.data = params;
+    options.data = params2;
     options.method = "POST";
     const nextRes = await external_axios_default().request(options);
     const session = getSession(res.headers);
