@@ -148,7 +148,7 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     options.headers.Cookie = getCookieString(c1);
 
-    const url2 = baseUrl;
+    const url2 = "https://www.instagram.com/challenge/?next=https%3A%2F%2Fwww.instagram.com%2F%3F__coig_challenged%3D1";
     options.url = url2;
     options.method = "GET"
     options.data = "";
@@ -156,11 +156,13 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
     const res2 = await axios.request(options)
 
     console.log("----------get response-------")
+    console.log(res2.data)
     console.log(res2.headers["set-cookie"])
 
     const params2 = new URLSearchParams();
     params2.append("choice", "0")
-    options.url = "https://www.instagram.com/challenge/?next=https%3A%2F%2Fwww.instagram.com%2F%3F__coig_challenged%3D1"
+    params2.append("next", "https://www.instagram.com/?__coig_challenged=1")
+    options.url = "https://www.instagram.com/challenge/"
     options.data = params2;
     options.method = "POST"
 
