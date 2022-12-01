@@ -126,7 +126,7 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
     options.data = "";
 
     const nres = await axios.request(options)
-    console.log(nres.headers)
+    console.log(nres.headers["set-cookie"])
 
     console.log("---------- challenge post start -------")
 
@@ -138,7 +138,7 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
     const nextRes1 = await axios.request(options);
 
     console.log("----------first challenge response-------")
-    console.log(nextRes1.headers)
+    console.log(nextRes1.headers["set-cookie"])
     console.log(nextRes1.data)
 
     const nextRes1Token = extractToken(nextRes1.headers);
@@ -156,11 +156,11 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
     const res2 = await axios.request(options)
 
     console.log("----------get response-------")
-    console.log(res2.headers)
+    console.log(res2.headers["set-cookie"])
 
     const params2 = new URLSearchParams();
     params2.append("choice", "0")
-    options.url = "https://www.instagram.com/challenge/"
+    options.url = "https://www.instagram.com/challenge/?next=https%3A%2F%2Fwww.instagram.com%2F%3F__coig_challenged%3D1"
     options.data = params2;
     options.method = "POST"
 
@@ -170,7 +170,7 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     console.log("----------challenge response-------")
     console.log(nextRes.data)
-    console.log(nextRes.headers)
+    console.log(nextRes.headers["set-cookie"])
 
     if(nextRes.data.type && nextRes.data.type === "CHALLENGE"){
 
