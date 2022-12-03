@@ -105,8 +105,12 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
 const requestChallenge = async (account:string, options:AxiosRequestConfig, res:AxiosResponse<any, any>) :Promise<IgResponse<ILoginResponse>> => {
 
-    console.log("---------- challenge start -------")
+    console.log("---------- challenge start -------\n")
+    console.log("---------- challenge data -------\n")
     console.log(res.data);
+    console.log("\n")
+    console.log("---------- challenge header -------\n")
+    console.log(res.headers);
 
     if(!options.headers){
         throw new Error("headers empty");
@@ -128,10 +132,10 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
     const nres = await axios.request(options)
     console.log(nres.headers["set-cookie"])
 
-    console.log("---------- challenge post start -------")
+    console.log("---------- challenge post start -------\n")
 
     const params = new URLSearchParams();
-    params.append("choice", "0")
+    params.append("choice", "1")
     options.data = params;
     options.method = "POST"
 
@@ -139,9 +143,22 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     const session = getSession(res.headers);
 
-    console.log("----------challenge response-------")
-    console.log(nextRes.data)
-    console.log(nextRes.headers["set-cookie"])
+    console.log("---------- challenge data -------\n")
+    console.log(nextRes.data);
+    console.log("\n")
+    console.log("---------- challenge header -------\n")
+    console.log(nextRes.headers);
+
+    console.log("---------- redirect start -------\n")
+
+    options.url = baseUrl;
+    options.data = "";
+    options.method = "GET"
+
+    const pres = await axios.request(options);
+
+    console.log("---------- redirect header -------\n")
+    console.log(pres.headers);
 
     if(nextRes.data.type && nextRes.data.type === "CHALLENGE"){
 
