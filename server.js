@@ -334,7 +334,7 @@ const requestChallenge = async (account, options, res) => {
     options.method = "GET";
     const fres = await external_axios_default().request(options);
     console.log(fres.headers);
-    console.log(fres.data);
+    console.log(fres.request.responseURL);
     const params = new URLSearchParams();
     params.append("choice", "1");
     options.data = params;
@@ -343,7 +343,6 @@ const requestChallenge = async (account, options, res) => {
     const session = getSession(res.headers);
     console.log("---------- challenge data -------\n");
     console.log(nextRes.data);
-    console.log("\n");
     console.log("---------- challenge header -------\n");
     console.log(nextRes.headers);
     console.log("---------- redirect start -------\n");
@@ -357,6 +356,7 @@ const requestChallenge = async (account, options, res) => {
     const pres = await external_axios_default().request(options);
     console.log("---------- redirect header -------\n");
     console.log(pres.headers);
+    console.log(pres.request.responseURL);
     console.log("---------- after start -------");
     options.url = "https://www.instagram.com/challenge/";
     options.method = "POST";

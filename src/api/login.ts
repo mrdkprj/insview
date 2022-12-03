@@ -131,7 +131,7 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
     const fres = await axios.request(options);
 
     console.log(fres.headers)
-    console.log(fres.data)
+    console.log(fres.request.responseURL)
 
     const params = new URLSearchParams();
     params.append("choice", "1")
@@ -144,7 +144,6 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     console.log("---------- challenge data -------\n")
     console.log(nextRes.data);
-    console.log("\n")
     console.log("---------- challenge header -------\n")
     console.log(nextRes.headers);
 
@@ -166,6 +165,7 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     console.log("---------- redirect header -------\n")
     console.log(pres.headers);
+    console.log(pres.request.responseURL)
 
     console.log("---------- after start -------")
 
