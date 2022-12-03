@@ -331,6 +331,10 @@ const requestChallenge = async (account, options, res) => {
     options.headers.Cookie = getCookieString(responseCookies);
     const url = baseUrl + res.data.checkpoint_url;
     options.url = url;
+    options.method = "GET";
+    const fres = await external_axios_default().request(options);
+    console.log(fres.headers);
+    console.log(fres.data);
     const params = new URLSearchParams();
     params.append("choice", "1");
     options.data = params;

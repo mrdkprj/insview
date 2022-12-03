@@ -126,6 +126,13 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     const url = baseUrl + res.data.checkpoint_url;
     options.url = url;
+    options.method = "GET";
+
+    const fres = await axios.request(options);
+
+    console.log(fres.headers)
+    console.log(fres.data)
+
     const params = new URLSearchParams();
     params.append("choice", "1")
     options.data = params;
