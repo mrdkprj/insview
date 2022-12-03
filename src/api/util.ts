@@ -160,11 +160,11 @@ const getCookieString = (cookies:string[] | undefined[]) => {
     return setCookieString;
 }
 
-const updateCookie = (old:string | number | boolean, cs:string[] | undefined[]) => {
+const updateCookie = (old:string[] | undefined[], cs:string[] | undefined[]) => {
 
     let cookies:any
 
-    old.toString().split(";").map(s => s + ";").forEach(c => {
+    old.forEach((c:any) => {
         const cookie = Cookie.parse(c);
 
         if(!cookie || !cookie.value){

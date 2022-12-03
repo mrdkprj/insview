@@ -208,7 +208,7 @@ const getCookieString = (cookies) => {
 };
 const updateCookie = (old, cs) => {
     let cookies;
-    old.toString().split(";").map(s => s + ";").forEach(c => {
+    old.forEach((c) => {
         const cookie = Cookie.parse(c);
         if (!cookie || !cookie.value) {
             return;
@@ -328,7 +328,7 @@ const requestChallenge = async (account, options, res) => {
     const resToken = extractToken(res.headers);
     options.headers["x-csrftoken"] = resToken;
     const responseCookies = res.headers["set-cookie"] instanceof Array ? res.headers["set-cookie"] : [res.headers["set-cookie"]];
-    options.headers.Cookie = updateCookie(options.headers.Cookie, responseCookies);
+    options.headers.Cookie = getCookieString(responseCookies);
     const url = baseUrl + res.data.checkpoint_url;
     options.url = url;
     const params = new URLSearchParams();
@@ -346,7 +346,7 @@ const requestChallenge = async (account, options, res) => {
     const nToken = extractToken(nextRes.headers);
     options.headers["x-csrftoken"] = nToken;
     const nCookies = nextRes.headers["set-cookie"] instanceof Array ? nextRes.headers["set-cookie"] : [nextRes.headers["set-cookie"]];
-    options.headers.Cookie = updateCookie(options.headers.Cookie, nCookies);
+    options.headers.Cookie = updateCookie(responseCookies, nCookies);
     options.url = baseUrl;
     options.data = "";
     options.method = "GET";

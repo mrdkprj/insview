@@ -122,7 +122,7 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     const responseCookies = res.headers["set-cookie"] instanceof Array ? res.headers["set-cookie"] : [res.headers["set-cookie"]]
 
-    options.headers.Cookie = updateCookie(options.headers.Cookie, responseCookies);
+    options.headers.Cookie = getCookieString(responseCookies);
 
     const url = baseUrl + res.data.checkpoint_url;
     options.url = url;
@@ -149,7 +149,7 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     const nCookies = nextRes.headers["set-cookie"] instanceof Array ? nextRes.headers["set-cookie"] : [nextRes.headers["set-cookie"]]
 
-    options.headers.Cookie = updateCookie(options.headers.Cookie, nCookies);
+    options.headers.Cookie = updateCookie(responseCookies, nCookies);
 
     options.url = baseUrl;
     options.data = "";
