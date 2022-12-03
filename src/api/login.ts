@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
-import { baseRequestHeaders, baseUrl, createHeaders, extractToken, getAppId, getClientVersion, getCookieString, getSession } from "./util";
+import { baseRequestHeaders, baseUrl, createHeaders, extractToken, getAppId, getClientVersion, getCookieString, getSession, updateCookie } from "./util";
 import { IgRequest, IgResponse, ILoginResponse } from "@shared";
 
 const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
@@ -43,7 +43,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
         headers.Cookie = getCookieString(responseCookies);
 
-        //headers["x-requested-with"] = "XMLHttpRequest"
+        headers["x-requested-with"] = "XMLHttpRequest"
         headers["x-ig-www-claim"] = 0
         headers["x-instagram-ajax"] = version
         headers["x-csrftoken"] = baseCsrftoken;
@@ -122,18 +122,10 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     const responseCookies = res.headers["set-cookie"] instanceof Array ? res.headers["set-cookie"] : [res.headers["set-cookie"]]
 
-    options.headers.Cookie = getCookieString(responseCookies);
+    options.headers.Cookie = updateCookie(options.headers.Cookie, responseCookies);
 
     const url = baseUrl + res.data.checkpoint_url;
     options.url = url;
-    options.method = "GET"
-    options.data = "";
-
-    const nres = await axios.request(options)
-    console.log(nres.headers["set-cookie"])
-
-    console.log("---------- challenge post start -------\n")
-
     const params = new URLSearchParams();
     params.append("choice", "1")
     options.data = params;
@@ -151,6 +143,14 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     console.log("---------- redirect start -------\n")
 
+    const nToken = extractToken(nextRes.headers);
+
+    options.headers["x-csrftoken"] = nToken;
+
+    const nCookies = nextRes.headers["set-cookie"] instanceof Array ? nextRes.headers["set-cookie"] : [nextRes.headers["set-cookie"]]
+
+    options.headers.Cookie = updateCookie(options.headers.Cookie, nCookies);
+
     options.url = baseUrl;
     options.data = "";
     options.method = "GET"
@@ -159,6 +159,7 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     console.log("---------- redirect header -------\n")
     console.log(pres.headers);
+    console.log(pres.status)
 
     if(nextRes.data.type && nextRes.data.type === "CHALLENGE"){
 

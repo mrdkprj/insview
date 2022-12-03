@@ -206,6 +206,28 @@ const getCookieString = (cookies) => {
     });
     return setCookieString;
 };
+const updateCookie = (old, cs) => {
+    let cookies;
+    old.toString().split(";").map(s => s + ";").forEach(c => {
+        const cookie = Cookie.parse(c);
+        if (!cookie || !cookie.value) {
+            return;
+        }
+        cookies[cookie.key] = cookie.value;
+    });
+    cs.forEach((cookieString) => {
+        const cookie = Cookie.parse(cookieString);
+        if (!cookie || !cookie.value) {
+            return;
+        }
+        cookies[cookie.key] = cookie.value;
+    });
+    let setCookieString = "";
+    Object.keys(cookies).forEach((k) => {
+        setCookieString += `${k}=${cookies[k]};`;
+    });
+    return setCookieString;
+};
 
 
 ;// CONCATENATED MODULE: external "axios"
@@ -241,7 +263,7 @@ const login = async (req) => {
         }
         const responseCookies = baseResult.headers["set-cookie"] instanceof Array ? baseResult.headers["set-cookie"] : [baseResult.headers["set-cookie"]];
         headers.Cookie = getCookieString(responseCookies);
-        //headers["x-requested-with"] = "XMLHttpRequest"
+        headers["x-requested-with"] = "XMLHttpRequest";
         headers["x-ig-www-claim"] = 0;
         headers["x-instagram-ajax"] = version;
         headers["x-csrftoken"] = baseCsrftoken;
@@ -306,14 +328,9 @@ const requestChallenge = async (account, options, res) => {
     const resToken = extractToken(res.headers);
     options.headers["x-csrftoken"] = resToken;
     const responseCookies = res.headers["set-cookie"] instanceof Array ? res.headers["set-cookie"] : [res.headers["set-cookie"]];
-    options.headers.Cookie = getCookieString(responseCookies);
+    options.headers.Cookie = updateCookie(options.headers.Cookie, responseCookies);
     const url = baseUrl + res.data.checkpoint_url;
     options.url = url;
-    options.method = "GET";
-    options.data = "";
-    const nres = await external_axios_default().request(options);
-    console.log(nres.headers["set-cookie"]);
-    console.log("---------- challenge post start -------\n");
     const params = new URLSearchParams();
     params.append("choice", "1");
     options.data = params;
@@ -326,12 +343,17 @@ const requestChallenge = async (account, options, res) => {
     console.log("---------- challenge header -------\n");
     console.log(nextRes.headers);
     console.log("---------- redirect start -------\n");
+    const nToken = extractToken(nextRes.headers);
+    options.headers["x-csrftoken"] = nToken;
+    const nCookies = nextRes.headers["set-cookie"] instanceof Array ? nextRes.headers["set-cookie"] : [nextRes.headers["set-cookie"]];
+    options.headers.Cookie = updateCookie(options.headers.Cookie, nCookies);
     options.url = baseUrl;
     options.data = "";
     options.method = "GET";
     const pres = await external_axios_default().request(options);
     console.log("---------- redirect header -------\n");
     console.log(pres.headers);
+    console.log(pres.status);
     if (nextRes.data.type && nextRes.data.type === "CHALLENGE") {
         return {
             data: { account: account, success: false, challenge: true, endpoint: url },

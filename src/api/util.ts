@@ -160,4 +160,41 @@ const getCookieString = (cookies:string[] | undefined[]) => {
     return setCookieString;
 }
 
-export {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, getAppId, getClientVersion, getCookieString, extractToken}
+const updateCookie = (old:string | number | boolean, cs:string[] | undefined[]) => {
+
+    let cookies:any
+
+    old.toString().split(";").map(s => s + ";").forEach(c => {
+        const cookie = Cookie.parse(c);
+
+        if(!cookie || !cookie.value){
+            return
+        }
+
+        cookies[cookie.key] = cookie.value;
+    })
+
+    cs.forEach((cookieString:any) => {
+
+        const cookie = Cookie.parse(cookieString);
+
+        if(!cookie || !cookie.value){
+            return
+        }
+
+        cookies[cookie.key] = cookie.value;
+
+    })
+
+    let setCookieString = "";
+
+    Object.keys(cookies).forEach((k:any) => {
+
+        setCookieString += `${k}=${cookies[k]};`
+
+    })
+
+    return setCookieString;
+}
+
+export {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, getAppId, getClientVersion, getCookieString, extractToken, updateCookie}
