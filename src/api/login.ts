@@ -161,6 +161,15 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
     console.log(pres.headers);
     console.log(pres.status)
 
+    console.log("---------- after start -------")
+    /*
+    https://www.instagram.com/challenge/
+    POST
+    ontent-type: application/x-www-form-urlencoded
+    choice:0
+next:https://www.instagram.com/?__coig_challenged=1
+    */
+
     if(nextRes.data.type && nextRes.data.type === "CHALLENGE"){
 
         return {

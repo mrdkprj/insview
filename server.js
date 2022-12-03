@@ -207,7 +207,7 @@ const getCookieString = (cookies) => {
     return setCookieString;
 };
 const updateCookie = (old, cs) => {
-    let cookies;
+    const cookies = {};
     old.forEach((c) => {
         const cookie = Cookie.parse(c);
         if (!cookie || !cookie.value) {
@@ -354,6 +354,14 @@ const requestChallenge = async (account, options, res) => {
     console.log("---------- redirect header -------\n");
     console.log(pres.headers);
     console.log(pres.status);
+    console.log("---------- after start -------");
+    /*
+    https://www.instagram.com/challenge/
+    POST
+    ontent-type: application/x-www-form-urlencoded
+    choice:0
+next:https://www.instagram.com/?__coig_challenged=1
+    */
     if (nextRes.data.type && nextRes.data.type === "CHALLENGE") {
         return {
             data: { account: account, success: false, challenge: true, endpoint: url },

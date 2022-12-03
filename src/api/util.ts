@@ -162,7 +162,7 @@ const getCookieString = (cookies:string[] | undefined[]) => {
 
 const updateCookie = (old:string[] | undefined[], cs:string[] | undefined[]) => {
 
-    let cookies:any
+    const cookies:{[key:string]:any} = {}
 
     old.forEach((c:any) => {
         const cookie = Cookie.parse(c);
