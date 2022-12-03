@@ -151,7 +151,7 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     options.headers.Cookie = updateCookie(responseCookies, nCookies);
 
-    options.url = baseUrl;
+    options.url = "https://www.instagram.com/challenge/?next=https%3A%2F%2Fwww.instagram.com%2F%3F__coig_challenged%3D1";
     options.data = "";
     options.method = "GET"
 

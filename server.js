@@ -347,7 +347,7 @@ const requestChallenge = async (account, options, res) => {
     options.headers["x-csrftoken"] = nToken;
     const nCookies = nextRes.headers["set-cookie"] instanceof Array ? nextRes.headers["set-cookie"] : [nextRes.headers["set-cookie"]];
     options.headers.Cookie = updateCookie(responseCookies, nCookies);
-    options.url = baseUrl;
+    options.url = "https://www.instagram.com/challenge/?next=https%3A%2F%2Fwww.instagram.com%2F%3F__coig_challenged%3D1";
     options.data = "";
     options.method = "GET";
     const pres = await external_axios_default().request(options);
