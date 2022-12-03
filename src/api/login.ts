@@ -159,16 +159,22 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     console.log("---------- redirect header -------\n")
     console.log(pres.headers);
-    console.log(pres.status)
 
     console.log("---------- after start -------")
-    /*
-    https://www.instagram.com/challenge/
-    POST
-    ontent-type: application/x-www-form-urlencoded
-    choice:0
-next:https://www.instagram.com/?__coig_challenged=1
-    */
+
+    options.url = "https://www.instagram.com/challenge/"
+    options.method = "POST"
+    const params2 = new URLSearchParams();
+    params2.append("choice", "0")
+    params2.append("next", "https://www.instagram.com/?__coig_challenged=1")
+    options.data = params2;
+    options.method = "POST"
+
+    const pres2 = await axios.request(options);
+    console.log("---------- pres2 data -------\n")
+    console.log(pres2.data);
+    console.log("---------- pres2 head -------\n")
+    console.log(pres2.headers)
 
     if(nextRes.data.type && nextRes.data.type === "CHALLENGE"){
 
