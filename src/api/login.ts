@@ -171,6 +171,7 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
 const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
+    console.log("--------------code start*---------")
     const currentSession = getSession(req.headers);
 
     try{
@@ -179,7 +180,7 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =>
 
         const headers = createHeaders(url, currentSession);
         headers.Cookie = req.headers.cookie ?? "";
-        //headers["x-requested-with"] = "XMLHttpRequest"
+        headers["x-requested-with"] = "XMLHttpRequest"
         headers["content-type"] = "application/x-www-form-urlencoded"
 
         const params = new URLSearchParams();
@@ -199,6 +200,8 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =>
         const data = {account:req.data.account, success:session.isAuthenticated, challenge:!session.isAuthenticated, endpoint:""};
 
         console.log(response.data)
+        console.log(response.headers)
+        console.log(session)
 
         return {
             data,

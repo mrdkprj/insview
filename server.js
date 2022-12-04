@@ -361,12 +361,13 @@ const requestChallenge = async (account, options, res, cookies) => {
 };
 const challenge = async (req) => {
     var _a;
+    console.log("--------------code start*---------");
     const currentSession = getSession(req.headers);
     try {
         const url = req.data.endpoint;
         const headers = createHeaders(url, currentSession);
         headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
-        //headers["x-requested-with"] = "XMLHttpRequest"
+        headers["x-requested-with"] = "XMLHttpRequest";
         headers["content-type"] = "application/x-www-form-urlencoded";
         const params = new URLSearchParams();
         params.append("security_code", req.data.code);
@@ -381,6 +382,8 @@ const challenge = async (req) => {
         const session = getSession(response.headers);
         const data = { account: req.data.account, success: session.isAuthenticated, challenge: !session.isAuthenticated, endpoint: "" };
         console.log(response.data);
+        console.log(response.headers);
+        console.log(session);
         return {
             data,
             session
@@ -902,8 +905,14 @@ class Controller {
     async saveSession(req, account, session) {
         req.session.account = account;
         if (session.expires) {
-            const maxAge = session.expires.getTime() - new Date().getTime();
-            req.session.cookie.maxAge = maxAge;
+            try {
+                const maxAge = session.expires.getTime() - new Date().getTime();
+                req.session.cookie.maxAge = maxAge;
+            }
+            catch (ex) {
+                console.log(ex.message);
+                req.session.cookie.maxAge = -1;
+            }
         }
     }
     async tryLogin(req, res, account, password) {
