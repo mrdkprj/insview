@@ -106,10 +106,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 const requestChallenge = async (account:string, options:AxiosRequestConfig, res:AxiosResponse<any, any>) :Promise<IgResponse<ILoginResponse>> => {
 
     console.log("---------- challenge start -------\n")
-    console.log("---------- challenge data -------\n")
     console.log(res.data);
-    console.log("\n")
-    console.log("---------- challenge header -------\n")
     console.log(res.headers);
 
     if(!options.headers){
@@ -124,19 +121,22 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     options.headers.Cookie = getCookieString(responseCookies);
 
-    const url = baseUrl + res.data.checkpoint_url;
+    const url = "https://i.instagram.com" + res.data.checkpoint_url;
     options.url = url;
     options.method = "GET";
 
     const fres = await axios.request(options);
 
     console.log(fres.headers)
-    console.log(fres.request.responseURL)
+
+    options.headers["referer"] = url
 
     const params = new URLSearchParams();
     params.append("choice", "1")
     options.data = params;
     options.method = "POST"
+
+    console.log(`cookie:${options.headers.Cookie}`)
 
     const nextRes = await axios.request(options);
 
@@ -156,8 +156,8 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
     const nCookies = nextRes.headers["set-cookie"] instanceof Array ? nextRes.headers["set-cookie"] : [nextRes.headers["set-cookie"]]
 
     options.headers.Cookie = updateCookie(responseCookies, nCookies);
-
-    options.url = "https://www.instagram.com/challenge/?next=https%3A%2F%2Fwww.instagram.com%2F%3F__coig_challenged%3D1";
+console.log(`cookie:${options.headers.Cookie}`)
+    options.url = "https://i.instagram.com"
     options.data = "";
     options.method = "GET"
 
@@ -165,10 +165,9 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     console.log("---------- redirect header -------\n")
     console.log(pres.headers);
-    console.log(pres.request.responseURL)
 
     console.log("---------- after start -------")
-
+/*
     options.url = "https://www.instagram.com/challenge/"
     options.method = "POST"
     const params2 = new URLSearchParams();
@@ -182,7 +181,7 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
     console.log(pres2.data);
     console.log("---------- pres2 head -------\n")
     console.log(pres2.headers)
-
+*/
     if(nextRes.data.type && nextRes.data.type === "CHALLENGE"){
 
         return {
