@@ -121,13 +121,8 @@ class Controller{
         req.session.account = account
 
         if(session.expires){
-            try{
-                const maxAge = session.expires.getTime() - new Date().getTime();
-                req.session.cookie.maxAge = maxAge
-            }catch(ex:any){
-                console.log(ex.message)
-                req.session.cookie.maxAge = -1
-            }
+            const maxAge = session.expires.getTime() - new Date().getTime();
+            req.session.cookie.maxAge = maxAge
         }
     }
 

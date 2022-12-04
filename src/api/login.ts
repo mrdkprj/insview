@@ -177,9 +177,12 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =>
     try{
 
         const url = req.data.endpoint;
-
+console.log(url)
         const headers = createHeaders(url, currentSession);
         headers.Cookie = req.headers.cookie ?? "";
+        headers["x-ig-www-claim"] = 0
+        headers["x-instagram-ajax"] = "1006681242"
+        headers["x-csrftoken"] = currentSession.csrfToken;
         headers["x-requested-with"] = "XMLHttpRequest"
         headers["content-type"] = "application/x-www-form-urlencoded"
 
@@ -191,7 +194,6 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =>
             method: "POST",
             headers,
             data: params,
-            withCredentials:true
         }
 
         const response = await axios.request(options);
@@ -201,7 +203,6 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =>
 
         console.log(response.data)
         console.log(response.headers)
-        console.log(session)
 
         return {
             data,

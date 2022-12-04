@@ -45,7 +45,7 @@ const getSession = (headers:any) :ISession => {
                 return
             }
 
-            if(cookie.key.toLowerCase() === "sessionid"){
+            if(cookie.key.toLowerCase() === "sessionid" && cookie.value){
 
                 session.isAuthenticated = true;
 

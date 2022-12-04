@@ -131,7 +131,7 @@ const getSession = (headers) => {
             if (!cookie) {
                 return;
             }
-            if (cookie.key.toLowerCase() === "sessionid") {
+            if (cookie.key.toLowerCase() === "sessionid" && cookie.value) {
                 session.isAuthenticated = true;
                 if (!cookie.expires) {
                     const expires = new Date();
@@ -365,8 +365,12 @@ const challenge = async (req) => {
     const currentSession = getSession(req.headers);
     try {
         const url = req.data.endpoint;
+        console.log(url);
         const headers = createHeaders(url, currentSession);
         headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
+        headers["x-ig-www-claim"] = 0;
+        headers["x-instagram-ajax"] = "1006681242";
+        headers["x-csrftoken"] = currentSession.csrfToken;
         headers["x-requested-with"] = "XMLHttpRequest";
         headers["content-type"] = "application/x-www-form-urlencoded";
         const params = new URLSearchParams();
@@ -376,14 +380,12 @@ const challenge = async (req) => {
             method: "POST",
             headers,
             data: params,
-            withCredentials: true
         };
         const response = await external_axios_default().request(options);
         const session = getSession(response.headers);
         const data = { account: req.data.account, success: session.isAuthenticated, challenge: !session.isAuthenticated, endpoint: "" };
         console.log(response.data);
         console.log(response.headers);
-        console.log(session);
         return {
             data,
             session
@@ -905,14 +907,8 @@ class Controller {
     async saveSession(req, account, session) {
         req.session.account = account;
         if (session.expires) {
-            try {
-                const maxAge = session.expires.getTime() - new Date().getTime();
-                req.session.cookie.maxAge = maxAge;
-            }
-            catch (ex) {
-                console.log(ex.message);
-                req.session.cookie.maxAge = -1;
-            }
+            const maxAge = session.expires.getTime() - new Date().getTime();
+            req.session.cookie.maxAge = maxAge;
         }
     }
     async tryLogin(req, res, account, password) {
