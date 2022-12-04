@@ -249,6 +249,7 @@ const login = async (req) => {
         withCredentials: true
     };
     let responseCookies;
+    let baseres;
     try {
         headers.Cookie = "ig_cb=1;";
         headers["x-instagram-ajax"] = 1;
@@ -258,6 +259,7 @@ const login = async (req) => {
         headers["x-ig-app-id"] = appId;
         options.url = "https://i.instagram.com/api/v1/public/landing_info/";
         const baseResult = await external_axios_default().request(options);
+        baseres = baseResult;
         const baseCsrftoken = extractToken(baseResult.headers);
         if (!baseCsrftoken) {
             throw new Error("Token not found");
@@ -296,7 +298,7 @@ const login = async (req) => {
     catch (ex) {
         if (ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required") {
             try {
-                return await requestChallenge(account, options, ex.response, responseCookies);
+                return await requestChallenge(account, options, ex.response, responseCookies, baseres);
             }
             catch (ex) {
                 if (ex.response) {
@@ -316,7 +318,7 @@ const login = async (req) => {
         throw new Error("Login failed");
     }
 };
-const requestChallenge = async (account, options, res, cookies) => {
+const requestChallenge = async (account, options, res, baseCookies, baseres) => {
     console.log(options.headers);
     console.log(res.data);
     console.log(res.headers);
@@ -327,7 +329,7 @@ const requestChallenge = async (account, options, res, cookies) => {
     const resToken = extractToken(res.headers);
     options.headers["x-csrftoken"] = resToken;
     const responseCookies = res.headers["set-cookie"] instanceof Array ? res.headers["set-cookie"] : [res.headers["set-cookie"]];
-    options.headers.Cookie = updateCookie(cookies, responseCookies);
+    options.headers.Cookie = updateCookie(baseCookies, responseCookies);
     console.log("---------- challenge get -------");
     console.log(options.headers);
     const url = "https://i.instagram.com" + res.data.checkpoint_url;
@@ -345,9 +347,9 @@ const requestChallenge = async (account, options, res, cookies) => {
     console.log(options.headers);
     const nextRes = await external_axios_default().request(options);
     console.log("---------- done -------");
-    console.log(nextRes.data);
+    console.log(JSON.stringify(nextRes.data));
     console.log(nextRes.headers);
-    const session = getSession(res.headers);
+    const session = getSession(baseres.headers);
     if (nextRes.data.type && nextRes.data.type === "CHALLENGE") {
         return {
             data: { account: account, success: false, challenge: true, endpoint: url },
@@ -365,14 +367,14 @@ const challenge = async (req) => {
     const currentSession = getSession(req.headers);
     try {
         const url = req.data.endpoint;
-        console.log(url);
         const headers = createHeaders(url, currentSession);
         headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
         headers["x-ig-www-claim"] = 0;
         headers["x-instagram-ajax"] = "1006681242";
-        headers["x-csrftoken"] = currentSession.csrfToken;
         headers["x-requested-with"] = "XMLHttpRequest";
         headers["content-type"] = "application/x-www-form-urlencoded";
+        console.log(req.data.code);
+        console.log(headers);
         const params = new URLSearchParams();
         params.append("security_code", req.data.code);
         const options = {

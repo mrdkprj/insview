@@ -21,6 +21,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     };
 
     let responseCookies:any
+    let baseres:any
     try{
 
         headers.Cookie = "ig_cb=1;"
@@ -33,7 +34,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         headers["x-ig-app-id"] = appId
         options.url = "https://i.instagram.com/api/v1/public/landing_info/"
         const baseResult = await axios.request(options);
-
+        baseres = baseResult
         const baseCsrftoken = extractToken(baseResult.headers)
 
         if(!baseCsrftoken){
@@ -84,7 +85,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
         if(ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required"){
             try{
-                return await requestChallenge(account, options, ex.response, responseCookies)
+                return await requestChallenge(account, options, ex.response, responseCookies, baseres)
             }catch(ex:any){
                 if(ex.response){
                     console.log(ex.response.data)
@@ -104,7 +105,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     }
 }
 
-const requestChallenge = async (account:string, options:AxiosRequestConfig, res:AxiosResponse<any, any>, cookies:string[] | undefined[]) :Promise<IgResponse<ILoginResponse>> => {
+const requestChallenge = async (account:string, options:AxiosRequestConfig, res:AxiosResponse<any, any>, baseCookies:string[] | undefined[], baseres:AxiosResponse<any, any>) :Promise<IgResponse<ILoginResponse>> => {
 
     console.log(options.headers)
     console.log(res.data);
@@ -121,7 +122,7 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     const responseCookies = res.headers["set-cookie"] instanceof Array ? res.headers["set-cookie"] : [res.headers["set-cookie"]]
 
-    options.headers.Cookie = updateCookie(cookies, responseCookies);
+    options.headers.Cookie = updateCookie(baseCookies, responseCookies);
 
     console.log("---------- challenge get -------")
     console.log(options.headers)
@@ -149,10 +150,10 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
     const nextRes = await axios.request(options);
 
     console.log("---------- done -------")
-    console.log(nextRes.data)
+    console.log(JSON.stringify(nextRes.data))
     console.log(nextRes.headers)
 
-    const session = getSession(res.headers);
+    const session = getSession(baseres.headers);
 
     if(nextRes.data.type && nextRes.data.type === "CHALLENGE"){
 
@@ -177,14 +178,16 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =>
     try{
 
         const url = req.data.endpoint;
-console.log(url)
+
         const headers = createHeaders(url, currentSession);
         headers.Cookie = req.headers.cookie ?? "";
         headers["x-ig-www-claim"] = 0
         headers["x-instagram-ajax"] = "1006681242"
-        headers["x-csrftoken"] = currentSession.csrfToken;
         headers["x-requested-with"] = "XMLHttpRequest"
         headers["content-type"] = "application/x-www-form-urlencoded"
+
+        console.log(req.data.code)
+        console.log(headers)
 
         const params = new URLSearchParams();
         params.append("security_code", req.data.code)
