@@ -199,7 +199,7 @@ const getCookieString = (cookies) => {
     let setCookieString = "";
     cookies.forEach((cookieString) => {
         const cookie = Cookie.parse(cookieString);
-        if (!cookie || !cookie.value) {
+        if (!cookie || cookie.value === "" || cookie.value === undefined || cookie.value === null) {
             return;
         }
         setCookieString += `${cookie.key}=${cookie.value};`;
@@ -316,9 +316,10 @@ const login = async (req) => {
     }
 };
 const requestChallenge = async (account, options, res) => {
-    console.log("---------- challenge start -------\n");
+    console.log(options.headers);
     console.log(res.data);
     console.log(res.headers);
+    console.log("---------- challenge start -------");
     if (!options.headers) {
         throw new Error("headers empty");
     }
@@ -326,51 +327,26 @@ const requestChallenge = async (account, options, res) => {
     options.headers["x-csrftoken"] = resToken;
     const responseCookies = res.headers["set-cookie"] instanceof Array ? res.headers["set-cookie"] : [res.headers["set-cookie"]];
     options.headers.Cookie = getCookieString(responseCookies);
+    console.log("---------- challenge get -------");
+    console.log(options.headers);
     const url = "https://i.instagram.com" + res.data.checkpoint_url;
     options.url = url;
     options.method = "GET";
+    options.data = "";
     const fres = await external_axios_default().request(options);
     console.log(fres.headers);
+    console.log("---------- challenge post -------");
     options.headers["referer"] = url;
     const params = new URLSearchParams();
     params.append("choice", "1");
     options.data = params;
     options.method = "POST";
-    console.log(`cookie:${options.headers.Cookie}`);
+    console.log(options.headers);
     const nextRes = await external_axios_default().request(options);
-    const session = getSession(res.headers);
-    console.log("---------- challenge data -------\n");
+    console.log("---------- done -------");
     console.log(nextRes.data);
-    console.log("---------- challenge header -------\n");
     console.log(nextRes.headers);
-    console.log("---------- redirect start -------\n");
-    const nToken = extractToken(nextRes.headers);
-    options.headers["x-csrftoken"] = nToken;
-    const nCookies = nextRes.headers["set-cookie"] instanceof Array ? nextRes.headers["set-cookie"] : [nextRes.headers["set-cookie"]];
-    options.headers.Cookie = updateCookie(responseCookies, nCookies);
-    console.log(`cookie:${options.headers.Cookie}`);
-    options.url = "https://i.instagram.com";
-    options.data = "";
-    options.method = "GET";
-    const pres = await external_axios_default().request(options);
-    console.log("---------- redirect header -------\n");
-    console.log(pres.headers);
-    console.log("---------- after start -------");
-    /*
-        options.url = "https://www.instagram.com/challenge/"
-        options.method = "POST"
-        const params2 = new URLSearchParams();
-        params2.append("choice", "0")
-        params2.append("next", "https://www.instagram.com/?__coig_challenged=1")
-        options.data = params2;
-        options.method = "POST"
-    
-        const pres2 = await axios.request(options);
-        console.log("---------- pres2 data -------\n")
-        console.log(pres2.data);
-        console.log("---------- pres2 head -------\n")
-        console.log(pres2.headers)
-    */
+    const session = getSession(res.headers);
     if (nextRes.data.type && nextRes.data.type === "CHALLENGE") {
         return {
             data: { account: account, success: false, challenge: true, endpoint: url },

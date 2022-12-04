@@ -149,7 +149,7 @@ const getCookieString = (cookies:string[] | undefined[]) => {
 
         const cookie = Cookie.parse(cookieString);
 
-        if(!cookie || !cookie.value){
+        if(!cookie || cookie.value === "" || cookie.value === undefined || cookie.value === null){
             return
         }
 
