@@ -20,6 +20,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         withCredentials:true
     };
 
+    let responseCookies:any
     try{
 
         headers.Cookie = "ig_cb=1;"
@@ -39,7 +40,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
             throw new Error("Token not found")
         }
 
-        const responseCookies = baseResult.headers["set-cookie"] instanceof Array ? baseResult.headers["set-cookie"] : [baseResult.headers["set-cookie"]]
+        responseCookies = baseResult.headers["set-cookie"] instanceof Array ? baseResult.headers["set-cookie"] : [baseResult.headers["set-cookie"]]
 
         headers.Cookie = getCookieString(responseCookies);
 
@@ -83,7 +84,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
         if(ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required"){
             try{
-                return await requestChallenge(account, options, ex.response)
+                return await requestChallenge(account, options, ex.response, responseCookies)
             }catch(ex:any){
                 if(ex.response){
                     console.log(ex.response.data)
@@ -103,7 +104,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     }
 }
 
-const requestChallenge = async (account:string, options:AxiosRequestConfig, res:AxiosResponse<any, any>) :Promise<IgResponse<ILoginResponse>> => {
+const requestChallenge = async (account:string, options:AxiosRequestConfig, res:AxiosResponse<any, any>, cookies:string[] | undefined[]) :Promise<IgResponse<ILoginResponse>> => {
 
     console.log(options.headers)
     console.log(res.data);
@@ -120,7 +121,7 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 
     const responseCookies = res.headers["set-cookie"] instanceof Array ? res.headers["set-cookie"] : [res.headers["set-cookie"]]
 
-    options.headers.Cookie = getCookieString(responseCookies);
+    options.headers.Cookie = updateCookie(cookies, responseCookies);
 
     console.log("---------- challenge get -------")
     console.log(options.headers)

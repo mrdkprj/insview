@@ -167,7 +167,7 @@ const updateCookie = (old:string[] | undefined[], cs:string[] | undefined[]) => 
     old.forEach((c:any) => {
         const cookie = Cookie.parse(c);
 
-        if(!cookie || !cookie.value){
+        if(!cookie || cookie.value === "" || cookie.value === undefined || cookie.value === null){
             return
         }
 
@@ -178,7 +178,7 @@ const updateCookie = (old:string[] | undefined[], cs:string[] | undefined[]) => 
 
         const cookie = Cookie.parse(cookieString);
 
-        if(!cookie || !cookie.value){
+        if(!cookie || cookie.value === "" || cookie.value === undefined || cookie.value === null){
             return
         }
 

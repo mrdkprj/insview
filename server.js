@@ -210,14 +210,14 @@ const updateCookie = (old, cs) => {
     const cookies = {};
     old.forEach((c) => {
         const cookie = Cookie.parse(c);
-        if (!cookie || !cookie.value) {
+        if (!cookie || cookie.value === "" || cookie.value === undefined || cookie.value === null) {
             return;
         }
         cookies[cookie.key] = cookie.value;
     });
     cs.forEach((cookieString) => {
         const cookie = Cookie.parse(cookieString);
-        if (!cookie || !cookie.value) {
+        if (!cookie || cookie.value === "" || cookie.value === undefined || cookie.value === null) {
             return;
         }
         cookies[cookie.key] = cookie.value;
@@ -248,6 +248,7 @@ const login = async (req) => {
         headers,
         withCredentials: true
     };
+    let responseCookies;
     try {
         headers.Cookie = "ig_cb=1;";
         headers["x-instagram-ajax"] = 1;
@@ -261,7 +262,7 @@ const login = async (req) => {
         if (!baseCsrftoken) {
             throw new Error("Token not found");
         }
-        const responseCookies = baseResult.headers["set-cookie"] instanceof Array ? baseResult.headers["set-cookie"] : [baseResult.headers["set-cookie"]];
+        responseCookies = baseResult.headers["set-cookie"] instanceof Array ? baseResult.headers["set-cookie"] : [baseResult.headers["set-cookie"]];
         headers.Cookie = getCookieString(responseCookies);
         headers["x-requested-with"] = "XMLHttpRequest";
         headers["x-ig-www-claim"] = 0;
@@ -295,7 +296,7 @@ const login = async (req) => {
     catch (ex) {
         if (ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required") {
             try {
-                return await requestChallenge(account, options, ex.response);
+                return await requestChallenge(account, options, ex.response, responseCookies);
             }
             catch (ex) {
                 if (ex.response) {
@@ -315,7 +316,7 @@ const login = async (req) => {
         throw new Error("Login failed");
     }
 };
-const requestChallenge = async (account, options, res) => {
+const requestChallenge = async (account, options, res, cookies) => {
     console.log(options.headers);
     console.log(res.data);
     console.log(res.headers);
@@ -326,7 +327,7 @@ const requestChallenge = async (account, options, res) => {
     const resToken = extractToken(res.headers);
     options.headers["x-csrftoken"] = resToken;
     const responseCookies = res.headers["set-cookie"] instanceof Array ? res.headers["set-cookie"] : [res.headers["set-cookie"]];
-    options.headers.Cookie = getCookieString(responseCookies);
+    options.headers.Cookie = updateCookie(cookies, responseCookies);
     console.log("---------- challenge get -------");
     console.log(options.headers);
     const url = "https://i.instagram.com" + res.data.checkpoint_url;
