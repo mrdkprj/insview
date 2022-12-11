@@ -92,11 +92,16 @@ const emptyResponse = {
     history: {},
     isAuthenticated: false
 };
+const IgHeaderNames = {
+    appId: "x_app_id",
+    ajax: "x_ajax"
+};
 
 ;// CONCATENATED MODULE: external "tough-cookie"
 const external_tough_cookie_namespaceObject = require("tough-cookie");
 var external_tough_cookie_default = /*#__PURE__*/__webpack_require__.n(external_tough_cookie_namespaceObject);
 ;// CONCATENATED MODULE: ./src/api/util.ts
+
 
 const baseUrl = "https://www.instagram.com";
 const Cookie = (external_tough_cookie_default()).Cookie;
@@ -115,23 +120,19 @@ const getSession = (headers) => {
             userAgent: headers["user-agent"],
             cookies: [],
             expires: null,
+            xHeaders: { appId: "", ajax: "" }
         };
-        if (!headers.cookie && !headers["set-cookie"]) {
+        if (!headers.cookie) {
             return session;
         }
-        let cookies = [];
-        if (headers.cookie) {
-            cookies = headers.cookie.split(";");
-        }
-        else {
-            cookies = headers["set-cookie"] instanceof Array ? headers["set-cookie"] : [headers["set-cookie"]];
-        }
+        const cookies = headers.cookie.split(";");
         cookies.forEach((cookieString) => {
             const cookie = Cookie.parse(cookieString);
             if (!cookie) {
                 return;
             }
-            if (cookie.key.toLowerCase() === "sessionid" && cookie.value) {
+            const key = cookie.key.toLowerCase();
+            if (key === "sessionid" && cookie.value) {
                 session.isAuthenticated = true;
                 if (!cookie.expires) {
                     const expires = new Date();
@@ -142,11 +143,17 @@ const getSession = (headers) => {
                     session.expires = cookie.expires;
                 }
             }
-            if (cookie.key.toLowerCase() === "csrftoken") {
+            if (key === "csrftoken") {
                 session.csrfToken = cookie.value;
             }
-            if (cookie.key.toLowerCase() === "ds_user_id") {
+            if (key === "ds_user_id") {
                 session.userId = cookie.value;
+            }
+            if (key === IgHeaderNames.appId.toLowerCase()) {
+                session.xHeaders.appId = cookie.value;
+            }
+            if (key === IgHeaderNames.ajax.toLowerCase()) {
+                session.xHeaders.ajax = cookie.value;
             }
             session.cookies.push(cookie);
         });
@@ -157,23 +164,87 @@ const getSession = (headers) => {
         throw new Error("cookie error");
     }
 };
-const updateSession = (currentSession, headers) => {
-    const session = currentSession;
-    session.cookies = [];
-    const cookies = headers["set-cookie"] instanceof Array ? headers["set-cookie"] : [headers["set-cookie"]];
-    cookies.forEach((cookieString) => {
-        const cookie = Cookie.parse(cookieString);
-        if (!cookie)
-            return;
+const updateSession = (currentSession, cookies, xHeaders) => {
+    const session = {
+        isAuthenticated: false,
+        csrfToken: currentSession.csrfToken,
+        userId: currentSession.userId,
+        userAgent: currentSession.userAgent,
+        cookies: [],
+        expires: currentSession.expires,
+        xHeaders: xHeaders !== null && xHeaders !== void 0 ? xHeaders : currentSession.xHeaders,
+    };
+    const updatedCookies = {};
+    currentSession.cookies.forEach(cookie => updatedCookies[cookie.key] = cookie);
+    cookies.forEach(cookie => updatedCookies[cookie.key] = cookie);
+    if (xHeaders) {
+        const today = new Date();
+        const expires = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
+        const xAjaxCookie = new (external_tough_cookie_default()).Cookie();
+        xAjaxCookie.key = IgHeaderNames.ajax;
+        xAjaxCookie.value = xHeaders.ajax;
+        xAjaxCookie.expires = expires;
+        xAjaxCookie.path = "/";
+        xAjaxCookie.secure = true;
+        xAjaxCookie.maxAge = 31449600;
+        updatedCookies[xAjaxCookie.key] = xAjaxCookie;
+        const xAppIdCookie = new (external_tough_cookie_default()).Cookie();
+        xAppIdCookie.key = IgHeaderNames.appId;
+        xAppIdCookie.value = xHeaders.appId;
+        xAppIdCookie.expires = expires;
+        xAppIdCookie.path = "/";
+        xAppIdCookie.secure = true;
+        xAppIdCookie.maxAge = 31449600;
+        updatedCookies[xAppIdCookie.key] = xAppIdCookie;
+    }
+    Object.values(updatedCookies).forEach((cookie) => {
+        if (cookie.key.toLowerCase() === "sessionid" && cookie.value) {
+            session.isAuthenticated = true;
+            if (!cookie.expires) {
+                const expires = new Date();
+                expires.setTime(expires.getTime() + (8 * 60 * 60 * 1000));
+                cookie.expires = expires;
+            }
+            if (cookie.expires !== "Infinity") {
+                session.expires = cookie.expires;
+            }
+        }
+        if (cookie.key.toLowerCase() === "csrftoken") {
+            session.csrfToken = cookie.value;
+        }
+        if (cookie.key.toLowerCase() === "ds_user_id") {
+            session.userId = cookie.value;
+        }
         session.cookies.push(cookie);
     });
     return session;
 };
+/*
+const updateSession = (currentSession:ISession, headers:any) => {
+
+    currentSession.cookies = [];
+
+    const cookies = headers["set-cookie"] instanceof Array ? headers["set-cookie"] : [headers["set-cookie"]];
+
+    cookies.forEach((cookieString:string) => {
+
+        const cookie = Cookie.parse(cookieString);
+
+        if(!cookie) return;
+
+        currentSession.cookies.push(cookie)
+
+    })
+
+    return currentSession;
+
+}
+*/
 const createHeaders = (referer, session) => {
     const headers = baseRequestHeaders;
     headers["origin"] = "https://www.instagram.com";
     headers["referer"] = referer;
-    //headers["x-requested-with"] = "XMLHttpRequest"
+    headers["x-requested-with"] = "XMLHttpRequest";
     headers["x-csrftoken"] = session.csrfToken;
     headers["user-agent"] = session.userAgent;
     return headers;
@@ -186,9 +257,16 @@ const getClientVersion = (data) => {
     const version = data.match(/"client_revision":(.*),"tier"/);
     return version[1];
 };
+const extractRequestCookie = (cookieStrings) => {
+    if (!cookieStrings)
+        return "";
+    const excludeKeys = ["connect.sid", IgHeaderNames.ajax, IgHeaderNames.appId];
+    const validCookies = cookieStrings.split(";").filter(cookieString => !excludeKeys.some(key => cookieString.includes(key)));
+    return validCookies.join(";");
+};
 const extractToken = (headers) => {
     const setCookieHeader = headers["set-cookie"] || [];
-    const cookies = setCookieHeader.map(c => Cookie.parse(c) || new (external_tough_cookie_default()).Cookie());
+    const cookies = setCookieHeader.map(c => Cookie.parse(c) || new tough.Cookie());
     const { value: csrftoken } = cookies.find(({ key }) => key === "csrftoken") || {};
     if (!csrftoken) {
         return "";
@@ -228,6 +306,26 @@ const updateCookie = (old, cs) => {
     });
     return setCookieString;
 };
+class CookieStore {
+    constructor() {
+        this.jar = new external_tough_cookie_namespaceObject.CookieJar();
+    }
+    async storeCookie(setCookie) {
+        if (!setCookie) {
+            return await this.getCookies();
+        }
+        for (const cookieString of setCookie) {
+            await this.jar.setCookie(cookieString, baseUrl, { ignoreError: true });
+        }
+        return await this.getCookies();
+    }
+    async getCookieStrings() {
+        return await this.jar.getCookieString(baseUrl);
+    }
+    async getCookies() {
+        return await this.jar.getCookies(baseUrl);
+    }
+}
 
 
 ;// CONCATENATED MODULE: external "axios"
@@ -240,37 +338,34 @@ const login = async (req) => {
     console.log("----------try login----------");
     const account = req.data.account;
     let session = getSession(req.headers);
-    const headers = baseRequestHeaders;
-    headers["user-agent"] = session.userAgent;
-    const options = {
-        url: baseUrl,
-        method: "GET",
-        headers,
-        withCredentials: true
-    };
-    let responseCookies;
-    let baseres;
+    const headers = createHeaders(baseUrl, session);
+    let cookies = [];
+    const jar = new CookieStore();
     try {
+        const options = {};
         headers.Cookie = "ig_cb=1;";
         headers["x-instagram-ajax"] = 1;
-        const initialPage = await external_axios_default().request(options);
-        const appId = getAppId(initialPage.data);
-        const version = getClientVersion(initialPage.data);
-        headers["x-ig-app-id"] = appId;
+        options.url = baseUrl;
+        options.method = "GET";
+        options.headers = headers;
+        let response = await external_axios_default().request(options);
+        const xHeaders = {
+            appId: getAppId(response.data),
+            ajax: getClientVersion(response.data)
+        };
+        headers["x-ig-app-id"] = xHeaders.appId;
         options.url = "https://i.instagram.com/api/v1/public/landing_info/";
-        const baseResult = await external_axios_default().request(options);
-        baseres = baseResult;
-        const baseCsrftoken = extractToken(baseResult.headers);
-        if (!baseCsrftoken) {
-            throw new Error("Token not found");
-        }
-        responseCookies = baseResult.headers["set-cookie"] instanceof Array ? baseResult.headers["set-cookie"] : [baseResult.headers["set-cookie"]];
-        headers.Cookie = getCookieString(responseCookies);
-        headers["x-requested-with"] = "XMLHttpRequest";
+        options.method = "GET";
+        options.headers = headers;
+        response = await external_axios_default().request(options);
+        console.log("----------here----------");
+        console.log(response.headers["set-cookie"]);
+        cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        session = updateSession(session, cookies, xHeaders);
+        headers.Cookie = await jar.getCookieStrings();
         headers["x-ig-www-claim"] = 0;
-        headers["x-instagram-ajax"] = version;
-        headers["x-csrftoken"] = baseCsrftoken;
-        headers["x-requested-with"] = "XMLHttpRequest";
+        headers["x-instagram-ajax"] = xHeaders.ajax;
+        headers["x-csrftoken"] = session.csrfToken;
         headers["content-type"] = "application/x-www-form-urlencoded";
         const createEncPassword = (pwd) => {
             return `#PWD_INSTAGRAM_BROWSER:0:${Math.floor(Date.now() / 1000)}:${pwd}`;
@@ -285,10 +380,11 @@ const login = async (req) => {
         options.method = "POST";
         options.data = params;
         options.headers = headers;
-        const authResponse = await external_axios_default().request(options);
+        response = await external_axios_default().request(options);
         console.log("----------auth response-------");
-        console.log(authResponse.data);
-        session = getSession(authResponse.headers);
+        console.log(response.data);
+        cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        session = updateSession(session, cookies);
         const data = { account, success: session.isAuthenticated, challenge: false, endpoint: "" };
         return {
             data,
@@ -297,17 +393,7 @@ const login = async (req) => {
     }
     catch (ex) {
         if (ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required") {
-            try {
-                return await requestChallenge(account, options, ex.response, responseCookies, baseres);
-            }
-            catch (ex) {
-                if (ex.response) {
-                    console.log(ex.response.data);
-                }
-                else {
-                    console.log(ex.message);
-                }
-            }
+            return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar);
         }
         if (ex.response) {
             console.log(ex.response.data);
@@ -318,39 +404,34 @@ const login = async (req) => {
         throw new Error("Login failed");
     }
 };
-const requestChallenge = async (account, options, res, baseCookies, baseres) => {
-    console.log(options.headers);
-    console.log(res.data);
-    console.log(res.headers);
+const requestChallenge = async (account, checkpoint, headers, session, jar) => {
     console.log("---------- challenge start -------");
-    if (!options.headers) {
-        throw new Error("headers empty");
-    }
-    const resToken = extractToken(res.headers);
-    options.headers["x-csrftoken"] = resToken;
-    const responseCookies = res.headers["set-cookie"] instanceof Array ? res.headers["set-cookie"] : [res.headers["set-cookie"]];
-    options.headers.Cookie = updateCookie(baseCookies, responseCookies);
-    console.log("---------- challenge get -------");
-    console.log(options.headers);
-    const url = "https://i.instagram.com" + res.data.checkpoint_url;
+    const options = {};
+    const url = "https://i.instagram.com" + checkpoint;
     options.url = url;
     options.method = "GET";
     options.data = "";
-    const fres = await external_axios_default().request(options);
-    console.log(fres.headers);
+    options.headers = headers;
+    let response = await external_axios_default().request(options);
+    let cookies = await jar.storeCookie(response.headers["set-cookie"]);
+    session = updateSession(session, cookies);
+    console.log(response.headers);
     console.log("---------- challenge post -------");
-    options.headers["referer"] = url;
+    headers["referer"] = url;
+    headers["x-csrftoken"] = session.csrfToken;
     const params = new URLSearchParams();
     params.append("choice", "1");
     options.data = params;
     options.method = "POST";
+    options.headers = headers;
     console.log(options.headers);
-    const nextRes = await external_axios_default().request(options);
+    response = await external_axios_default().request(options);
     console.log("---------- done -------");
-    console.log(JSON.stringify(nextRes.data));
-    console.log(nextRes.headers);
-    const session = getSession(baseres.headers);
-    if (nextRes.data.type && nextRes.data.type === "CHALLENGE") {
+    console.log(response.data);
+    console.log(response.headers);
+    cookies = await jar.storeCookie(response.headers["set-cookie"]);
+    session = updateSession(session, cookies);
+    if (response.data.type && response.data.type === "CHALLENGE") {
         return {
             data: { account: account, success: false, challenge: true, endpoint: url },
             session
@@ -362,29 +443,27 @@ const requestChallenge = async (account, options, res, baseCookies, baseres) => 
     };
 };
 const challenge = async (req) => {
-    var _a;
     console.log("--------------code start*---------");
-    const currentSession = getSession(req.headers);
+    const url = req.data.endpoint;
+    const jar = new CookieStore();
+    const options = {};
+    let session = getSession(req.headers);
+    const headers = createHeaders(url, session);
     try {
-        const url = req.data.endpoint;
-        const headers = createHeaders(url, currentSession);
-        headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
+        headers["x-ig-app-id"] = session.xHeaders.appId;
         headers["x-ig-www-claim"] = 0;
-        headers["x-instagram-ajax"] = "1006681242";
-        headers["x-requested-with"] = "XMLHttpRequest";
+        headers["x-instagram-ajax"] = session.xHeaders.ajax;
         headers["content-type"] = "application/x-www-form-urlencoded";
-        console.log(req.data.code);
-        console.log(headers);
+        headers.Cookie = extractRequestCookie(req.headers.cookie);
         const params = new URLSearchParams();
         params.append("security_code", req.data.code);
-        const options = {
-            url,
-            method: "POST",
-            headers,
-            data: params,
-        };
+        options.url = url;
+        options.data = params;
+        options.method = "POST";
+        options.headers = headers;
         const response = await external_axios_default().request(options);
-        const session = getSession(response.headers);
+        const cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        session = updateSession(session, cookies);
         const data = { account: req.data.account, success: session.isAuthenticated, challenge: !session.isAuthenticated, endpoint: "" };
         console.log(response.data);
         console.log(response.headers);
@@ -396,27 +475,32 @@ const challenge = async (req) => {
     catch (ex) {
         return {
             data: { account: req.data.account, success: false, challenge: true, endpoint: req.data.endpoint },
-            session: currentSession
+            session
         };
     }
 };
 const logout = async (req) => {
-    var _a;
-    const currentSession = getSession(req.headers);
-    if (!currentSession.isAuthenticated)
+    const jar = new CookieStore();
+    let session = getSession(req.headers);
+    if (!session.isAuthenticated)
         throw new Error("Already logged out");
     try {
-        const headers = createHeaders(baseUrl, currentSession);
-        headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
+        const url = "https://i.instagram.com/api/v1/web/accounts/logout/ajax/";
+        const headers = createHeaders(baseUrl, session);
+        headers["x-ig-app-id"] = session.xHeaders.appId;
+        headers["x-ig-www-claim"] = 0;
+        headers["x-instagram-ajax"] = session.xHeaders.ajax;
+        headers["content-type"] = "application/x-www-form-urlencoded";
+        headers.Cookie = extractRequestCookie(req.headers.cookie);
         const options = {
-            url: "https://i.instagram.com/api/v1/web/accounts/logout/ajax/",
+            url,
             method: "POST",
             headers,
-            withCredentials: true
         };
         const response = await external_axios_default().request(options);
         console.log(response.data);
-        const session = getSession(response.headers);
+        const cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        session = updateSession(session, cookies);
         const data = { account: "", success: true, challenge: false, endpoint: "" };
         return {
             data,
@@ -426,7 +510,7 @@ const logout = async (req) => {
     catch (ex) {
         return {
             data: { account: "", success: true, challenge: false, endpoint: "" },
-            session: currentSession
+            session
         };
     }
 };
@@ -450,27 +534,27 @@ const requestMedia = async (req) => {
     const url = `https://graph.facebook.com/v${version}/${userId}?fields=business_discovery.username(${username}){id,username,name,biography,profile_picture_url,ig_id,media{id,media_url,media_type,permalink,children{id,media_url,media_type,permalink}}}&access_token=${access_token}`;
     try {
         const response = await external_axios_default().get(url);
-        const data = _formatMedia(response.data);
+        const data = _formatGraph(response.data);
         return {
             data,
             session
         };
     }
     catch (ex) {
-        return await _tryRequestGraph(req, session);
+        return await _tryRequestPrivate(req, session);
     }
 };
 const requestMore = async (req) => {
     const session = getSession(req.headers);
     if (req.data.next.startsWith(GRAPH_QL)) {
-        return _tryRequestMoreGraph(req, session);
+        return _tryRequestMorePrivate(req, session);
     }
     const access_token = process.env.TOKEN;
     const userId = process.env.USER_ID;
     const version = process.env.VERSION;
     const url = `https://graph.facebook.com/v${version}/${userId}?fields=business_discovery.username(${req.data.user.username}){id,username,name,profile_picture_url,ig_id,media.after(${req.data.next}){id,media_url,media_type,permalink,children{id,media_url,media_type,permalink}}}&access_token=${access_token}`;
     const response = await external_axios_default().get(url);
-    const data = _formatMedia(response.data);
+    const data = _formatGraph(response.data);
     return {
         data,
         session
@@ -482,7 +566,7 @@ const _getVideoUrl = (url) => {
 const _getImageUrl = (url) => {
     return `${IMAGE_URL}${encodeURIComponent(url)}`;
 };
-const _formatMedia = (data) => {
+const _formatGraph = (data) => {
     const media = [];
     const root = data.business_discovery;
     root.media.data.forEach((data) => {
@@ -530,38 +614,24 @@ const _formatMedia = (data) => {
     const history = { [username]: user };
     return { username, media, user, rowIndex, next, history, isAuthenticated: true };
 };
-const _tryRequestGraph = async (req, currentSession) => {
-    var _a, _b;
-    if (!currentSession.isAuthenticated) {
+const _tryRequestPrivate = async (req, session) => {
+    if (!session.isAuthenticated) {
         throw new AuthError("");
     }
+    const jar = new CookieStore();
+    const username = req.data.username;
+    const headers = createHeaders(baseUrl + "/" + username + "/", session);
     try {
-        const username = req.data.username;
-        const pageHeaders = createHeaders(baseUrl + "/" + username + "/", currentSession);
-        pageHeaders.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
-        const pageUrl = `${baseUrl}/${username}/`;
-        const options = {
-            url: pageUrl,
-            method: "GET",
-            headers: pageHeaders,
-        };
-        const pageResponse = await external_axios_default().request(options);
-        /*
-        const title = pageResponse.data.match(/<title>(.*)\(&#064;(.*)\).*<\/title>/);
-        const profile = pageResponse.data.match(/"props":{"id":"([0-9]*)".*"profile_pic_url":"(.*)","show_suggested_profiles"/);
-        */
-        const profileSession = updateSession(currentSession, pageResponse.headers);
-        const profileHeaders = createHeaders(baseUrl + "/" + username + "/", profileSession);
-        profileHeaders["x-ig-app-id"] = getAppId(pageResponse.data);
-        profileHeaders.Cookie = (_b = req.headers.cookie) !== null && _b !== void 0 ? _b : "";
+        headers["x-ig-app-id"] = session.xHeaders.appId;
+        headers.Cookie = extractRequestCookie(req.headers.cookie);
         const url = `https://i.instagram.com/api/v1/users/web_profile_info/?username=${username}`;
-        const profileOptions = {
+        const options = {
             url,
             method: "GET",
-            headers: pageHeaders,
+            headers,
         };
-        const profileResponse = await external_axios_default().request(profileOptions);
-        const userData = profileResponse.data.data.user;
+        let response = await external_axios_default().request(options);
+        const userData = response.data.data.user;
         const user = {
             id: userData.id,
             igId: userData.id,
@@ -572,10 +642,12 @@ const _tryRequestGraph = async (req, currentSession) => {
             following: userData.followed_by_viewer,
             isPro: false,
         };
-        const requestSession = updateSession(currentSession, pageResponse.headers);
-        const response = await _requestGraph(req, requestSession, user);
-        const session = updateSession(currentSession, response.headers);
-        const data = _formatGraph(response.data.data, session, user);
+        let cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        session = updateSession(session, cookies);
+        response = await _requestPrivate(req, session, user, jar);
+        cookies = await jar.getCookies();
+        session = updateSession(session, cookies);
+        const data = _formatMedia(response.data.data, session, user);
         return {
             data,
             session
@@ -586,23 +658,24 @@ const _tryRequestGraph = async (req, currentSession) => {
         throw new Error("User not found");
     }
 };
-const _tryRequestMoreGraph = async (req, currentSession) => {
-    if (!currentSession.isAuthenticated) {
+const _tryRequestMorePrivate = async (req, session) => {
+    if (!session.isAuthenticated) {
         throw new AuthError("");
     }
-    const response = await _requestMoreByGraphql(req, currentSession);
-    const session = updateSession(currentSession, response.headers);
-    const formatResult = _formatGraph(response.data.data, session, req.data.user);
+    const jar = new CookieStore();
+    const response = await _requestMorePrivate(req, session, jar);
+    const cookie = await jar.getCookies();
+    session = updateSession(session, cookie);
+    const formatResult = _formatMedia(response.data.data, session, req.data.user);
     const data = formatResult;
     return {
         data,
         session
     };
 };
-const _requestGraph = async (req, session, user) => {
-    var _a;
+const _requestPrivate = async (req, session, user, jar) => {
     const headers = createHeaders(baseUrl + "/" + user.username + "/", session);
-    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
+    headers.Cookie = await jar.getCookieStrings();
     const params = JSON.stringify({
         id: user.id,
         first: 12,
@@ -620,10 +693,10 @@ const _requestGraph = async (req, session, user) => {
     if (!response.data.data) {
         throw new Error("Response error");
     }
+    await jar.storeCookie(response.headers["set-cookie"]);
     return response;
 };
-const _requestMoreByGraphql = async (req, session) => {
-    var _a;
+const _requestMorePrivate = async (req, session, jar) => {
     const params = JSON.stringify({
         id: req.data.user.id,
         first: 12,
@@ -631,7 +704,7 @@ const _requestMoreByGraphql = async (req, session) => {
     });
     const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`;
     const headers = createHeaders(baseUrl + "/" + req.data.user.username + "/", session);
-    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
+    headers.Cookie = extractRequestCookie(req.headers.cookie);
     const options = {
         url,
         method: "GET",
@@ -644,9 +717,10 @@ const _requestMoreByGraphql = async (req, session) => {
     if (!response.data.data) {
         throw new Error("Response error");
     }
+    await jar.storeCookie(response.headers["set-cookie"]);
     return response;
 };
-const _formatGraph = (data, session, user) => {
+const _formatMedia = (data, session, user) => {
     const media = [];
     const mediaNode = data.user.edge_owner_to_timeline_media;
     mediaNode.edges.forEach((data) => {
@@ -721,7 +795,7 @@ const downloadMedia = async (url) => {
 
 
 const requestFollowings = async (req) => {
-    var _a;
+    const jar = new CookieStore();
     const currentSession = getSession(req.headers);
     const params = req.data.next ? {
         id: currentSession.userId,
@@ -734,19 +808,19 @@ const requestFollowings = async (req) => {
     //https://i.instagram.com/api/v1/friendships/${userid}/following/?count=12&max_id=1
     const url = `https://www.instagram.com/graphql/query/?query_hash=58712303d941c6855d4e888c5f0cd22f&variables=${encodeURIComponent(JSON.stringify(params))}`;
     const headers = createHeaders(baseUrl, currentSession);
-    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
+    headers.Cookie = extractRequestCookie(req.headers.cookie);
     const options = {
         url,
         method: "GET",
         headers,
-        withCredentials: true
     };
     const response = await external_axios_default().request(options);
     if (response.headers["content-type"].includes("html")) {
-        throw new Error("Auth error");
+        throw new AuthError("Auth error");
     }
+    const cookies = await jar.storeCookie(response.headers["set-cookie"]);
     const data = _formatFollowings(response.data);
-    const session = updateSession(currentSession, response.headers);
+    const session = updateSession(currentSession, cookies);
     return {
         data,
         session
@@ -771,14 +845,14 @@ const _formatFollowings = (data) => {
     return { users, hasNext, next };
 };
 const follow = async (req) => {
-    var _a;
+    const jar = new CookieStore();
     const currentSession = getSession(req.headers);
     if (!currentSession.isAuthenticated) {
         throw new AuthError("");
     }
     const url = `${baseUrl}/web/friendships/${req.data.user.id}/follow/`;
     const headers = createHeaders(baseUrl, currentSession);
-    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
+    headers.Cookie = extractRequestCookie(req.headers.cookie);
     const options = {
         url,
         method: "POST",
@@ -786,22 +860,23 @@ const follow = async (req) => {
         withCredentials: true
     };
     const response = await external_axios_default().request(options);
+    const cookies = await jar.storeCookie(response.headers["set-cookie"]);
     const data = response.data;
-    const session = updateSession(currentSession, response.headers);
+    const session = updateSession(currentSession, cookies);
     return {
         data,
         session
     };
 };
 const unfollow = async (req) => {
-    var _a;
+    const jar = new CookieStore();
     const currentSession = getSession(req.headers);
     if (!currentSession.isAuthenticated) {
         throw new AuthError("");
     }
     const url = `${baseUrl}/web/friendships/${req.data.user.id}/unfollow/`;
     const headers = createHeaders(baseUrl, currentSession);
-    headers.Cookie = (_a = req.headers.cookie) !== null && _a !== void 0 ? _a : "";
+    headers.Cookie = extractRequestCookie(req.headers.cookie);
     const options = {
         url,
         method: "POST",
@@ -809,8 +884,9 @@ const unfollow = async (req) => {
         withCredentials: true
     };
     const response = await external_axios_default().request(options);
+    const cookies = await jar.storeCookie(response.headers["set-cookie"]);
     const data = response.data;
-    const session = updateSession(currentSession, response.headers);
+    const session = updateSession(currentSession, cookies);
     return {
         data,
         session
@@ -1472,7 +1548,7 @@ app.use(external_express_session_default()({
     cookie: {
         secure: isProduction ? true : false,
         httpOnly: true,
-        maxAge: 86400000,
+        maxAge: 31449600,
         sameSite: isProduction ? "none" : "strict"
     }
 }));

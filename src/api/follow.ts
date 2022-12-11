@@ -1,8 +1,10 @@
 import axios, { AxiosRequestConfig } from "axios";
-import { baseUrl, createHeaders, getSession, updateSession } from "./util";
+import { baseUrl, createHeaders, getSession, updateSession, extractRequestCookie, CookieStore } from "./util";
 import { AuthError, IFollowing, IgRequest, IgResponse, IUser } from "@shared";
 
 const requestFollowings = async (req:IgRequest) : Promise<IgResponse<IFollowing>> => {
+
+    const jar = new CookieStore();
 
     const currentSession = getSession(req.headers);
 
@@ -14,27 +16,28 @@ const requestFollowings = async (req:IgRequest) : Promise<IgResponse<IFollowing>
         id: currentSession.userId,
         first:20
     }
+
     //https://i.instagram.com/api/v1/friendships/${userid}/following/?count=12&max_id=1
     const url = `https://www.instagram.com/graphql/query/?query_hash=58712303d941c6855d4e888c5f0cd22f&variables=${encodeURIComponent(JSON.stringify(params))}`
 
     const headers = createHeaders(baseUrl, currentSession);
-    headers.Cookie = req.headers.cookie ?? "";
+    headers.Cookie = extractRequestCookie(req.headers.cookie);
 
     const options :AxiosRequestConfig = {
         url,
         method: "GET",
         headers,
-        withCredentials:true
     }
 
     const response = await axios.request(options);
 
     if(response.headers["content-type"].includes("html")){
-        throw new Error("Auth error")
+        throw new AuthError("Auth error")
     }
 
+    const cookies = await jar.storeCookie(response.headers["set-cookie"])
     const data = _formatFollowings(response.data);
-    const session = updateSession(currentSession, response.headers);
+    const session = updateSession(currentSession, cookies);
 
     return {
         data,
@@ -70,6 +73,8 @@ const _formatFollowings = (data:any) :IFollowing => {
 
 const follow = async (req:IgRequest) => {
 
+    const jar = new CookieStore();
+
     const currentSession = getSession(req.headers);
 
     if(!currentSession.isAuthenticated){
@@ -79,7 +84,7 @@ const follow = async (req:IgRequest) => {
     const url = `${baseUrl}/web/friendships/${req.data.user.id}/follow/`
 
     const headers = createHeaders(baseUrl, currentSession);
-    headers.Cookie = req.headers.cookie ?? "";
+    headers.Cookie = extractRequestCookie(req.headers.cookie);
 
     const options :AxiosRequestConfig = {
         url,
@@ -90,8 +95,9 @@ const follow = async (req:IgRequest) => {
 
     const response = await axios.request(options);
 
+    const cookies = await jar.storeCookie(response.headers["set-cookie"])
     const data = response.data;
-    const session = updateSession(currentSession, response.headers);
+    const session = updateSession(currentSession, cookies);
 
     return {
         data,
@@ -100,6 +106,8 @@ const follow = async (req:IgRequest) => {
 }
 
 const unfollow = async (req:IgRequest) => {
+
+    const jar = new CookieStore();
 
     const currentSession = getSession(req.headers);
 
@@ -110,7 +118,7 @@ const unfollow = async (req:IgRequest) => {
     const url = `${baseUrl}/web/friendships/${req.data.user.id}/unfollow/`
 
     const headers = createHeaders(baseUrl, currentSession);
-    headers.Cookie = req.headers.cookie ?? "";
+    headers.Cookie = extractRequestCookie(req.headers.cookie);
 
     const options :AxiosRequestConfig = {
         url,
@@ -121,8 +129,9 @@ const unfollow = async (req:IgRequest) => {
 
     const response = await axios.request(options);
 
+    const cookies = await jar.storeCookie(response.headers["set-cookie"])
     const data = response.data;
-    const session = updateSession(currentSession, response.headers);
+    const session = updateSession(currentSession, cookies);
 
     return {
         data,

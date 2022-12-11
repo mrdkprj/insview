@@ -1,5 +1,8 @@
-import React, {useEffect, createRef, useCallback} from "react"
+import React, {useEffect, createRef, useCallback, useState} from "react"
 import {css, keyframes} from "@emotion/react";
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import LinkButton from "./LinkButton";
 
 interface TextFieldProps {
     value:any;
@@ -18,10 +21,11 @@ const TextField = (props:TextFieldProps) => {
 
     const formRef :React.RefObject<HTMLDivElement> = createRef();
     const inputRef :React.RefObject<HTMLInputElement> = props.inputRef ? props.inputRef : createRef();
+    const [passwordVisible, setPasswordVisible] = useState(false);
 
     const _onChange = (e:React.ChangeEvent<HTMLInputElement>) => {
 
-        toggleFilled(inputRef.current?.value);
+        _toggleFilled(inputRef.current?.value);
 
         props.onChange && props.onChange(e);
 
@@ -39,7 +43,7 @@ const TextField = (props:TextFieldProps) => {
         }
     }
 
-    const toggleFilled = useCallback((value:any) => {
+    const _toggleFilled = useCallback((value:any) => {
 
         if(value || document.activeElement === inputRef.current){
             formRef.current?.classList.remove("empty")
@@ -52,11 +56,24 @@ const TextField = (props:TextFieldProps) => {
     const _onAnimationStart = (e:React.AnimationEvent<HTMLInputElement>) => {
 
        if(e.animationName.endsWith("autoFillCancel")){
-            toggleFilled(inputRef.current?.value)
+            _toggleFilled(inputRef.current?.value)
        }else{
-            toggleFilled("value")
+            _toggleFilled("value")
        }
 
+    }
+
+    const _togglePassword = () => {
+
+        if(!inputRef.current) return;
+
+        setPasswordVisible(!passwordVisible)
+
+        if(inputRef.current.type === "password"){
+            inputRef.current.type = "text"
+        }else{
+            inputRef.current.type = "password"
+        }
     }
 
     useEffect(() => {
@@ -71,9 +88,9 @@ const TextField = (props:TextFieldProps) => {
 
     useEffect(() => {
 
-        toggleFilled(props.value)
+        _toggleFilled(props.value)
 
-    },[formRef, props.value, toggleFilled])
+    },[formRef, props.value, _toggleFilled])
 
     return (
         <div ref={formRef} css={form}>
@@ -91,7 +108,8 @@ const TextField = (props:TextFieldProps) => {
                     onChange={_onChange}
                     onAnimationStart={_onAnimationStart}
                 />
-                { props.endAdornment ?? <div css={clear}></div> }
+                { props.type === "password" && <LinkButton size="small" onClick={_togglePassword}> {passwordVisible ? <VisibilityOffIcon/> : <VisibilityIcon/>} </LinkButton>}
+                { props.endAdornment && props.endAdornment }
             </div>
             { props.error && <p css={msg}>{props.helperText}</p> }
         </div>
@@ -222,16 +240,6 @@ const input = css({
         animationDuration: "5000s",
         animationName: `${autoFill}`
     }
-})
-
-const clear = css({
-    display: "flex",
-    height: "0.01em",
-    maxHeight: "2em",
-    alignItems: "center",
-    whiteSpace: "nowrap",
-    color: "rgba(0, 0, 0, 0.54)",
-    marginLeft: "8px",
 })
 
 const msg = css({

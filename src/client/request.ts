@@ -16,15 +16,13 @@ const createOptions = (url:string, method:Method, data:any) :AxiosRequestConfig 
 
 const getState = (headers:AxiosResponseHeaders) :boolean => {
 
-    return headers["ig-auth"] === "true" ? true : false;
+    return headers["ig-auth"] === "true";
 
 }
 
 const throwError = (ex:any) => {
 
-    const authState = ex.response.headers["ig-auth"] === "true" ? true : false;
-
-    throw new RequestError(ex.response.data, {igAuth: authState})
+    throw new RequestError(ex.response.data, {igAuth: ex.response.headers["ig-auth"] === "true"})
 
 }
 

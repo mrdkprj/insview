@@ -66,7 +66,6 @@ const Snackbar = (props:SnackbarProps) => {
     },[props.open])
 
     useEffect(() => {
-        console.log("ef")
         if(_open){
             display();
             setAutoHideTimer();

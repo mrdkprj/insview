@@ -228,13 +228,13 @@ function App(){
 
         }catch(ex:any){
 
-            handleError(ex, "Verification failed")
+            dispatchAppState({type:AppAction.showError, value: "Verification failed"})
 
         }finally{
             dispatchAppState({type:AppAction.end})
         }
 
-    },[handleError, authState.account, authState.endpoint])
+    },[authState.account, authState.endpoint])
 
     /*
     * requestFollowing
@@ -249,6 +249,7 @@ function App(){
 
             dispatchAuthState({type:AuthAction.toggleAuth, value:{success:result.status}})
             dispatchMediaState({type:MediaAction.followings, value: result.data})
+            dispatchAppState({type:AppAction.toggleAccountModal, value:true})
 
         }catch(ex:any){
 
@@ -282,6 +283,7 @@ function App(){
 
         if(!mediaState.isFollowingsReady){
             await requestFollowing();
+            return;
         }
 
         if(authState.success){

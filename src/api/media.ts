@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
-import {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, getAppId} from "./util"
+import {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, CookieStore, extractRequestCookie} from "./util"
 import { IMedia, IMediaResponse, IUser, IgRequest, IgResponse, ISession, AuthError} from "@shared";
 
 const GRAPH_QL = "#GRAPH_QL";
@@ -21,7 +21,7 @@ const requestMedia = async (req:IgRequest) : Promise<IgResponse<IMediaResponse>>
     try{
 
         const response = await axios.get(url);
-        const data = _formatMedia(response.data);
+        const data = _formatGraph(response.data);
 
         return {
             data,
@@ -30,7 +30,7 @@ const requestMedia = async (req:IgRequest) : Promise<IgResponse<IMediaResponse>>
 
     }catch(ex:any){
 
-        return await _tryRequestGraph(req, session)
+        return await _tryRequestPrivate(req, session)
 
     }
 
@@ -41,7 +41,7 @@ const requestMore = async (req:IgRequest) : Promise<IgResponse<IMediaResponse>> 
     const session = getSession(req.headers);
 
     if(req.data.next.startsWith(GRAPH_QL)){
-        return _tryRequestMoreGraph(req, session);
+        return _tryRequestMorePrivate(req, session);
     }
 
     const access_token = process.env.TOKEN
@@ -51,7 +51,7 @@ const requestMore = async (req:IgRequest) : Promise<IgResponse<IMediaResponse>> 
 
     const response = await axios.get(url);
 
-    const data = _formatMedia(response.data);
+    const data = _formatGraph(response.data);
 
     return {
         data,
@@ -67,7 +67,7 @@ const _getImageUrl = (url:string) => {
     return `${IMAGE_URL}${encodeURIComponent(url)}`
 }
 
-const _formatMedia = (data:any) :IMediaResponse =>{
+const _formatGraph = (data:any) :IMediaResponse =>{
 
     const media :IMedia[] = [];
 
@@ -133,46 +133,31 @@ const _formatMedia = (data:any) :IMediaResponse =>{
 }
 
 
-const _tryRequestGraph = async (req:IgRequest, currentSession:ISession) : Promise<IgResponse<IMediaResponse>> => {
+const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgResponse<IMediaResponse>> => {
 
-    if(!currentSession.isAuthenticated){
+    if(!session.isAuthenticated){
         throw new AuthError("")
     }
 
+    const jar = new CookieStore();
+    const username = req.data.username;
+    const headers = createHeaders(baseUrl + "/" + username + "/", session);
+
     try{
 
-        const username = req.data.username;
-        const pageHeaders = createHeaders(baseUrl + "/" + username + "/", currentSession);
-        pageHeaders.Cookie = req.headers.cookie ?? "";
-
-        const pageUrl = `${baseUrl}/${username}/`
-        const options :AxiosRequestConfig = {
-            url:pageUrl,
-            method: "GET",
-            headers:pageHeaders,
-        }
-
-        const pageResponse = await axios.request(options);
-
-        /*
-        const title = pageResponse.data.match(/<title>(.*)\(&#064;(.*)\).*<\/title>/);
-        const profile = pageResponse.data.match(/"props":{"id":"([0-9]*)".*"profile_pic_url":"(.*)","show_suggested_profiles"/);
-        */
-        const profileSession = updateSession(currentSession, pageResponse.headers)
-        const profileHeaders = createHeaders(baseUrl + "/" + username + "/", profileSession);
-        profileHeaders["x-ig-app-id"] = getAppId(pageResponse.data)
-        profileHeaders.Cookie = req.headers.cookie ?? "";
+        headers["x-ig-app-id"] = session.xHeaders.appId
+        headers.Cookie = extractRequestCookie(req.headers.cookie)
 
         const url = `https://i.instagram.com/api/v1/users/web_profile_info/?username=${username}`
-        const profileOptions :AxiosRequestConfig = {
+        const options :AxiosRequestConfig = {
             url,
             method: "GET",
-            headers:pageHeaders,
+            headers,
         }
 
-        const profileResponse = await axios.request(profileOptions);
+        let response = await axios.request(options);
 
-        const userData = profileResponse.data.data.user;
+        const userData = response.data.data.user;
 
         const user :IUser = {
             id: userData.id,
@@ -185,11 +170,14 @@ const _tryRequestGraph = async (req:IgRequest, currentSession:ISession) : Promis
             isPro:false,
         }
 
-        const requestSession = updateSession(currentSession, pageResponse.headers)
+        let cookies = await jar.storeCookie(response.headers["set-cookie"])
+        session = updateSession(session, cookies)
 
-        const response = await _requestGraph(req, requestSession, user);
-        const session = updateSession(currentSession, response.headers)
-        const data = _formatGraph(response.data.data, session, user)
+        response = await _requestPrivate(req, session, user, jar);
+
+        cookies = await jar.getCookies();
+        session = updateSession(session, cookies)
+        const data = _formatMedia(response.data.data, session, user)
 
         return {
             data,
@@ -202,16 +190,19 @@ const _tryRequestGraph = async (req:IgRequest, currentSession:ISession) : Promis
     }
 }
 
-const _tryRequestMoreGraph = async (req:IgRequest, currentSession:ISession) : Promise<IgResponse<IMediaResponse>> => {
+const _tryRequestMorePrivate = async (req:IgRequest, session:ISession) : Promise<IgResponse<IMediaResponse>> => {
 
-    if(!currentSession.isAuthenticated){
+    if(!session.isAuthenticated){
         throw new AuthError("")
     }
 
-    const response = await _requestMoreByGraphql(req, currentSession);
-    const session = updateSession(currentSession, response.headers)
+    const jar = new CookieStore();
 
-    const formatResult = _formatGraph(response.data.data, session, req.data.user);
+    const response = await _requestMorePrivate(req, session, jar);
+    const cookie = await jar.getCookies();
+    session = updateSession(session, cookie)
+
+    const formatResult = _formatMedia(response.data.data, session, req.data.user);
 
     const data = formatResult;
 
@@ -221,10 +212,10 @@ const _tryRequestMoreGraph = async (req:IgRequest, currentSession:ISession) : Pr
     }
 }
 
-const _requestGraph = async (req:IgRequest, session:ISession, user:IUser) : Promise<AxiosResponse<any, any>> => {
+const _requestPrivate = async (req:IgRequest, session:ISession, user:IUser, jar:CookieStore) : Promise<AxiosResponse<any, any>> => {
 
     const headers = createHeaders(baseUrl + "/" + user.username + "/", session);
-    headers.Cookie = req.headers.cookie ?? "";
+    headers.Cookie = await jar.getCookieStrings();
 
     const params = JSON.stringify({
         id: user.id,
@@ -249,10 +240,12 @@ const _requestGraph = async (req:IgRequest, session:ISession, user:IUser) : Prom
         throw new Error("Response error")
     }
 
+    await jar.storeCookie(response.headers["set-cookie"])
+
     return response;
 }
 
-const _requestMoreByGraphql = async (req:IgRequest, session:ISession) : Promise<AxiosResponse<any, any>> => {
+const _requestMorePrivate = async (req:IgRequest, session:ISession, jar:CookieStore) : Promise<AxiosResponse<any, any>> => {
 
     const params = JSON.stringify({
         id:req.data.user.id,
@@ -263,7 +256,7 @@ const _requestMoreByGraphql = async (req:IgRequest, session:ISession) : Promise<
     const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`
 
     const headers = createHeaders(baseUrl + "/" + req.data.user.username + "/", session);
-    headers.Cookie = req.headers.cookie ?? "";
+    headers.Cookie = extractRequestCookie(req.headers.cookie)
 
     const options :AxiosRequestConfig = {
         url,
@@ -281,11 +274,13 @@ const _requestMoreByGraphql = async (req:IgRequest, session:ISession) : Promise<
         throw new Error("Response error")
     }
 
+    await jar.storeCookie(response.headers["set-cookie"])
+
     return response;
 
 }
 
-const _formatGraph = (data:any, session:ISession, user:IUser) : IMediaResponse => {
+const _formatMedia = (data:any, session:ISession, user:IUser) : IMediaResponse => {
 
     const media :IMedia[] = [];
 

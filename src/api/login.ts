@@ -1,6 +1,6 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
-import { baseRequestHeaders, baseUrl, createHeaders, extractToken, getAppId, getClientVersion, getCookieString, getSession, updateCookie } from "./util";
-import { IgRequest, IgResponse, ILoginResponse } from "@shared";
+import axios, { AxiosRequestConfig, AxiosRequestHeaders } from "axios";
+import { baseUrl, createHeaders, getAppId, getClientVersion, getSession, CookieStore, updateSession, extractRequestCookie } from "./util";
+import { IgHeaders, IgRequest, IgResponse, ILoginResponse, ISession } from "@shared";
 
 const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
@@ -9,47 +9,42 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     const account = req.data.account;
 
     let session = getSession(req.headers);
+    const headers = createHeaders(baseUrl, session);
+    let cookies = [];
+    const jar = new CookieStore();
 
-    const headers = baseRequestHeaders;
-    headers["user-agent"] = session.userAgent
-
-    const options :AxiosRequestConfig= {
-        url: baseUrl,
-        method: "GET",
-        headers,
-        withCredentials:true
-    };
-
-    let responseCookies:any
-    let baseres:any
     try{
+
+        const options :AxiosRequestConfig= {};
 
         headers.Cookie = "ig_cb=1;"
         headers["x-instagram-ajax"] = 1;
-        const initialPage = await axios.request(options);
+        options.url = baseUrl;
+        options.method = "GET"
+        options.headers = headers;
+        let response = await axios.request(options);
 
-        const appId = getAppId(initialPage.data);
-        const version = getClientVersion(initialPage.data);
-
-        headers["x-ig-app-id"] = appId
-        options.url = "https://i.instagram.com/api/v1/public/landing_info/"
-        const baseResult = await axios.request(options);
-        baseres = baseResult
-        const baseCsrftoken = extractToken(baseResult.headers)
-
-        if(!baseCsrftoken){
-            throw new Error("Token not found")
+        const xHeaders :IgHeaders = {
+            appId: getAppId(response.data),
+            ajax: getClientVersion(response.data)
         }
 
-        responseCookies = baseResult.headers["set-cookie"] instanceof Array ? baseResult.headers["set-cookie"] : [baseResult.headers["set-cookie"]]
+        headers["x-ig-app-id"] = xHeaders.appId
+        options.url = "https://i.instagram.com/api/v1/public/landing_info/";
+        options.method = "GET"
+        options.headers = headers;
+        response = await axios.request(options);
 
-        headers.Cookie = getCookieString(responseCookies);
+        console.log("----------here----------")
+        console.log(response.headers["set-cookie"])
 
-        headers["x-requested-with"] = "XMLHttpRequest"
+        cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        session = updateSession(session, cookies, xHeaders)
+        headers.Cookie = await jar.getCookieStrings()
+
         headers["x-ig-www-claim"] = 0
-        headers["x-instagram-ajax"] = version
-        headers["x-csrftoken"] = baseCsrftoken;
-        headers["x-requested-with"] = "XMLHttpRequest"
+        headers["x-instagram-ajax"] = xHeaders.ajax
+        headers["x-csrftoken"] = session.csrfToken;
         headers["content-type"] = "application/x-www-form-urlencoded"
 
         const createEncPassword = (pwd:string) => {
@@ -68,12 +63,13 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         options.data = params;
         options.headers = headers;
 
-        const authResponse = await axios.request(options);
+        response = await axios.request(options);
 
         console.log("----------auth response-------")
-        console.log(authResponse.data)
+        console.log(response.data)
 
-        session = getSession(authResponse.headers);
+        cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        session = updateSession(session, cookies);
         const data = {account, success:session.isAuthenticated, challenge:false, endpoint:""};
 
         return {
@@ -84,15 +80,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     }catch(ex:any){
 
         if(ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required"){
-            try{
-                return await requestChallenge(account, options, ex.response, responseCookies, baseres)
-            }catch(ex:any){
-                if(ex.response){
-                    console.log(ex.response.data)
-                }else{
-                    console.log(ex.message)
-                }
-            }
+            return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar)
         }
 
         if(ex.response){
@@ -105,57 +93,49 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     }
 }
 
-const requestChallenge = async (account:string, options:AxiosRequestConfig, res:AxiosResponse<any, any>, baseCookies:string[] | undefined[], baseres:AxiosResponse<any, any>) :Promise<IgResponse<ILoginResponse>> => {
+const requestChallenge = async (account:string, checkpoint:string, headers:AxiosRequestHeaders, session:ISession, jar:CookieStore) :Promise<IgResponse<ILoginResponse>> => {
 
-    console.log(options.headers)
-    console.log(res.data);
-    console.log(res.headers);
     console.log("---------- challenge start -------")
 
-    if(!options.headers){
-        throw new Error("headers empty");
-    }
+    const options :AxiosRequestConfig= {};
 
-    const resToken = extractToken(res.headers);
-
-    options.headers["x-csrftoken"] = resToken;
-
-    const responseCookies = res.headers["set-cookie"] instanceof Array ? res.headers["set-cookie"] : [res.headers["set-cookie"]]
-
-    options.headers.Cookie = updateCookie(baseCookies, responseCookies);
-
-    console.log("---------- challenge get -------")
-    console.log(options.headers)
-
-    const url = "https://i.instagram.com" + res.data.checkpoint_url;
+    const url = "https://i.instagram.com" + checkpoint;
     options.url = url;
     options.method = "GET";
     options.data = "";
+    options.headers = headers;
 
-    const fres = await axios.request(options);
+    let response = await axios.request(options);
 
-    console.log(fres.headers)
+    let cookies = await jar.storeCookie(response.headers["set-cookie"])
+    session = updateSession(session, cookies)
+
+    console.log(response.headers)
 
     console.log("---------- challenge post -------")
 
-    options.headers["referer"] = url
+    headers["referer"] = url
+    headers["x-csrftoken"] = session.csrfToken;
 
     const params = new URLSearchParams();
     params.append("choice", "1")
+
     options.data = params;
     options.method = "POST"
+    options.headers = headers;
 
     console.log(options.headers)
 
-    const nextRes = await axios.request(options);
+    response = await axios.request(options);
 
     console.log("---------- done -------")
-    console.log(JSON.stringify(nextRes.data))
-    console.log(nextRes.headers)
+    console.log(response.data)
+    console.log(response.headers)
 
-    const session = getSession(baseres.headers);
+    cookies = await jar.storeCookie(response.headers["set-cookie"])
+    session = updateSession(session, cookies)
 
-    if(nextRes.data.type && nextRes.data.type === "CHALLENGE"){
+    if(response.data.type && response.data.type === "CHALLENGE"){
 
         return {
             data:{account:account, success:false, challenge: true, endpoint:url},
@@ -173,35 +153,35 @@ const requestChallenge = async (account:string, options:AxiosRequestConfig, res:
 const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
     console.log("--------------code start*---------")
-    const currentSession = getSession(req.headers);
+
+    const url = req.data.endpoint;
+
+    const jar = new CookieStore();
+    const options :AxiosRequestConfig = {}
+    let session = getSession(req.headers);
+    const headers = createHeaders(url, session);
 
     try{
 
-        const url = req.data.endpoint;
-
-        const headers = createHeaders(url, currentSession);
-        headers.Cookie = req.headers.cookie ?? "";
+        headers["x-ig-app-id"] = session.xHeaders.appId
         headers["x-ig-www-claim"] = 0
-        headers["x-instagram-ajax"] = "1006681242"
-        headers["x-requested-with"] = "XMLHttpRequest"
+        headers["x-instagram-ajax"] = session.xHeaders.ajax
         headers["content-type"] = "application/x-www-form-urlencoded"
 
-        console.log(req.data.code)
-        console.log(headers)
+        headers.Cookie = extractRequestCookie(req.headers.cookie);
 
         const params = new URLSearchParams();
         params.append("security_code", req.data.code)
 
-        const options :AxiosRequestConfig = {
-            url,
-            method: "POST",
-            headers,
-            data: params,
-        }
+        options.url = url;
+        options.data = params;
+        options.method = "POST"
+        options.headers = headers;
 
         const response = await axios.request(options);
 
-        const session = getSession(response.headers);
+        const cookies = await jar.storeCookie(response.headers["set-cookie"])
+        session = updateSession(session, cookies);
         const data = {account:req.data.account, success:session.isAuthenticated, challenge:!session.isAuthenticated, endpoint:""};
 
         console.log(response.data)
@@ -215,7 +195,7 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =>
     }catch(ex:any){
         return {
             data:{account:req.data.account, success:false, challenge:true, endpoint:req.data.endpoint},
-            session: currentSession
+            session
         }
     }
 
@@ -223,27 +203,34 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =>
 
 const logout = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>>  => {
 
-    const currentSession = getSession(req.headers);
+    const jar = new CookieStore();
 
-    if(!currentSession.isAuthenticated) throw new Error("Already logged out")
+    let session = getSession(req.headers);
+
+    if(!session.isAuthenticated) throw new Error("Already logged out")
 
     try{
 
-        const headers = createHeaders(baseUrl, currentSession);
-        headers.Cookie = req.headers.cookie ?? "";
+        const url = "https://i.instagram.com/api/v1/web/accounts/logout/ajax/";
+
+        const headers = createHeaders(baseUrl, session);
+        headers["x-ig-app-id"] = session.xHeaders.appId
+        headers["x-ig-www-claim"] = 0
+        headers["x-instagram-ajax"] = session.xHeaders.ajax
+        headers["content-type"] = "application/x-www-form-urlencoded"
+        headers.Cookie = extractRequestCookie(req.headers.cookie)
 
         const options :AxiosRequestConfig = {
-            url: "https://i.instagram.com/api/v1/web/accounts/logout/ajax/",
+            url,
             method: "POST",
             headers,
-            withCredentials:true
         }
 
         const response = await axios.request(options);
 
         console.log(response.data)
-
-        const session = getSession(response.headers);
+        const cookies = await jar.storeCookie(response.headers["set-cookie"])
+        session = updateSession(session, cookies);
 
         const data = {account:"", success:true, challenge:false, endpoint:""};
 
@@ -255,7 +242,7 @@ const logout = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>>  => {
     }catch(ex:any){
         return {
             data:{account:"", success:true, challenge:false, endpoint:""},
-            session: currentSession
+            session
         }
     }
 }

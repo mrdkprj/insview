@@ -106,6 +106,16 @@ export interface ILoginResponse {
     endpoint:string;
 }
 
+export interface IgHeaders {
+    appId:string;
+    ajax:string;
+}
+
+export const IgHeaderNames = {
+    appId:"x_app_id",
+    ajax:"x_ajax"
+}
+
 export interface IAuthResponse {
     status:ILoginResponse;
     media:IMediaResponse;
@@ -128,6 +138,7 @@ export interface ISession {
     userAgent:string;
     cookies: Cookie[];
     expires: Date | null;
+    xHeaders:IgHeaders;
 }
 
 
