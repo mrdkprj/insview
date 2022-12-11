@@ -335,7 +335,7 @@ var external_axios_default = /*#__PURE__*/__webpack_require__.n(external_axios_n
 
 
 const login = async (req) => {
-    console.log("----------try login----------");
+    console.log("---------- login start ----------");
     const account = req.data.account;
     let session = getSession(req.headers);
     const headers = createHeaders(baseUrl, session);
@@ -358,8 +358,6 @@ const login = async (req) => {
         options.method = "GET";
         options.headers = headers;
         response = await external_axios_default().request(options);
-        console.log("----------here----------");
-        console.log(response.headers["set-cookie"]);
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies, xHeaders);
         headers.Cookie = await jar.getCookieStrings();
@@ -406,44 +404,48 @@ const login = async (req) => {
 };
 const requestChallenge = async (account, checkpoint, headers, session, jar) => {
     console.log("---------- challenge start -------");
-    const options = {};
-    const url = "https://i.instagram.com" + checkpoint;
-    options.url = url;
-    options.method = "GET";
-    options.data = "";
-    options.headers = headers;
-    let response = await external_axios_default().request(options);
-    let cookies = await jar.storeCookie(response.headers["set-cookie"]);
-    session = updateSession(session, cookies);
-    console.log(response.headers);
-    console.log("---------- challenge post -------");
-    headers["referer"] = url;
-    headers["x-csrftoken"] = session.csrfToken;
-    const params = new URLSearchParams();
-    params.append("choice", "1");
-    options.data = params;
-    options.method = "POST";
-    options.headers = headers;
-    console.log(options.headers);
-    response = await external_axios_default().request(options);
-    console.log("---------- done -------");
-    console.log(response.data);
-    console.log(response.headers);
-    cookies = await jar.storeCookie(response.headers["set-cookie"]);
-    session = updateSession(session, cookies);
-    if (response.data.type && response.data.type === "CHALLENGE") {
-        return {
-            data: { account: account, success: false, challenge: true, endpoint: url },
-            session
-        };
+    try {
+        const options = {};
+        const url = "https://i.instagram.com" + checkpoint;
+        options.url = url;
+        options.method = "GET";
+        options.data = "";
+        options.headers = headers;
+        let response = await external_axios_default().request(options);
+        let cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        session = updateSession(session, cookies);
+        headers["referer"] = url;
+        headers["x-csrftoken"] = session.csrfToken;
+        const params = new URLSearchParams();
+        params.append("choice", "1");
+        options.data = params;
+        options.method = "POST";
+        options.headers = headers;
+        response = await external_axios_default().request(options);
+        console.log("---------- challenge response -------");
+        console.log(response.data);
+        cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        session = updateSession(session, cookies);
+        if (response.data.type && response.data.type === "CHALLENGE") {
+            return {
+                data: { account: account, success: false, challenge: true, endpoint: url },
+                session
+            };
+        }
+        throw new Error("Challenge request failed");
     }
-    return {
-        data: { account, success: false, challenge: false, endpoint: "" },
-        session
-    };
+    catch (ex) {
+        if (ex.response) {
+            console.log(ex.response.data);
+        }
+        else {
+            console.log(ex.message);
+        }
+        throw new Error("Challenge request failed");
+    }
 };
 const challenge = async (req) => {
-    console.log("--------------code start*---------");
+    console.log("-------------- code verification start ---------");
     const url = req.data.endpoint;
     const jar = new CookieStore();
     const options = {};
@@ -465,8 +467,8 @@ const challenge = async (req) => {
         const cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
         const data = { account: req.data.account, success: session.isAuthenticated, challenge: !session.isAuthenticated, endpoint: "" };
+        console.log("-------------- code verification start ---------");
         console.log(response.data);
-        console.log(response.headers);
         return {
             data,
             session

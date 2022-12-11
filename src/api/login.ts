@@ -4,7 +4,7 @@ import { IgHeaders, IgRequest, IgResponse, ILoginResponse, ISession } from "@sha
 
 const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
-    console.log("----------try login----------")
+    console.log("---------- login start ----------")
 
     const account = req.data.account;
 
@@ -34,9 +34,6 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         options.method = "GET"
         options.headers = headers;
         response = await axios.request(options);
-
-        console.log("----------here----------")
-        console.log(response.headers["set-cookie"])
 
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies, xHeaders)
@@ -97,62 +94,66 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
 
     console.log("---------- challenge start -------")
 
-    const options :AxiosRequestConfig= {};
+    try{
 
-    const url = "https://i.instagram.com" + checkpoint;
-    options.url = url;
-    options.method = "GET";
-    options.data = "";
-    options.headers = headers;
+        const options :AxiosRequestConfig= {};
 
-    let response = await axios.request(options);
+        const url = "https://i.instagram.com" + checkpoint;
+        options.url = url;
+        options.method = "GET";
+        options.data = "";
+        options.headers = headers;
 
-    let cookies = await jar.storeCookie(response.headers["set-cookie"])
-    session = updateSession(session, cookies)
+        let response = await axios.request(options);
 
-    console.log(response.headers)
+        let cookies = await jar.storeCookie(response.headers["set-cookie"])
+        session = updateSession(session, cookies)
 
-    console.log("---------- challenge post -------")
+        headers["referer"] = url
+        headers["x-csrftoken"] = session.csrfToken;
 
-    headers["referer"] = url
-    headers["x-csrftoken"] = session.csrfToken;
+        const params = new URLSearchParams();
+        params.append("choice", "1")
 
-    const params = new URLSearchParams();
-    params.append("choice", "1")
+        options.data = params;
+        options.method = "POST"
+        options.headers = headers;
 
-    options.data = params;
-    options.method = "POST"
-    options.headers = headers;
+        response = await axios.request(options);
 
-    console.log(options.headers)
+        console.log("---------- challenge response -------")
+        console.log(response.data)
 
-    response = await axios.request(options);
+        cookies = await jar.storeCookie(response.headers["set-cookie"])
+        session = updateSession(session, cookies)
 
-    console.log("---------- done -------")
-    console.log(response.data)
-    console.log(response.headers)
+        if(response.data.type && response.data.type === "CHALLENGE"){
 
-    cookies = await jar.storeCookie(response.headers["set-cookie"])
-    session = updateSession(session, cookies)
-
-    if(response.data.type && response.data.type === "CHALLENGE"){
-
-        return {
-            data:{account:account, success:false, challenge: true, endpoint:url},
-            session
+            return {
+                data:{account:account, success:false, challenge: true, endpoint:url},
+                session
+            }
         }
-    }
 
-    return {
-        data:{account, success:false, challenge: false, endpoint: ""},
-        session
+        throw new Error("Challenge request failed");
+
+    }catch(ex:any){
+
+        if(ex.response){
+            console.log(ex.response.data)
+        }else{
+            console.log(ex.message)
+        }
+
+        throw new Error("Challenge request failed")
+
     }
 
 }
 
 const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
-    console.log("--------------code start*---------")
+    console.log("-------------- code verification start ---------")
 
     const url = req.data.endpoint;
 
@@ -184,8 +185,8 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =>
         session = updateSession(session, cookies);
         const data = {account:req.data.account, success:session.isAuthenticated, challenge:!session.isAuthenticated, endpoint:""};
 
+        console.log("-------------- code verification start ---------")
         console.log(response.data)
-        console.log(response.headers)
 
         return {
             data,
