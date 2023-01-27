@@ -80,11 +80,13 @@ const _formatGraph = (data:any) :IMediaResponse =>{
             data.children.data.forEach((child:any) => {
 
                 const isVideo = child.media_type === "VIDEO"
-                const thumbnailUrl = isVideo ? `${IMAGE_URL}${child.permalink}media?size=t` : child.media_url
+                // use permalink instead of child.media_url
+                const media_url = `${IMAGE_URL}${child.permalink}media?size=l`
+                const thumbnailUrl = isVideo ? `${IMAGE_URL}${child.permalink}media?size=t` : media_url
 
                 media.push({
                     id:child.id,
-                    media_url: child.media_url,
+                    media_url: media_url,
                     taggedUsers:[],
                     thumbnail_url: thumbnailUrl,
                     isVideo,
@@ -95,12 +97,14 @@ const _formatGraph = (data:any) :IMediaResponse =>{
         }else{
 
             const isVideo = data.media_type === "VIDEO"
+            // use permalink instead of data.media_url
+            const media_url = `${IMAGE_URL}${data.permalink}media?size=l`
             const permalink = isVideo ? data.permalink.replace(/\/reel\//, "/p/") : data.permalink
-            const thumbnailUrl = isVideo ? `${IMAGE_URL}${permalink}media?size=t` : data.media_url
+            const thumbnailUrl = isVideo ? `${IMAGE_URL}${permalink}media?size=t` : media_url
 
             media.push({
                 id:data.id,
-                media_url: data.media_url,
+                media_url: media_url,
                 taggedUsers:[],
                 thumbnail_url: thumbnailUrl,
                 isVideo,
