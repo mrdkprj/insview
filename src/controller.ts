@@ -233,7 +233,9 @@ class Controller{
                 }
 
             }else{
+                console.log("try requestMedia")
                 const result = await api.requestMedia({data:{username}, headers: req.headers});
+                console.log("end requestMedia")
                 mediaResponse = result.data
                 session = result.session
             }
