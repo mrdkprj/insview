@@ -319,4 +319,14 @@ class CookieStore{
 
 }
 
-export {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, getAppId, getClientVersion, extractRequestCookie, getCookieString, extractToken, updateCookie, CookieStore}
+const logError = (ex:any) => {
+
+    const errorData = ex.response ? ex.response.data : ex;
+    console.log(errorData)
+
+    if(ex.response && ex.response.data){
+        return ex.response.data.require_login
+    }
+}
+
+export {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, getAppId, getClientVersion, extractRequestCookie, getCookieString, extractToken, updateCookie, CookieStore, logError}

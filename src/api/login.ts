@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosRequestHeaders } from "axios";
-import { baseUrl, createHeaders, getAppId, getClientVersion, getSession, CookieStore, updateSession, extractRequestCookie } from "./util";
+import { baseUrl, createHeaders, getAppId, getClientVersion, getSession, CookieStore, updateSession, extractRequestCookie, logError } from "./util";
 import { IgHeaders, IgRequest, IgResponse, ILoginResponse, ISession } from "@shared";
 
 const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
@@ -80,11 +80,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
             return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar)
         }
 
-        if(ex.response){
-            console.log(ex.response.data)
-        }else{
-            console.log(ex.message)
-        }
+        logError(ex)
 
         throw new Error("Login failed")
     }
@@ -139,11 +135,7 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
 
     }catch(ex:any){
 
-        if(ex.response){
-            console.log(ex.response.data)
-        }else{
-            console.log(ex.message)
-        }
+        logError(ex)
 
         throw new Error("Challenge request failed")
 

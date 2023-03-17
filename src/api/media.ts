@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
-import {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, CookieStore, extractRequestCookie} from "./util"
+import {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, CookieStore, extractRequestCookie, logError} from "./util"
 import { IMedia, IMediaResponse, IUser, IgRequest, IgResponse, ISession, AuthError} from "@shared";
 
 const GRAPH_QL = "#GRAPH_QL";
@@ -134,8 +134,7 @@ const _formatGraph = (data:any) :IMediaResponse =>{
 
 
 const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgResponse<IMediaResponse>> => {
-    console.log(req.data.username)
-    console.log(session)
+
     if(!session.isAuthenticated){
         throw new AuthError("")
     }
@@ -186,8 +185,12 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
         }
 
     }catch(ex:any){
-        console.log(ex.message)
-        throw new Error("User not found")
+
+        const requireLogin = logError(ex);
+
+        if(requireLogin) throw new AuthError("");
+
+        throw new Error("Private media request failed")
     }
 }
 
@@ -199,17 +202,28 @@ const _tryRequestMorePrivate = async (req:IgRequest, session:ISession) : Promise
 
     const jar = new CookieStore();
 
-    const response = await _requestMorePrivate(req, session, jar);
-    const cookie = await jar.getCookies();
-    session = updateSession(session, cookie)
+    try{
+        const response = await _requestMorePrivate(req, session, jar);
+        const cookie = await jar.getCookies();
+        session = updateSession(session, cookie)
 
-    const formatResult = _formatMedia(response.data.data, session, req.data.user);
+        const formatResult = _formatMedia(response.data.data, session, req.data.user);
 
-    const data = formatResult;
+        const data = formatResult;
 
-    return {
-        data,
-        session
+        return {
+            data,
+            session
+        }
+
+    }catch(ex:any){
+
+        const requireLogin = logError(ex);
+
+        if(requireLogin) throw new AuthError("");
+
+        throw new Error("Private querymore failed")
+
     }
 }
 
@@ -222,7 +236,7 @@ const _requestPrivate = async (req:IgRequest, session:ISession, user:IUser, jar:
         id: user.id,
         first:12,
     });
-console.log(params)
+
     const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`
 
     const options :AxiosRequestConfig = {
@@ -230,25 +244,21 @@ console.log(params)
         method: "GET",
         headers,
     }
-console.log(headers)
-try{
+
     const response = await axios.request(options);
-    console.log("ok")
+
     if(response.headers["content-type"].includes("html")){
         throw new Error("Auth error")
     }
-    console.log("ok2")
+
     if(!response.data.data){
         throw new Error("Response error")
     }
-    console.log("ok3")
+
     await jar.storeCookie(response.headers["set-cookie"])
-    console.log("ok4")
+
     return response;
-}catch(ex:any){
-    console.log(ex.response.data)
-    throw new Error("private rror")
-}
+
 }
 
 const _requestMorePrivate = async (req:IgRequest, session:ISession, jar:CookieStore) : Promise<AxiosResponse<any, any>> => {

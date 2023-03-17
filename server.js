@@ -326,6 +326,13 @@ class CookieStore {
         return await this.jar.getCookies(baseUrl);
     }
 }
+const logError = (ex) => {
+    const errorData = ex.response ? ex.response.data : ex;
+    console.log(errorData);
+    if (ex.response && ex.response.data) {
+        return ex.response.data.require_login;
+    }
+};
 
 
 ;// CONCATENATED MODULE: external "axios"
@@ -393,12 +400,7 @@ const login = async (req) => {
         if (ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required") {
             return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar);
         }
-        if (ex.response) {
-            console.log(ex.response.data);
-        }
-        else {
-            console.log(ex.message);
-        }
+        logError(ex);
         throw new Error("Login failed");
     }
 };
@@ -435,12 +437,7 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
         throw new Error("Challenge request failed");
     }
     catch (ex) {
-        if (ex.response) {
-            console.log(ex.response.data);
-        }
-        else {
-            console.log(ex.message);
-        }
+        logError(ex);
         throw new Error("Challenge request failed");
     }
 };
@@ -617,8 +614,6 @@ const _formatGraph = (data) => {
     return { username, media, user, rowIndex, next, history, isAuthenticated: true };
 };
 const _tryRequestPrivate = async (req, session) => {
-    console.log(req.data.username);
-    console.log(session);
     if (!session.isAuthenticated) {
         throw new AuthError("");
     }
@@ -658,8 +653,10 @@ const _tryRequestPrivate = async (req, session) => {
         };
     }
     catch (ex) {
-        console.log(ex.message);
-        throw new Error("User not found");
+        const requireLogin = logError(ex);
+        if (requireLogin)
+            throw new AuthError("");
+        throw new Error("Private media request failed");
     }
 };
 const _tryRequestMorePrivate = async (req, session) => {
@@ -667,15 +664,23 @@ const _tryRequestMorePrivate = async (req, session) => {
         throw new AuthError("");
     }
     const jar = new CookieStore();
-    const response = await _requestMorePrivate(req, session, jar);
-    const cookie = await jar.getCookies();
-    session = updateSession(session, cookie);
-    const formatResult = _formatMedia(response.data.data, session, req.data.user);
-    const data = formatResult;
-    return {
-        data,
-        session
-    };
+    try {
+        const response = await _requestMorePrivate(req, session, jar);
+        const cookie = await jar.getCookies();
+        session = updateSession(session, cookie);
+        const formatResult = _formatMedia(response.data.data, session, req.data.user);
+        const data = formatResult;
+        return {
+            data,
+            session
+        };
+    }
+    catch (ex) {
+        const requireLogin = logError(ex);
+        if (requireLogin)
+            throw new AuthError("");
+        throw new Error("Private querymore failed");
+    }
 };
 const _requestPrivate = async (req, session, user, jar) => {
     const headers = createHeaders(baseUrl + "/" + user.username + "/", session);
@@ -684,33 +689,21 @@ const _requestPrivate = async (req, session, user, jar) => {
         id: user.id,
         first: 12,
     });
-    console.log(params);
     const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`;
     const options = {
         url,
         method: "GET",
         headers,
     };
-    console.log(headers);
-    try {
-        const response = await external_axios_default().request(options);
-        console.log("ok");
-        if (response.headers["content-type"].includes("html")) {
-            throw new Error("Auth error");
-        }
-        console.log("ok2");
-        if (!response.data.data) {
-            throw new Error("Response error");
-        }
-        console.log("ok3");
-        await jar.storeCookie(response.headers["set-cookie"]);
-        console.log("ok4");
-        return response;
+    const response = await external_axios_default().request(options);
+    if (response.headers["content-type"].includes("html")) {
+        throw new Error("Auth error");
     }
-    catch (ex) {
-        console.log(ex.response.data);
-        throw new Error("private rror");
+    if (!response.data.data) {
+        throw new Error("Response error");
     }
+    await jar.storeCookie(response.headers["set-cookie"]);
+    return response;
 };
 const _requestMorePrivate = async (req, session, jar) => {
     const params = JSON.stringify({
