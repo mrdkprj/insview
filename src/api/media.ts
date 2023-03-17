@@ -156,9 +156,8 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
             headers,
         }
 
-        console.log("here")
         let response = await axios.request(options);
-        console.log("here2")
+
         const userData = response.data.data.user;
 
         const user :IUser = {
@@ -176,7 +175,7 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
         session = updateSession(session, cookies)
 
         response = await _requestPrivate(req, session, user, jar);
-        console.log("here3")
+
         cookies = await jar.getCookies();
         session = updateSession(session, cookies)
         const data = _formatMedia(response.data.data, session, user)
@@ -223,7 +222,7 @@ const _requestPrivate = async (req:IgRequest, session:ISession, user:IUser, jar:
         id: user.id,
         first:12,
     });
-
+console.log(params)
     const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`
 
     const options :AxiosRequestConfig = {
@@ -231,9 +230,9 @@ const _requestPrivate = async (req:IgRequest, session:ISession, user:IUser, jar:
         method: "GET",
         headers,
     }
-
+console.log(headers)
     const response = await axios.request(options);
-
+    console.log(response)
     if(response.headers["content-type"].includes("html")){
         throw new Error("Auth error")
     }

@@ -634,9 +634,7 @@ const _tryRequestPrivate = async (req, session) => {
             method: "GET",
             headers,
         };
-        console.log("here");
         let response = await external_axios_default().request(options);
-        console.log("here2");
         const userData = response.data.data.user;
         const user = {
             id: userData.id,
@@ -651,7 +649,6 @@ const _tryRequestPrivate = async (req, session) => {
         let cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
         response = await _requestPrivate(req, session, user, jar);
-        console.log("here3");
         cookies = await jar.getCookies();
         session = updateSession(session, cookies);
         const data = _formatMedia(response.data.data, session, user);
@@ -687,13 +684,16 @@ const _requestPrivate = async (req, session, user, jar) => {
         id: user.id,
         first: 12,
     });
+    console.log(params);
     const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`;
     const options = {
         url,
         method: "GET",
         headers,
     };
+    console.log(headers);
     const response = await external_axios_default().request(options);
+    console.log(response);
     if (response.headers["content-type"].includes("html")) {
         throw new Error("Auth error");
     }
@@ -1069,9 +1069,7 @@ class Controller {
                 };
             }
             else {
-                console.log("try requestMedia");
                 const result = await requestMedia({ data: { username }, headers: req.headers });
-                console.log("end requestMedia");
                 mediaResponse = result.data;
                 session = result.session;
             }
