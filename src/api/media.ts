@@ -144,7 +144,8 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
     const headers = createHeaders(baseUrl + "/" + username + "/", session);
 
     try{
-
+        console.log(username)
+        console.log(session)
         headers["x-ig-app-id"] = session.xHeaders.appId
         headers.Cookie = extractRequestCookie(req.headers.cookie)
 
@@ -155,8 +156,9 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
             headers,
         }
 
+        console.log("here")
         let response = await axios.request(options);
-
+        console.log("here2")
         const userData = response.data.data.user;
 
         const user :IUser = {
@@ -174,7 +176,7 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
         session = updateSession(session, cookies)
 
         response = await _requestPrivate(req, session, user, jar);
-
+        console.log("here3")
         cookies = await jar.getCookies();
         session = updateSession(session, cookies)
         const data = _formatMedia(response.data.data, session, user)
