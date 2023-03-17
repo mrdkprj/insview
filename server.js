@@ -1077,6 +1077,8 @@ class Controller {
             await this.sendResponse(req, res, mediaResponse, session);
         }
         catch (ex) {
+            console.log("try query error");
+            console.log(ex);
             return this.sendErrorResponse(res, ex);
         }
     }
