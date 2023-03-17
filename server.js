@@ -617,6 +617,8 @@ const _formatGraph = (data) => {
     return { username, media, user, rowIndex, next, history, isAuthenticated: true };
 };
 const _tryRequestPrivate = async (req, session) => {
+    console.log(req.data.username);
+    console.log(session);
     if (!session.isAuthenticated) {
         throw new AuthError("");
     }
@@ -632,7 +634,9 @@ const _tryRequestPrivate = async (req, session) => {
             method: "GET",
             headers,
         };
+        console.log("here");
         let response = await external_axios_default().request(options);
+        console.log("here2");
         const userData = response.data.data.user;
         const user = {
             id: userData.id,
@@ -647,6 +651,7 @@ const _tryRequestPrivate = async (req, session) => {
         let cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
         response = await _requestPrivate(req, session, user, jar);
+        console.log("here3");
         cookies = await jar.getCookies();
         session = updateSession(session, cookies);
         const data = _formatMedia(response.data.data, session, user);
@@ -1064,7 +1069,9 @@ class Controller {
                 };
             }
             else {
+                console.log("try requestMedia");
                 const result = await requestMedia({ data: { username }, headers: req.headers });
+                console.log("end requestMedia");
                 mediaResponse = result.data;
                 session = result.session;
             }
