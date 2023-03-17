@@ -231,19 +231,24 @@ console.log(params)
         headers,
     }
 console.log(headers)
+try{
     const response = await axios.request(options);
-    console.log(response)
+    console.log("ok")
     if(response.headers["content-type"].includes("html")){
         throw new Error("Auth error")
     }
-
+    console.log("ok2")
     if(!response.data.data){
         throw new Error("Response error")
     }
-
+    console.log("ok3")
     await jar.storeCookie(response.headers["set-cookie"])
-
+    console.log("ok4")
     return response;
+}catch(ex:any){
+    console.log(ex.response.data)
+    throw new Error("private rror")
+}
 }
 
 const _requestMorePrivate = async (req:IgRequest, session:ISession, jar:CookieStore) : Promise<AxiosResponse<any, any>> => {

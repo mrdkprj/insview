@@ -692,16 +692,25 @@ const _requestPrivate = async (req, session, user, jar) => {
         headers,
     };
     console.log(headers);
-    const response = await external_axios_default().request(options);
-    console.log(response);
-    if (response.headers["content-type"].includes("html")) {
-        throw new Error("Auth error");
+    try {
+        const response = await external_axios_default().request(options);
+        console.log("ok");
+        if (response.headers["content-type"].includes("html")) {
+            throw new Error("Auth error");
+        }
+        console.log("ok2");
+        if (!response.data.data) {
+            throw new Error("Response error");
+        }
+        console.log("ok3");
+        await jar.storeCookie(response.headers["set-cookie"]);
+        console.log("ok4");
+        return response;
     }
-    if (!response.data.data) {
-        throw new Error("Response error");
+    catch (ex) {
+        console.log(ex.response.data);
+        throw new Error("private rror");
     }
-    await jar.storeCookie(response.headers["set-cookie"]);
-    return response;
 };
 const _requestMorePrivate = async (req, session, jar) => {
     const params = JSON.stringify({
