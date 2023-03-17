@@ -134,7 +134,8 @@ const _formatGraph = (data:any) :IMediaResponse =>{
 
 
 const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgResponse<IMediaResponse>> => {
-
+    console.log(req.data.username)
+    console.log(session)
     if(!session.isAuthenticated){
         throw new AuthError("")
     }
@@ -144,8 +145,7 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
     const headers = createHeaders(baseUrl + "/" + username + "/", session);
 
     try{
-        console.log(username)
-        console.log(session)
+
         headers["x-ig-app-id"] = session.xHeaders.appId
         headers.Cookie = extractRequestCookie(req.headers.cookie)
 
