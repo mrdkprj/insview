@@ -77,6 +77,7 @@ console.log(options)
     }catch(ex:any){
 
         if(ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required"){
+            console.log(ex.response.data)
             return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar)
         }
 
@@ -94,7 +95,7 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
 
         const options :AxiosRequestConfig= {};
 
-        const url = "https://i.instagram.com" + checkpoint;
+        const url = "https://www.instagram.com" + checkpoint;
         options.url = url;
         options.method = "GET";
         options.data = "";
@@ -104,7 +105,7 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
 
         let cookies = await jar.storeCookie(response.headers["set-cookie"])
         session = updateSession(session, cookies)
-
+console.log(session)
         headers["referer"] = url
         headers["x-csrftoken"] = session.csrfToken;
 
@@ -204,7 +205,7 @@ const logout = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>>  => {
 
     try{
 
-        const url = "https://i.instagram.com/api/v1/web/accounts/logout/ajax/";
+        const url = "https://www.instagram.com/api/v1/web/accounts/logout/ajax/";
 
         const headers = createHeaders(baseUrl, session);
         headers["x-ig-app-id"] = session.xHeaders.appId

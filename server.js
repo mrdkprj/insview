@@ -414,6 +414,7 @@ const login = async (req) => {
     }
     catch (ex) {
         if (ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required") {
+            console.log(ex.response.data);
             return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar);
         }
         logError(ex);
@@ -424,7 +425,7 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
     console.log("---------- challenge start -------");
     try {
         const options = {};
-        const url = "https://i.instagram.com" + checkpoint;
+        const url = "https://www.instagram.com" + checkpoint;
         options.url = url;
         options.method = "GET";
         options.data = "";
@@ -432,6 +433,7 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
         let response = await external_axios_default().request(options);
         let cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
+        console.log(session);
         headers["referer"] = url;
         headers["x-csrftoken"] = session.csrfToken;
         const params = new URLSearchParams();
@@ -500,7 +502,7 @@ const logout = async (req) => {
     if (!session.isAuthenticated)
         throw new Error("Already logged out");
     try {
-        const url = "https://i.instagram.com/api/v1/web/accounts/logout/ajax/";
+        const url = "https://www.instagram.com/api/v1/web/accounts/logout/ajax/";
         const headers = createHeaders(baseUrl, session);
         headers["x-ig-app-id"] = session.xHeaders.appId;
         headers["x-ig-www-claim"] = 0;
