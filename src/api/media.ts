@@ -146,9 +146,11 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
     try{
 
         headers["x-ig-app-id"] = session.xHeaders.appId
+
         headers.Cookie = extractRequestCookie(req.headers.cookie)
 
         const url = `https://i.instagram.com/api/v1/users/web_profile_info/?username=${username}`
+        headers["x-asbd-id"] = "198387"
         const options :AxiosRequestConfig = {
             url,
             method: "GET",
@@ -177,7 +179,7 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
 
         cookies = await jar.getCookies();
         session = updateSession(session, cookies)
-        const data = _formatMedia(response.data.data, session, user)
+        const data = _formatMedia(response.data, session, user)
 
         return {
             data,
@@ -196,6 +198,9 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
 
 const _tryRequestMorePrivate = async (req:IgRequest, session:ISession) : Promise<IgResponse<IMediaResponse>> => {
 
+    const x = false;
+    if(x) throw new Error("not now")
+
     if(!session.isAuthenticated){
         throw new AuthError("")
     }
@@ -207,7 +212,7 @@ const _tryRequestMorePrivate = async (req:IgRequest, session:ISession) : Promise
         const cookie = await jar.getCookies();
         session = updateSession(session, cookie)
 
-        const formatResult = _formatMedia(response.data.data, session, req.data.user);
+        const formatResult = _formatMedia(response.data, session, req.data.user);
 
         const data = formatResult;
 
@@ -231,27 +236,30 @@ const _requestPrivate = async (req:IgRequest, session:ISession, user:IUser, jar:
 
     const headers = createHeaders(baseUrl + "/" + user.username + "/", session);
     headers.Cookie = await jar.getCookieStrings();
-
+    console.log(headers.Cookie)
     const params = JSON.stringify({
         id: user.id,
         first:12,
     });
 
-    const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`
+    //const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`
+    //const PRIVATE_REQUEST_URL = "https://www.instagram.com/api/v1/feed/user/silksdriver_daily/username/?count=12"
+
+    const url = `https://www.instagram.com/api/v1/feed/user/${user.username}/username/?count=12`
 
     const options :AxiosRequestConfig = {
         url,
         method: "GET",
         headers,
     }
-
+    console.log(options)
     const response = await axios.request(options);
 
     if(response.headers["content-type"].includes("html")){
         throw new Error("Auth error")
     }
 
-    if(!response.data.data){
+    if(!response.data.items){
         throw new Error("Response error")
     }
 
@@ -268,9 +276,11 @@ const _requestMorePrivate = async (req:IgRequest, session:ISession, jar:CookieSt
         first:12,
         after:req.data.next.replace(GRAPH_QL, "")
     });
-
-    const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`
-
+console.log(req.data)
+    //const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`
+    // /const PRIVATE_REQUEST_MORE_URL = `https://www.instagram.com/api/v1/feed/user/53246370416/?count=12&max_id=3067051056560848281_53246370416`
+    const url = `https://www.instagram.com/api/v1/feed/user/${req.data.user.id}/?count=12&max_id=${req.data.next.replace(GRAPH_QL, "")}`
+console.log(url)
     const headers = createHeaders(baseUrl + "/" + req.data.user.username + "/", session);
     headers.Cookie = extractRequestCookie(req.headers.cookie)
 
@@ -286,7 +296,7 @@ const _requestMorePrivate = async (req:IgRequest, session:ISession, jar:CookieSt
         throw new Error("Auth error")
     }
 
-    if(!response.data.data){
+    if(!response.data.items){
         throw new Error("Response error")
     }
 
@@ -296,6 +306,92 @@ const _requestMorePrivate = async (req:IgRequest, session:ISession, jar:CookieSt
 
 }
 
+/*
+    image_versions2.candidates[0].url
+    media_type : 1 = img, 2 = video,
+    product_type: clips
+    pk = id
+[4].video_versions[0]
+*/
+const _formatMedia = (data:any, session:ISession, user:IUser) : IMediaResponse => {
+
+    const media :IMedia[] = [];
+
+    const mediaNode = data.items
+
+    mediaNode.forEach( (data:any) => {
+
+        if(data.carousel_media){
+
+            data.carousel_media.forEach((child:any) =>{
+
+
+                const isVideo = child.media_type == 2
+                const mediaUrl = isVideo ? _getVideoUrl(child.video_versions[0].url) : _getImageUrl(child.image_versions2.candidates[0].url)
+                const thumbnailUrl = _getImageUrl(child.image_versions2.candidates[0].url)
+                const permalink = isVideo ? `${VIDEO_PERMALINK_URL}${child.code}` : `${IMAGE_PERMALINK_URL}${child.code}`
+
+                media.push({
+                    id:child.pk,
+                    media_url: mediaUrl,
+                    taggedUsers: child.usertags ? child.usertags.in.map((edge:any) => {
+                        return {
+                            id:edge.user.pk,
+                            igId:edge.user.pk,
+                            username:edge.user.username,
+                            name:edge.user.full_name,
+                            profileImage: _getImageUrl(edge.user.profile_pic_url),
+                            biography:"",
+                        }
+                    }) : [],
+                    thumbnail_url: thumbnailUrl,
+                    isVideo,
+                    permalink
+                })
+
+            })
+
+        }else{
+
+            const isVideo = data.media_type == 2
+            const mediaUrl = isVideo ? _getVideoUrl(data.video_versions[0].url) : _getImageUrl(data.image_versions2.candidates[0].url)
+            const thumbnailUrl = _getImageUrl(data.image_versions2.candidates[0].url)
+            const permalink = isVideo ? `${VIDEO_PERMALINK_URL}${data.code}` : `${IMAGE_PERMALINK_URL}${data.code}`
+
+            media.push({
+                id:data.pk,
+                media_url: mediaUrl,
+                taggedUsers: data.usertags ? data.usertags.in.map((edge:any) => {
+                    return {
+                        id:edge.user.pk,
+                        igId:edge.user.pk,
+                        username:edge.user.username,
+                        name:edge.user.full_name,
+                        profileImage: _getImageUrl(edge.user.profile_pic_url),
+                        biography:"",
+                    }
+                }) : [],
+                thumbnail_url: thumbnailUrl,
+                isVideo,
+                permalink
+            })
+
+        }
+    })
+
+    const rowIndex = 0;
+
+    const next = data.next_max_id ? GRAPH_QL + data.next_max_id : "";
+
+    const username = user.username;
+
+    const history = {[username]: user}
+
+    return {username, media, user, rowIndex, next, history, isAuthenticated: session.isAuthenticated};
+
+}
+
+/*
 const _formatMedia = (data:any, session:ISession, user:IUser) : IMediaResponse => {
 
     const media :IMedia[] = [];
@@ -372,7 +468,7 @@ const _formatMedia = (data:any, session:ISession, user:IUser) : IMediaResponse =
     return {username, media, user, rowIndex, next, history, isAuthenticated: session.isAuthenticated};
 
 }
-
+*/
 const downloadMedia = async (url:string) => {
 
     const options :AxiosRequestConfig = {

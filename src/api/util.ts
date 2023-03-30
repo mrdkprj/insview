@@ -309,6 +309,19 @@ class CookieStore{
         return await this.getCookies();
     }
 
+    async storeCookieByTough(setCookie:tough.Cookie[] | undefined){
+
+        if(!setCookie){
+            return await this.getCookies();
+        }
+
+        for (const cookieString of setCookie) {
+            await this.jar.setCookie(cookieString, baseUrl, {ignoreError:true});
+        }
+
+        return await this.getCookies();
+    }
+
     async getCookieStrings(){
         return await this.jar.getCookieString(baseUrl)
     }
@@ -321,12 +334,20 @@ class CookieStore{
 
 const logError = (ex:any) => {
 
+    if(ex.response && ex.response.headers["content-type"].includes("html")){
+        return false;
+    }
+
     const errorData = ex.response ? ex.response.data : ex;
     console.log(errorData)
+    console.log(errorData.message)
 
     if(ex.response && ex.response.data){
-        return ex.response.data.require_login
+        //return ex.response.data.require_login
+        return false
     }
+
+    return false
 }
 
 export {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, getAppId, getClientVersion, extractRequestCookie, getCookieString, extractToken, updateCookie, CookieStore, logError}

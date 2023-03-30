@@ -319,6 +319,15 @@ class CookieStore {
         }
         return await this.getCookies();
     }
+    async storeCookieByTough(setCookie) {
+        if (!setCookie) {
+            return await this.getCookies();
+        }
+        for (const cookieString of setCookie) {
+            await this.jar.setCookie(cookieString, baseUrl, { ignoreError: true });
+        }
+        return await this.getCookies();
+    }
     async getCookieStrings() {
         return await this.jar.getCookieString(baseUrl);
     }
@@ -327,11 +336,17 @@ class CookieStore {
     }
 }
 const logError = (ex) => {
+    if (ex.response && ex.response.headers["content-type"].includes("html")) {
+        return false;
+    }
     const errorData = ex.response ? ex.response.data : ex;
     console.log(errorData);
+    console.log(errorData.message);
     if (ex.response && ex.response.data) {
-        return ex.response.data.require_login;
+        //return ex.response.data.require_login
+        return false;
     }
+    return false;
 };
 
 
@@ -624,6 +639,7 @@ const _tryRequestPrivate = async (req, session) => {
         headers["x-ig-app-id"] = session.xHeaders.appId;
         headers.Cookie = extractRequestCookie(req.headers.cookie);
         const url = `https://i.instagram.com/api/v1/users/web_profile_info/?username=${username}`;
+        headers["x-asbd-id"] = "198387";
         const options = {
             url,
             method: "GET",
@@ -646,7 +662,7 @@ const _tryRequestPrivate = async (req, session) => {
         response = await _requestPrivate(req, session, user, jar);
         cookies = await jar.getCookies();
         session = updateSession(session, cookies);
-        const data = _formatMedia(response.data.data, session, user);
+        const data = _formatMedia(response.data, session, user);
         return {
             data,
             session
@@ -660,6 +676,9 @@ const _tryRequestPrivate = async (req, session) => {
     }
 };
 const _tryRequestMorePrivate = async (req, session) => {
+    const x = false;
+    if (x)
+        throw new Error("not now");
     if (!session.isAuthenticated) {
         throw new AuthError("");
     }
@@ -668,7 +687,7 @@ const _tryRequestMorePrivate = async (req, session) => {
         const response = await _requestMorePrivate(req, session, jar);
         const cookie = await jar.getCookies();
         session = updateSession(session, cookie);
-        const formatResult = _formatMedia(response.data.data, session, req.data.user);
+        const formatResult = _formatMedia(response.data, session, req.data.user);
         const data = formatResult;
         return {
             data,
@@ -685,21 +704,25 @@ const _tryRequestMorePrivate = async (req, session) => {
 const _requestPrivate = async (req, session, user, jar) => {
     const headers = createHeaders(baseUrl + "/" + user.username + "/", session);
     headers.Cookie = await jar.getCookieStrings();
+    console.log(headers.Cookie);
     const params = JSON.stringify({
         id: user.id,
         first: 12,
     });
-    const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`;
+    //const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`
+    //const PRIVATE_REQUEST_URL = "https://www.instagram.com/api/v1/feed/user/silksdriver_daily/username/?count=12"
+    const url = `https://www.instagram.com/api/v1/feed/user/${user.username}/username/?count=12`;
     const options = {
         url,
         method: "GET",
         headers,
     };
+    console.log(options);
     const response = await external_axios_default().request(options);
     if (response.headers["content-type"].includes("html")) {
         throw new Error("Auth error");
     }
-    if (!response.data.data) {
+    if (!response.data.items) {
         throw new Error("Response error");
     }
     await jar.storeCookie(response.headers["set-cookie"]);
@@ -711,7 +734,11 @@ const _requestMorePrivate = async (req, session, jar) => {
         first: 12,
         after: req.data.next.replace(GRAPH_QL, "")
     });
-    const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`;
+    console.log(req.data);
+    //const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`
+    // /const PRIVATE_REQUEST_MORE_URL = `https://www.instagram.com/api/v1/feed/user/53246370416/?count=12&max_id=3067051056560848281_53246370416`
+    const url = `https://www.instagram.com/api/v1/feed/user/${req.data.user.id}/?count=12&max_id=${req.data.next.replace(GRAPH_QL, "")}`;
+    console.log(url);
     const headers = createHeaders(baseUrl + "/" + req.data.user.username + "/", session);
     headers.Cookie = extractRequestCookie(req.headers.cookie);
     const options = {
@@ -723,59 +750,66 @@ const _requestMorePrivate = async (req, session, jar) => {
     if (response.headers["content-type"].includes("html")) {
         throw new Error("Auth error");
     }
-    if (!response.data.data) {
+    if (!response.data.items) {
         throw new Error("Response error");
     }
     await jar.storeCookie(response.headers["set-cookie"]);
     return response;
 };
+/*
+    image_versions2.candidates[0].url
+    media_type : 1 = img, 2 = video,
+    product_type: clips
+    pk = id
+[4].video_versions[0]
+*/
 const _formatMedia = (data, session, user) => {
     const media = [];
-    const mediaNode = data.user.edge_owner_to_timeline_media;
-    mediaNode.edges.forEach((data) => {
-        if (data.node.edge_sidecar_to_children) {
-            data.node.edge_sidecar_to_children.edges.forEach((child) => {
-                const isVideo = child.node.is_video;
-                const mediaUrl = isVideo ? _getVideoUrl(child.node.video_url) : _getImageUrl(child.node.display_url);
-                const thumbnail_url = _getImageUrl(child.node.display_url);
-                const permalink = isVideo ? `${VIDEO_PERMALINK_URL}${child.node.shortcode}` : `${IMAGE_PERMALINK_URL}${child.node.shortcode}`;
+    const mediaNode = data.items;
+    mediaNode.forEach((data) => {
+        if (data.carousel_media) {
+            data.carousel_media.forEach((child) => {
+                const isVideo = child.media_type == 2;
+                const mediaUrl = isVideo ? _getVideoUrl(child.video_versions[0].url) : _getImageUrl(child.image_versions2.candidates[0].url);
+                const thumbnailUrl = _getImageUrl(child.image_versions2.candidates[0].url);
+                const permalink = isVideo ? `${VIDEO_PERMALINK_URL}${child.code}` : `${IMAGE_PERMALINK_URL}${child.code}`;
                 media.push({
-                    id: child.node.id,
+                    id: child.pk,
                     media_url: mediaUrl,
-                    taggedUsers: child.node.edge_media_to_tagged_user.edges.map((edge) => {
+                    taggedUsers: child.usertags ? child.usertags.in.map((edge) => {
                         return {
-                            id: edge.node.user.id,
-                            igId: edge.node.user.id,
-                            username: edge.node.user.username,
-                            name: edge.node.user.full_name,
-                            profileImage: _getImageUrl(edge.node.user.profile_pic_url),
+                            id: edge.user.pk,
+                            igId: edge.user.pk,
+                            username: edge.user.username,
+                            name: edge.user.full_name,
+                            profileImage: _getImageUrl(edge.user.profile_pic_url),
                             biography: "",
                         };
-                    }),
-                    thumbnail_url,
+                    }) : [],
+                    thumbnail_url: thumbnailUrl,
                     isVideo,
                     permalink
                 });
             });
         }
         else {
-            const isVideo = data.node.is_video;
-            const mediaUrl = isVideo ? _getVideoUrl(data.node.video_url) : _getImageUrl(data.node.display_url);
-            const thumbnailUrl = isVideo ? _getImageUrl(data.node.thumbnail_src) : mediaUrl;
-            const permalink = isVideo ? `${VIDEO_PERMALINK_URL}${data.node.shortcode}` : `${IMAGE_PERMALINK_URL}${data.node.shortcode}`;
+            const isVideo = data.media_type == 2;
+            const mediaUrl = isVideo ? _getVideoUrl(data.video_versions[0].url) : _getImageUrl(data.image_versions2.candidates[0].url);
+            const thumbnailUrl = _getImageUrl(data.image_versions2.candidates[0].url);
+            const permalink = isVideo ? `${VIDEO_PERMALINK_URL}${data.code}` : `${IMAGE_PERMALINK_URL}${data.code}`;
             media.push({
-                id: data.node.id,
+                id: data.pk,
                 media_url: mediaUrl,
-                taggedUsers: data.node.edge_media_to_tagged_user.edges.map((edge) => {
+                taggedUsers: data.usertags ? data.usertags.in.map((edge) => {
                     return {
-                        id: edge.node.user.id,
-                        igId: edge.node.user.id,
-                        username: edge.node.user.username,
-                        name: edge.node.user.full_name,
-                        profileImage: _getImageUrl(edge.node.user.profile_pic_url),
+                        id: edge.user.pk,
+                        igId: edge.user.pk,
+                        username: edge.user.username,
+                        name: edge.user.full_name,
+                        profileImage: _getImageUrl(edge.user.profile_pic_url),
                         biography: "",
                     };
-                }),
+                }) : [],
                 thumbnail_url: thumbnailUrl,
                 isVideo,
                 permalink
@@ -783,11 +817,89 @@ const _formatMedia = (data, session, user) => {
         }
     });
     const rowIndex = 0;
-    const next = mediaNode.page_info.has_next_page ? GRAPH_QL + mediaNode.page_info.end_cursor : "";
+    const next = data.next_max_id ? GRAPH_QL + data.next_max_id : "";
     const username = user.username;
     const history = { [username]: user };
     return { username, media, user, rowIndex, next, history, isAuthenticated: session.isAuthenticated };
 };
+/*
+const _formatMedia = (data:any, session:ISession, user:IUser) : IMediaResponse => {
+
+    const media :IMedia[] = [];
+
+    const mediaNode = data.user.edge_owner_to_timeline_media;
+
+    mediaNode.edges.forEach( (data:any) => {
+
+        if(data.node.edge_sidecar_to_children){
+
+            data.node.edge_sidecar_to_children.edges.forEach((child:any) =>{
+
+                const isVideo = child.node.is_video
+                const mediaUrl = isVideo ? _getVideoUrl(child.node.video_url) : _getImageUrl(child.node.display_url)
+                const thumbnail_url = _getImageUrl(child.node.display_url)
+                const permalink = isVideo ? `${VIDEO_PERMALINK_URL}${child.node.shortcode}` : `${IMAGE_PERMALINK_URL}${child.node.shortcode}`
+
+                media.push({
+                    id:child.node.id,
+                    media_url: mediaUrl,
+                    taggedUsers: child.node.edge_media_to_tagged_user.edges.map((edge:any) => {
+                        return {
+                            id:edge.node.user.id,
+                            igId:edge.node.user.id,
+                            username:edge.node.user.username,
+                            name:edge.node.user.full_name,
+                            profileImage: _getImageUrl(edge.node.user.profile_pic_url),
+                            biography:"",
+                        }
+                    }),
+                    thumbnail_url,
+                    isVideo,
+                    permalink
+                })
+
+            })
+
+        }else{
+
+            const isVideo = data.node.is_video
+            const mediaUrl = isVideo ? _getVideoUrl(data.node.video_url) : _getImageUrl(data.node.display_url)
+            const thumbnailUrl = isVideo ? _getImageUrl(data.node.thumbnail_src) : mediaUrl
+            const permalink = isVideo ? `${VIDEO_PERMALINK_URL}${data.node.shortcode}` : `${IMAGE_PERMALINK_URL}${data.node.shortcode}`
+
+            media.push({
+                id:data.node.id,
+                media_url: mediaUrl,
+                taggedUsers: data.node.edge_media_to_tagged_user.edges.map((edge:any) => {
+                    return {
+                        id:edge.node.user.id,
+                        igId:edge.node.user.id,
+                        username:edge.node.user.username,
+                        name:edge.node.user.full_name,
+                        profileImage: _getImageUrl(edge.node.user.profile_pic_url),
+                        biography:"",
+                    }
+                }),
+                thumbnail_url: thumbnailUrl,
+                isVideo,
+                permalink
+            })
+
+        }
+    })
+
+    const rowIndex = 0;
+
+    const next = mediaNode.page_info.has_next_page ? GRAPH_QL + mediaNode.page_info.end_cursor : "";
+
+    const username = user.username;
+
+    const history = {[username]: user}
+
+    return {username, media, user, rowIndex, next, history, isAuthenticated: session.isAuthenticated};
+
+}
+*/
 const downloadMedia = async (url) => {
     const options = {
         url,
