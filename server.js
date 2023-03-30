@@ -400,6 +400,7 @@ const login = async (req) => {
         options.method = "POST";
         options.data = params;
         options.headers = headers;
+        console.log(options);
         response = await external_axios_default().request(options);
         console.log("----------auth response-------");
         console.log(response.data);
