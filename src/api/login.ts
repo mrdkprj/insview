@@ -101,11 +101,12 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
         options.data = "";
         options.headers = headers;
         console.log(headers)
-        let response = await axios.request(options);
+        //let response = await axios.request(options);
 
-        let cookies = await jar.storeCookie(response.headers["set-cookie"])
-        session = updateSession(session, cookies)
+        //let cookies = await jar.storeCookie(response.headers["set-cookie"])
+        //session = updateSession(session, cookies)
 console.log(session)
+
         headers["referer"] = url
         headers["x-csrftoken"] = session.csrfToken;
 
@@ -116,12 +117,12 @@ console.log(session)
         options.method = "POST"
         options.headers = headers;
 
-        response = await axios.request(options);
+        const response = await axios.request(options);
 
         console.log("---------- challenge response -------")
         console.log(response.data)
 
-        cookies = await jar.storeCookie(response.headers["set-cookie"])
+        const cookies = await jar.storeCookie(response.headers["set-cookie"])
         session = updateSession(session, cookies)
 
         if(response.data.type && response.data.type === "CHALLENGE"){
