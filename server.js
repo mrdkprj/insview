@@ -400,7 +400,7 @@ const login = async (req) => {
         options.method = "POST";
         options.data = params;
         options.headers = headers;
-        console.log(options);
+        console.log(headers + "\n");
         response = await external_axios_default().request(options);
         console.log("----------auth response-------");
         console.log(response.data);
@@ -414,7 +414,7 @@ const login = async (req) => {
     }
     catch (ex) {
         if (ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required") {
-            console.log(ex.response.data);
+            console.log(ex.response.data + "\n");
             return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar);
         }
         logError(ex);
@@ -430,11 +430,12 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
         options.method = "GET";
         options.data = "";
         options.headers = headers;
-        console.log(headers);
-        //let response = await axios.request(options);
-        //let cookies = await jar.storeCookie(response.headers["set-cookie"])
-        //session = updateSession(session, cookies)
-        console.log(session);
+        console.log(headers + "\n");
+        let response = await external_axios_default().request(options);
+        let cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        console.log(response.headers + "\n");
+        session = updateSession(session, cookies);
+        console.log(session + "\n");
         headers["referer"] = url;
         headers["x-csrftoken"] = session.csrfToken;
         const params = new URLSearchParams();
@@ -442,10 +443,10 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
         options.data = params;
         options.method = "POST";
         options.headers = headers;
-        const response = await external_axios_default().request(options);
+        response = await external_axios_default().request(options);
         console.log("---------- challenge response -------");
         console.log(response.data);
-        const cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
         if (response.data.type && response.data.type === "CHALLENGE") {
             return {

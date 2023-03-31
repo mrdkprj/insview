@@ -59,7 +59,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         options.method = "POST"
         options.data = params;
         options.headers = headers;
-console.log(options)
+console.log(headers + "\n")
         response = await axios.request(options);
 
         console.log("----------auth response-------")
@@ -77,7 +77,7 @@ console.log(options)
     }catch(ex:any){
 
         if(ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required"){
-            console.log(ex.response.data)
+            console.log(ex.response.data + "\n")
             return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar)
         }
 
@@ -100,12 +100,14 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
         options.method = "GET";
         options.data = "";
         options.headers = headers;
-        console.log(headers)
-        //let response = await axios.request(options);
 
-        //let cookies = await jar.storeCookie(response.headers["set-cookie"])
-        //session = updateSession(session, cookies)
-console.log(session)
+        console.log(headers + "\n")
+        let response = await axios.request(options);
+
+        let cookies = await jar.storeCookie(response.headers["set-cookie"])
+        console.log(response.headers + "\n")
+        session = updateSession(session, cookies)
+console.log(session + "\n")
 
         headers["referer"] = url
         headers["x-csrftoken"] = session.csrfToken;
@@ -117,12 +119,12 @@ console.log(session)
         options.method = "POST"
         options.headers = headers;
 
-        const response = await axios.request(options);
+        response = await axios.request(options);
 
         console.log("---------- challenge response -------")
         console.log(response.data)
 
-        const cookies = await jar.storeCookie(response.headers["set-cookie"])
+        cookies = await jar.storeCookie(response.headers["set-cookie"])
         session = updateSession(session, cookies)
 
         if(response.data.type && response.data.type === "CHALLENGE"){
