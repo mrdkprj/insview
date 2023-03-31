@@ -59,7 +59,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         options.method = "POST"
         options.data = params;
         options.headers = headers;
-console.log(headers + "\n")
+console.log(headers)
         response = await axios.request(options);
 
         console.log("----------auth response-------")
@@ -77,7 +77,7 @@ console.log(headers + "\n")
     }catch(ex:any){
 
         if(ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required"){
-            console.log(ex.response.data + "\n")
+            console.log(ex.response.data)
             return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar)
         }
 
@@ -101,13 +101,13 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
         options.data = "";
         options.headers = headers;
 
-        console.log(headers + "\n")
+        console.log(headers)
         let response = await axios.request(options);
 
         let cookies = await jar.storeCookie(response.headers["set-cookie"])
-        console.log(response.headers + "\n")
+        console.log(response.headers)
         session = updateSession(session, cookies)
-console.log(session + "\n")
+console.log(session)
 
         headers["referer"] = url
         headers["x-csrftoken"] = session.csrfToken;

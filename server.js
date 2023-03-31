@@ -400,7 +400,7 @@ const login = async (req) => {
         options.method = "POST";
         options.data = params;
         options.headers = headers;
-        console.log(headers + "\n");
+        console.log(headers);
         response = await external_axios_default().request(options);
         console.log("----------auth response-------");
         console.log(response.data);
@@ -414,7 +414,7 @@ const login = async (req) => {
     }
     catch (ex) {
         if (ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required") {
-            console.log(ex.response.data + "\n");
+            console.log(ex.response.data);
             return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar);
         }
         logError(ex);
@@ -430,12 +430,12 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
         options.method = "GET";
         options.data = "";
         options.headers = headers;
-        console.log(headers + "\n");
+        console.log(headers);
         let response = await external_axios_default().request(options);
         let cookies = await jar.storeCookie(response.headers["set-cookie"]);
-        console.log(response.headers + "\n");
+        console.log(response.headers);
         session = updateSession(session, cookies);
-        console.log(session + "\n");
+        console.log(session);
         headers["referer"] = url;
         headers["x-csrftoken"] = session.csrfToken;
         const params = new URLSearchParams();
