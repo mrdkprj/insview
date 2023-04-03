@@ -257,6 +257,10 @@ const getClientVersion = (data) => {
     const version = data.match(/"client_revision":(.*),"tier"/);
     return version[1];
 };
+const getDeviceId = (data) => {
+    const did = data.match(/"device_id":"(.*)","signal_collection_config"/);
+    return did[1];
+};
 const extractRequestCookie = (cookieStrings) => {
     if (!cookieStrings)
         return "";
@@ -371,12 +375,15 @@ const login = async (req) => {
         options.method = "GET";
         options.headers = headers;
         let response = await external_axios_default().request(options);
+        //
+        const did = getDeviceId(response.data);
+        //
         const xHeaders = {
             appId: getAppId(response.data),
             ajax: getClientVersion(response.data)
         };
         headers["x-ig-app-id"] = xHeaders.appId;
-        options.url = "https://i.instagram.com/api/v1/public/landing_info/";
+        options.url = "https://www.instagram.com/api/v1/public/landing_info/";
         options.method = "GET";
         options.headers = headers;
         response = await external_axios_default().request(options);
@@ -387,6 +394,9 @@ const login = async (req) => {
         headers["x-instagram-ajax"] = xHeaders.ajax;
         headers["x-csrftoken"] = session.csrfToken;
         headers["content-type"] = "application/x-www-form-urlencoded";
+        //
+        headers["x-web-device-id"] = did;
+        //
         const createEncPassword = (pwd) => {
             return `#PWD_INSTAGRAM_BROWSER:0:${Math.floor(Date.now() / 1000)}:${pwd}`;
         };

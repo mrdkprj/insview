@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosRequestHeaders } from "axios";
-import { baseUrl, createHeaders, getAppId, getClientVersion, getSession, CookieStore, updateSession, extractRequestCookie, logError } from "./util";
+import { baseUrl, createHeaders, getAppId, getClientVersion, getSession, CookieStore, updateSession, extractRequestCookie, logError, getDeviceId } from "./util";
 import { IgHeaders, IgRequest, IgResponse, ILoginResponse, ISession } from "@shared";
 
 const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
@@ -24,13 +24,17 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         options.headers = headers;
         let response = await axios.request(options);
 
+        //
+        const did = getDeviceId(response.data)
+        //
+
         const xHeaders :IgHeaders = {
             appId: getAppId(response.data),
             ajax: getClientVersion(response.data)
         }
 
         headers["x-ig-app-id"] = xHeaders.appId
-        options.url = "https://i.instagram.com/api/v1/public/landing_info/";
+        options.url = "https://www.instagram.com/api/v1/public/landing_info/";
         options.method = "GET"
         options.headers = headers;
         response = await axios.request(options);
@@ -43,6 +47,9 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         headers["x-instagram-ajax"] = xHeaders.ajax
         headers["x-csrftoken"] = session.csrfToken;
         headers["content-type"] = "application/x-www-form-urlencoded"
+        //
+        headers["x-web-device-id"] = did
+        //
 
         const createEncPassword = (pwd:string) => {
             return `#PWD_INSTAGRAM_BROWSER:0:${Math.floor(Date.now() / 1000)}:${pwd}`
