@@ -258,7 +258,7 @@ const getClientVersion = (data) => {
     return version[1];
 };
 const getDeviceId = (data) => {
-    const did = data.match(/"device_id":"(.*)","signal_collection_config"/);
+    const did = data.match(/"device_id":"(?!\$)(.*)","signal_collection_config"/);
     return did[1];
 };
 const extractRequestCookie = (cookieStrings) => {

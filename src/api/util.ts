@@ -207,7 +207,7 @@ const getClientVersion = (data:any) => {
 }
 
 const getDeviceId = (data:any) => {
-    const did = data.match(/"device_id":"(.*)","signal_collection_config"/)
+    const did = data.match(/"device_id":"(?!\$)(.*)","signal_collection_config"/)
     return did[1]
 }
 
