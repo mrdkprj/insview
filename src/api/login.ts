@@ -100,6 +100,7 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
         options.url = url;
         options.method = "GET";
         options.data = "";
+        headers["x-ig-www-claim"] = 1
         options.headers = headers;
 
         console.log(headers)

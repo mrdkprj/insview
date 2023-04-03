@@ -430,6 +430,7 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
         options.url = url;
         options.method = "GET";
         options.data = "";
+        headers["x-ig-www-claim"] = 1;
         options.headers = headers;
         console.log(headers);
         let response = await external_axios_default().request(options);
