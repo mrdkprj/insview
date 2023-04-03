@@ -400,7 +400,7 @@ const login = async (req) => {
         options.method = "POST";
         options.data = params;
         options.headers = headers;
-        console.log(headers);
+        console.log(options);
         response = await external_axios_default().request(options);
         console.log("----------auth response-------");
         console.log(response.data);
@@ -414,7 +414,6 @@ const login = async (req) => {
     }
     catch (ex) {
         if (ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required") {
-            console.log(ex.response.headers);
             console.log(ex.response.data);
             return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar);
         }
@@ -426,7 +425,7 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
     console.log("---------- challenge start -------");
     try {
         const options = {};
-        const url = "https://www.instagram.com"; // + checkpoint;
+        const url = "https://www.instagram.com" + checkpoint;
         options.url = url;
         options.method = "GET";
         options.data = "";
@@ -436,12 +435,10 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
         let cookies = await jar.storeCookie(response.headers["set-cookie"]);
         console.log(response.headers);
         session = updateSession(session, cookies);
-        console.log(session);
         headers["referer"] = url;
         headers["x-csrftoken"] = session.csrfToken;
         const params = new URLSearchParams();
         params.append("choice", "1");
-        options.url = "https://www.instagram.com" + checkpoint;
         options.data = params;
         options.method = "POST";
         options.headers = headers;
