@@ -206,11 +206,6 @@ const getClientVersion = (data:any) => {
     return version[1]
 }
 
-const getDeviceId = (data:any) => {
-    const did = data.match(/"device_id":"(?!\$)(.*)","signal_collection_config"/)
-    return did[1]
-}
-
 const extractRequestCookie = (cookieStrings:string | undefined) => {
 
     if(!cookieStrings) return "";
@@ -355,4 +350,4 @@ const logError = (ex:any) => {
     return false
 }
 
-export {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, getAppId, getClientVersion, extractRequestCookie, getCookieString, extractToken, updateCookie, CookieStore, logError, getDeviceId}
+export {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, getAppId, getClientVersion, extractRequestCookie, getCookieString, extractToken, updateCookie, CookieStore, logError}

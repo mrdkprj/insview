@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosRequestHeaders } from "axios";
-import { baseUrl, createHeaders, getAppId, getClientVersion, getSession, CookieStore, updateSession, extractRequestCookie, logError, getDeviceId } from "./util";
+import { baseUrl, createHeaders, getAppId, getClientVersion, getSession, CookieStore, updateSession, extractRequestCookie, logError } from "./util";
 import { IgHeaders, IgRequest, IgResponse, ILoginResponse, ISession } from "@shared";
 
 const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
@@ -23,10 +23,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         options.method = "GET"
         options.headers = headers;
         let response = await axios.request(options);
-
-        //
-        const did = getDeviceId(response.data)
-        //
+        console.log(response.headers)
 
         const xHeaders :IgHeaders = {
             appId: getAppId(response.data),
@@ -38,6 +35,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         options.method = "GET"
         options.headers = headers;
         response = await axios.request(options);
+        console.log(response.headers)
 
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies, xHeaders)
@@ -47,9 +45,6 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         headers["x-instagram-ajax"] = xHeaders.ajax
         headers["x-csrftoken"] = session.csrfToken;
         headers["content-type"] = "application/x-www-form-urlencoded"
-        //
-        headers["x-web-device-id"] = did
-        //
 
         const createEncPassword = (pwd:string) => {
             return `#PWD_INSTAGRAM_BROWSER:0:${Math.floor(Date.now() / 1000)}:${pwd}`
@@ -84,6 +79,7 @@ console.log(options)
     }catch(ex:any){
 
         if(ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required"){
+            console.log(ex.response.headers)
             console.log(ex.response.data)
             return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar)
         }
@@ -144,7 +140,7 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
         throw new Error("Challenge request failed");
 
     }catch(ex:any){
-
+        console.log(ex.response.headers)
         logError(ex)
 
         throw new Error("Challenge request failed")

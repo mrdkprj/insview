@@ -257,10 +257,6 @@ const getClientVersion = (data) => {
     const version = data.match(/"client_revision":(.*),"tier"/);
     return version[1];
 };
-const getDeviceId = (data) => {
-    const did = data.match(/"device_id":"(?!\$)(.*)","signal_collection_config"/);
-    return did[1];
-};
 const extractRequestCookie = (cookieStrings) => {
     if (!cookieStrings)
         return "";
@@ -375,9 +371,7 @@ const login = async (req) => {
         options.method = "GET";
         options.headers = headers;
         let response = await external_axios_default().request(options);
-        //
-        const did = getDeviceId(response.data);
-        //
+        console.log(response.headers);
         const xHeaders = {
             appId: getAppId(response.data),
             ajax: getClientVersion(response.data)
@@ -387,6 +381,7 @@ const login = async (req) => {
         options.method = "GET";
         options.headers = headers;
         response = await external_axios_default().request(options);
+        console.log(response.headers);
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies, xHeaders);
         headers.Cookie = await jar.getCookieStrings();
@@ -394,9 +389,6 @@ const login = async (req) => {
         headers["x-instagram-ajax"] = xHeaders.ajax;
         headers["x-csrftoken"] = session.csrfToken;
         headers["content-type"] = "application/x-www-form-urlencoded";
-        //
-        headers["x-web-device-id"] = did;
-        //
         const createEncPassword = (pwd) => {
             return `#PWD_INSTAGRAM_BROWSER:0:${Math.floor(Date.now() / 1000)}:${pwd}`;
         };
@@ -424,6 +416,7 @@ const login = async (req) => {
     }
     catch (ex) {
         if (ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required") {
+            console.log(ex.response.headers);
             console.log(ex.response.data);
             return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar);
         }
@@ -466,6 +459,7 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
         throw new Error("Challenge request failed");
     }
     catch (ex) {
+        console.log(ex.response.headers);
         logError(ex);
         throw new Error("Challenge request failed");
     }
