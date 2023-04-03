@@ -96,11 +96,10 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
 
         const options :AxiosRequestConfig= {};
 
-        const url = "https://www.instagram.com" + checkpoint;
+        const url = "https://www.instagram.com"// + checkpoint;
         options.url = url;
         options.method = "GET";
         options.data = "";
-        headers["x-ig-www-claim"] = 1
         options.headers = headers;
 
         console.log(headers)
@@ -116,7 +115,7 @@ console.log(session)
 
         const params = new URLSearchParams();
         params.append("choice", "1")
-
+        options.url = "https://www.instagram.com" + checkpoint;
         options.data = params;
         options.method = "POST"
         options.headers = headers;
