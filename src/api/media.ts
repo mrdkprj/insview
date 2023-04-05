@@ -236,16 +236,15 @@ const _requestPrivate = async (req:IgRequest, session:ISession, user:IUser, jar:
 
     const headers = createHeaders(baseUrl + "/" + user.username + "/", session);
     headers.Cookie = await jar.getCookieStrings();
-/*
+
     const params = JSON.stringify({
         id: user.id,
         first:12,
     });
-*/
-    //const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`
-    //const PRIVATE_REQUEST_URL = "https://www.instagram.com/api/v1/feed/user/silksdriver_daily/username/?count=12"
 
-    const url = `https://www.instagram.com/api/v1/feed/user/${user.username}/username/?count=12`
+    const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`
+
+    //const url = `https://www.instagram.com/api/v1/feed/user/${user.username}/username/?count=12`
 
     const options :AxiosRequestConfig = {
         url,
