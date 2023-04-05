@@ -33,7 +33,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         options.url = "https://www.instagram.com/api/v1/public/landing_info/";
         options.method = "GET"
         options.headers = headers;
-        options.proxy = {host:"208.184.163.30", port:3129}
+
         response = await axios.request(options);
 
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
@@ -55,7 +55,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         params.append("queryParams", "{}")
         params.append("optIntoOneTap", "false")
         params.append("trustedDeviceRecords", "{}")
-
+        console.log(headers)
         options.url = "https://www.instagram.com/api/v1/web/accounts/login/ajax/"
         options.method = "POST"
         options.data = params;
@@ -98,7 +98,7 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
     try{
 
         const options :AxiosRequestConfig= {};
-        options.proxy = {host:"208.184.163.30", port:3129}
+
         const url = "https://www.instagram.com" + checkpoint;
         options.url = url;
         options.method = "GET";
