@@ -12,7 +12,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     const headers = createHeaders(baseUrl, session);
     let cookies = [];
     const jar = new CookieStore();
-    console.log(session)
+
     try{
 
         const options :AxiosRequestConfig= {};
@@ -34,7 +34,6 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         options.method = "GET"
         options.headers = headers;
         response = await axios.request(options);
-        console.log(response.headers)
 
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies, xHeaders)
@@ -65,10 +64,10 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
         console.log("----------auth response-------")
         console.log(response.data)
-        console.log(response.headers)
+
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
-
+        console.log(session)
         const data = {account, success:session.isAuthenticated, challenge:false, endpoint:""};
 
         return {
@@ -79,7 +78,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     }catch(ex:any){
 
         if(ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required"){
-            console.log(ex.response.headers)
+            //console.log(ex.response.headers)
             console.log(ex.response.data)
             return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar)
         }
@@ -91,6 +90,16 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 }
 
 const requestChallenge = async (account:string, checkpoint:string, headers:AxiosRequestHeaders, session:ISession, jar:CookieStore) :Promise<IgResponse<ILoginResponse>> => {
+
+
+    function sleepFor(sleepDuration:number){
+        const now = new Date().getTime();
+        while(new Date().getTime() < now + sleepDuration){
+            /* Do nothing */
+        }
+    }
+
+    sleepFor(60000)
 
     console.log("---------- challenge start -------")
 
@@ -107,7 +116,6 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
         let response = await axios.request(options);
 
         let cookies = await jar.storeCookie(response.headers["set-cookie"])
-        console.log(response.headers)
         session = updateSession(session, cookies)
 
         headers["referer"] = url
@@ -139,7 +147,7 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
         throw new Error("Challenge request failed");
 
     }catch(ex:any){
-        console.log(ex.response.headers)
+
         logError(ex)
 
         throw new Error("Challenge request failed")

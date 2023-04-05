@@ -117,7 +117,7 @@ const getSession = (headers) => {
             isAuthenticated: false,
             csrfToken: "",
             userId: "",
-            userAgent: headers["user-agent"],
+            userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 16_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/111.0.5563.101 Mobile/15E148 Safari/604.1",
             cookies: [],
             expires: null,
             xHeaders: { appId: "", ajax: "" }
@@ -363,7 +363,6 @@ const login = async (req) => {
     const headers = createHeaders(baseUrl, session);
     let cookies = [];
     const jar = new CookieStore();
-    console.log(session);
     try {
         const options = {};
         headers.Cookie = "ig_cb=1;";
@@ -381,7 +380,6 @@ const login = async (req) => {
         options.method = "GET";
         options.headers = headers;
         response = await external_axios_default().request(options);
-        console.log(response.headers);
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies, xHeaders);
         headers.Cookie = await jar.getCookieStrings();
@@ -405,9 +403,9 @@ const login = async (req) => {
         response = await external_axios_default().request(options);
         console.log("----------auth response-------");
         console.log(response.data);
-        console.log(response.headers);
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
+        console.log(session);
         const data = { account, success: session.isAuthenticated, challenge: false, endpoint: "" };
         return {
             data,
@@ -416,7 +414,7 @@ const login = async (req) => {
     }
     catch (ex) {
         if (ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required") {
-            console.log(ex.response.headers);
+            //console.log(ex.response.headers)
             console.log(ex.response.data);
             return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar);
         }
@@ -425,6 +423,13 @@ const login = async (req) => {
     }
 };
 const requestChallenge = async (account, checkpoint, headers, session, jar) => {
+    function sleepFor(sleepDuration) {
+        const now = new Date().getTime();
+        while (new Date().getTime() < now + sleepDuration) {
+            /* Do nothing */
+        }
+    }
+    sleepFor(60000);
     console.log("---------- challenge start -------");
     try {
         const options = {};
@@ -435,7 +440,6 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
         options.headers = headers;
         let response = await external_axios_default().request(options);
         let cookies = await jar.storeCookie(response.headers["set-cookie"]);
-        console.log(response.headers);
         session = updateSession(session, cookies);
         headers["referer"] = url;
         headers["x-csrftoken"] = session.csrfToken;
@@ -458,7 +462,6 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
         throw new Error("Challenge request failed");
     }
     catch (ex) {
-        console.log(ex.response.headers);
         logError(ex);
         throw new Error("Challenge request failed");
     }
@@ -711,11 +714,12 @@ const _tryRequestMorePrivate = async (req, session) => {
 const _requestPrivate = async (req, session, user, jar) => {
     const headers = createHeaders(baseUrl + "/" + user.username + "/", session);
     headers.Cookie = await jar.getCookieStrings();
-    console.log(headers.Cookie);
-    const params = JSON.stringify({
-        id: user.id,
-        first: 12,
-    });
+    /*
+        const params = JSON.stringify({
+            id: user.id,
+            first:12,
+        });
+    */
     //const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`
     //const PRIVATE_REQUEST_URL = "https://www.instagram.com/api/v1/feed/user/silksdriver_daily/username/?count=12"
     const url = `https://www.instagram.com/api/v1/feed/user/${user.username}/username/?count=12`;
@@ -724,7 +728,6 @@ const _requestPrivate = async (req, session, user, jar) => {
         method: "GET",
         headers,
     };
-    console.log(options);
     const response = await external_axios_default().request(options);
     if (response.headers["content-type"].includes("html")) {
         throw new Error("Auth error");
@@ -736,16 +739,16 @@ const _requestPrivate = async (req, session, user, jar) => {
     return response;
 };
 const _requestMorePrivate = async (req, session, jar) => {
-    const params = JSON.stringify({
-        id: req.data.user.id,
-        first: 12,
-        after: req.data.next.replace(GRAPH_QL, "")
-    });
-    console.log(req.data);
+    /*
+        const params = JSON.stringify({
+            id:req.data.user.id,
+            first:12,
+            after:req.data.next.replace(GRAPH_QL, "")
+        });
+    */
     //const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`
     // /const PRIVATE_REQUEST_MORE_URL = `https://www.instagram.com/api/v1/feed/user/53246370416/?count=12&max_id=3067051056560848281_53246370416`
     const url = `https://www.instagram.com/api/v1/feed/user/${req.data.user.id}/?count=12&max_id=${req.data.next.replace(GRAPH_QL, "")}`;
-    console.log(url);
     const headers = createHeaders(baseUrl + "/" + req.data.user.username + "/", session);
     headers.Cookie = extractRequestCookie(req.headers.cookie);
     const options = {
@@ -1052,7 +1055,7 @@ class Controller {
         const domain =  true ? req.hostname : 0;
         session.cookies.forEach((cookie) => {
             var _a;
-            if (cookie.maxAge <= 0)
+            if (typeof cookie.maxAge === "number" && cookie.maxAge <= 0)
                 return;
             res.cookie(cookie.key, cookie.value, {
                 domain: domain,
@@ -1160,7 +1163,7 @@ class Controller {
     async tryLogout(req, res) {
         try {
             const result = await logout({ data: {}, headers: req.headers });
-            req.session.destroy(_e => { throw new Error("Session not destroyed"); });
+            req.session.destroy(_e => { console.log(_e); });
             const authResponse = {
                 status: result.data,
                 media: emptyResponse,

@@ -22,7 +22,7 @@ const getSession = (headers:any) :ISession => {
             isAuthenticated:false,
             csrfToken:"",
             userId:"",
-            userAgent: headers["user-agent"],
+            userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 16_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/111.0.5563.101 Mobile/15E148 Safari/604.1",//headers["user-agent"],
             cookies:[],
             expires: null,
             xHeaders:{appId:"", ajax:""}

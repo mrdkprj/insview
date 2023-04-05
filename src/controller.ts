@@ -38,7 +38,7 @@ class Controller{
 
         session.cookies.forEach((cookie:Cookie) => {
 
-            if(cookie.maxAge <= 0) return;
+            if(typeof cookie.maxAge === "number" && cookie.maxAge <= 0) return;
 
             res.cookie(cookie.key, cookie.value, {
                 domain:domain,
@@ -193,7 +193,7 @@ class Controller{
 
             const result = await api.logout({data:{}, headers:req.headers});
 
-            req.session.destroy(_e => {throw new Error("Session not destroyed")});
+            req.session.destroy(_e => {console.log(_e)});
 
             const authResponse :IAuthResponse = {
                 status: result.data,

@@ -236,12 +236,12 @@ const _requestPrivate = async (req:IgRequest, session:ISession, user:IUser, jar:
 
     const headers = createHeaders(baseUrl + "/" + user.username + "/", session);
     headers.Cookie = await jar.getCookieStrings();
-    console.log(headers.Cookie)
+/*
     const params = JSON.stringify({
         id: user.id,
         first:12,
     });
-
+*/
     //const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`
     //const PRIVATE_REQUEST_URL = "https://www.instagram.com/api/v1/feed/user/silksdriver_daily/username/?count=12"
 
@@ -252,7 +252,7 @@ const _requestPrivate = async (req:IgRequest, session:ISession, user:IUser, jar:
         method: "GET",
         headers,
     }
-    console.log(options)
+
     const response = await axios.request(options);
 
     if(response.headers["content-type"].includes("html")){
@@ -270,17 +270,17 @@ const _requestPrivate = async (req:IgRequest, session:ISession, user:IUser, jar:
 }
 
 const _requestMorePrivate = async (req:IgRequest, session:ISession, jar:CookieStore) : Promise<AxiosResponse<any, any>> => {
-
+/*
     const params = JSON.stringify({
         id:req.data.user.id,
         first:12,
         after:req.data.next.replace(GRAPH_QL, "")
     });
-console.log(req.data)
+*/
     //const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`
     // /const PRIVATE_REQUEST_MORE_URL = `https://www.instagram.com/api/v1/feed/user/53246370416/?count=12&max_id=3067051056560848281_53246370416`
     const url = `https://www.instagram.com/api/v1/feed/user/${req.data.user.id}/?count=12&max_id=${req.data.next.replace(GRAPH_QL, "")}`
-console.log(url)
+
     const headers = createHeaders(baseUrl + "/" + req.data.user.username + "/", session);
     headers.Cookie = extractRequestCookie(req.headers.cookie)
 
