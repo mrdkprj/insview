@@ -33,6 +33,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         options.url = "https://www.instagram.com/api/v1/public/landing_info/";
         options.method = "GET"
         options.headers = headers;
+        options.proxy = {host:"208.184.163.30", port:3129}
         response = await axios.request(options);
 
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
