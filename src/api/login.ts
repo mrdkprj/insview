@@ -98,7 +98,7 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
     try{
 
         const options :AxiosRequestConfig= {};
-
+        options.proxy = {host:"208.184.163.30", port:3129}
         const url = "https://www.instagram.com" + checkpoint;
         options.url = url;
         options.method = "GET";

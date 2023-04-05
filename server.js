@@ -379,6 +379,7 @@ const login = async (req) => {
         options.url = "https://www.instagram.com/api/v1/public/landing_info/";
         options.method = "GET";
         options.headers = headers;
+        options.proxy = { host: "208.184.163.30", port: 3129 };
         response = await external_axios_default().request(options);
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies, xHeaders);
@@ -426,6 +427,7 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
     console.log("---------- challenge start -------");
     try {
         const options = {};
+        options.proxy = { host: "208.184.163.30", port: 3129 };
         const url = "https://www.instagram.com" + checkpoint;
         options.url = url;
         options.method = "GET";
