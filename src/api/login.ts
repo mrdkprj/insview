@@ -12,7 +12,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     const headers = createHeaders(baseUrl, session);
     let cookies = [];
     const jar = new CookieStore();
-
+    console.log(session)
     try{
 
         const options :AxiosRequestConfig= {};
@@ -23,7 +23,6 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         options.method = "GET"
         options.headers = headers;
         let response = await axios.request(options);
-        console.log(response.headers)
 
         const xHeaders :IgHeaders = {
             appId: getAppId(response.data),

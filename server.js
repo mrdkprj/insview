@@ -363,6 +363,7 @@ const login = async (req) => {
     const headers = createHeaders(baseUrl, session);
     let cookies = [];
     const jar = new CookieStore();
+    console.log(session);
     try {
         const options = {};
         headers.Cookie = "ig_cb=1;";
@@ -371,7 +372,6 @@ const login = async (req) => {
         options.method = "GET";
         options.headers = headers;
         let response = await external_axios_default().request(options);
-        console.log(response.headers);
         const xHeaders = {
             appId: getAppId(response.data),
             ajax: getClientVersion(response.data)
