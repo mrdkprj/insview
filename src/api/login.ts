@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosRequestHeaders } from "axios";
-import { baseUrl, createHeaders, getAppId, getClientVersion, getSession, CookieStore, updateSession, extractRequestCookie, logError } from "./util";
+import { baseUrl, createHeaders, getAppId, getClientVersion, getSession, CookieStore, updateSession, extractRequestCookie, logError, testgetSession } from "./util";
 import { IgHeaders, IgRequest, IgResponse, ILoginResponse, ISession } from "@shared";
 
 const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
@@ -13,6 +13,19 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     let cookies = [];
     const jar = new CookieStore();
 
+    const x = 10;
+    if(x>0){
+        const s = testgetSession(req.headers)
+        console.log(s.cookies)
+        /*const data = {account, success:s.isAuthenticated, challenge:false, endpoint:""};
+
+        return {
+            data,
+            session:s
+        }
+        */
+       throw new Error("not now")
+    }
     try{
 
         const options :AxiosRequestConfig= {};
