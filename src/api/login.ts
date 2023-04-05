@@ -17,14 +17,14 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     if(x>0){
         const s = testgetSession(req.headers)
         console.log(s.cookies)
-        /*const data = {account, success:s.isAuthenticated, challenge:false, endpoint:""};
+        const data = {account, success:s.isAuthenticated, challenge:false, endpoint:""};
 
         return {
             data,
             session:s
         }
-        */
-       throw new Error("not now")
+
+       //throw new Error("not now")
     }
     try{
 
