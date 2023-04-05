@@ -92,15 +92,6 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 const requestChallenge = async (account:string, checkpoint:string, headers:AxiosRequestHeaders, session:ISession, jar:CookieStore) :Promise<IgResponse<ILoginResponse>> => {
 
 
-    function sleepFor(sleepDuration:number){
-        const now = new Date().getTime();
-        while(new Date().getTime() < now + sleepDuration){
-            /* Do nothing */
-        }
-    }
-
-    sleepFor(60000)
-
     console.log("---------- challenge start -------")
 
     try{

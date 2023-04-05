@@ -423,13 +423,6 @@ const login = async (req) => {
     }
 };
 const requestChallenge = async (account, checkpoint, headers, session, jar) => {
-    function sleepFor(sleepDuration) {
-        const now = new Date().getTime();
-        while (new Date().getTime() < now + sleepDuration) {
-            /* Do nothing */
-        }
-    }
-    sleepFor(60000);
     console.log("---------- challenge start -------");
     try {
         const options = {};
