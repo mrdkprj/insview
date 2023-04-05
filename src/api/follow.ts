@@ -22,7 +22,7 @@ const requestFollowings = async (req:IgRequest) : Promise<IgResponse<IFollowing>
 
     const headers = createHeaders(baseUrl, currentSession);
     headers.Cookie = extractRequestCookie(req.headers.cookie);
-
+    console.log(headers.Cookie)
     const options :AxiosRequestConfig = {
         url,
         method: "GET",
