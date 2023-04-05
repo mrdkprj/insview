@@ -237,6 +237,7 @@ const _requestPrivate = async (req:IgRequest, session:ISession, user:IUser, jar:
     const headers = createHeaders(baseUrl + "/" + user.username + "/", session);
     headers.Cookie = await jar.getCookieStrings();
 console.log(headers.Cookie)
+//test
     const params = JSON.stringify({
         id: user.id,
         first:12,

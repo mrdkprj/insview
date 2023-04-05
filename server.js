@@ -774,6 +774,8 @@ const _tryRequestMorePrivate = async (req, session) => {
 const _requestPrivate = async (req, session, user, jar) => {
     const headers = createHeaders(baseUrl + "/" + user.username + "/", session);
     headers.Cookie = await jar.getCookieStrings();
+    console.log(headers.Cookie);
+    //test
     const params = JSON.stringify({
         id: user.id,
         first: 12,
@@ -997,6 +999,7 @@ const requestFollowings = async (req) => {
     const url = `https://www.instagram.com/graphql/query/?query_hash=58712303d941c6855d4e888c5f0cd22f&variables=${encodeURIComponent(JSON.stringify(params))}`;
     const headers = createHeaders(baseUrl, currentSession);
     headers.Cookie = extractRequestCookie(req.headers.cookie);
+    console.log(headers.Cookie);
     const options = {
         url,
         method: "GET",
