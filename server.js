@@ -396,7 +396,6 @@ const login = async (req) => {
         params.append("queryParams", "{}");
         params.append("optIntoOneTap", "false");
         params.append("trustedDeviceRecords", "{}");
-        console.log(headers);
         options.url = "https://www.instagram.com/api/v1/web/accounts/login/ajax/";
         options.method = "POST";
         options.data = params;
@@ -406,7 +405,6 @@ const login = async (req) => {
         console.log(response.data);
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
-        console.log(session);
         const data = { account, success: session.isAuthenticated, challenge: false, endpoint: "" };
         return {
             data,
@@ -415,7 +413,6 @@ const login = async (req) => {
     }
     catch (ex) {
         if (ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required") {
-            //console.log(ex.response.headers)
             console.log(ex.response.data);
             return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar);
         }
@@ -483,7 +480,6 @@ const challenge = async (req) => {
         const cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
         const data = { account: req.data.account, success: session.isAuthenticated, challenge: !session.isAuthenticated, endpoint: "" };
-        console.log("-------------- code verification start ---------");
         console.log(response.data);
         return {
             data,
@@ -1087,6 +1083,7 @@ class Controller {
     async tryRestore(req, res) {
         try {
             const session = getSession(req.headers);
+            console.log(session);
             const result = await this.db.restore(req.session.account);
             result.isAuthenticated = session.isAuthenticated;
             result.account = req.session.account;
