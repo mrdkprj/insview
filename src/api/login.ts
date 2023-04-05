@@ -61,14 +61,15 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         options.method = "POST"
         options.data = params;
         options.headers = headers;
-console.log(options)
+
         response = await axios.request(options);
 
         console.log("----------auth response-------")
         console.log(response.data)
-
+        console.log(response.headers)
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
+
         const data = {account, success:session.isAuthenticated, challenge:false, endpoint:""};
 
         return {
@@ -104,7 +105,6 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
         options.data = "";
         options.headers = headers;
 
-        console.log(headers)
         let response = await axios.request(options);
 
         let cookies = await jar.storeCookie(response.headers["set-cookie"])

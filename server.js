@@ -402,10 +402,10 @@ const login = async (req) => {
         options.method = "POST";
         options.data = params;
         options.headers = headers;
-        console.log(options);
         response = await external_axios_default().request(options);
         console.log("----------auth response-------");
         console.log(response.data);
+        console.log(response.headers);
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
         const data = { account, success: session.isAuthenticated, challenge: false, endpoint: "" };
@@ -433,7 +433,6 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
         options.method = "GET";
         options.data = "";
         options.headers = headers;
-        console.log(headers);
         let response = await external_axios_default().request(options);
         let cookies = await jar.storeCookie(response.headers["set-cookie"]);
         console.log(response.headers);
