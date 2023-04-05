@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig } from "axios";
-import { baseUrl, createHeaders, getSession, updateSession, extractRequestCookie, CookieStore } from "./util";
+import { baseUrl, createHeaders, getSession, updateSession, CookieStore } from "./util";
 import { AuthError, IFollowing, IgRequest, IgResponse, IUser } from "@shared";
 
 const requestFollowings = async (req:IgRequest) : Promise<IgResponse<IFollowing>> => {
@@ -21,8 +21,10 @@ const requestFollowings = async (req:IgRequest) : Promise<IgResponse<IFollowing>
     const url = `https://www.instagram.com/graphql/query/?query_hash=58712303d941c6855d4e888c5f0cd22f&variables=${encodeURIComponent(JSON.stringify(params))}`
 
     const headers = createHeaders(baseUrl, currentSession);
-    headers.Cookie = extractRequestCookie(req.headers.cookie);
+    await jar.storeRequestCookie(req.headers.cookie)
+    headers.Cookie = await jar.getCookieStrings();
     console.log(headers.Cookie)
+
     const options :AxiosRequestConfig = {
         url,
         method: "GET",
@@ -84,7 +86,8 @@ const follow = async (req:IgRequest) => {
     const url = `${baseUrl}/web/friendships/${req.data.user.id}/follow/`
 
     const headers = createHeaders(baseUrl, currentSession);
-    headers.Cookie = extractRequestCookie(req.headers.cookie);
+    await jar.storeRequestCookie(req.headers.cookie);
+    headers.Cookie = await jar.getCookieStrings();
 
     const options :AxiosRequestConfig = {
         url,
@@ -118,7 +121,8 @@ const unfollow = async (req:IgRequest) => {
     const url = `${baseUrl}/web/friendships/${req.data.user.id}/unfollow/`
 
     const headers = createHeaders(baseUrl, currentSession);
-    headers.Cookie = extractRequestCookie(req.headers.cookie);
+    await jar.storeRequestCookie(req.headers.cookie);
+    headers.Cookie = await jar.getCookieStrings();
 
     const options :AxiosRequestConfig = {
         url,

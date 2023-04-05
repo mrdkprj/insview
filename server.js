@@ -310,19 +310,6 @@ const getClientVersion = (data) => {
     const version = data.match(/"client_revision":(.*),"tier"/);
     return version[1];
 };
-const extractRequestCookie = (cookieStrings) => {
-    if (!cookieStrings)
-        return "";
-    const excludeKeys = [
-        "connect.sid",
-        "ARRAffinity",
-        "ARRAffinitySameSite",
-        IgHeaderNames.ajax,
-        IgHeaderNames.appId
-    ];
-    const validCookies = cookieStrings.split(";").filter(cookieString => !excludeKeys.some(key => cookieString.includes(key)));
-    return validCookies.join(";");
-};
 const extractToken = (headers) => {
     const setCookieHeader = headers["set-cookie"] || [];
     const cookies = setCookieHeader.map(c => Cookie.parse(c) || new tough.Cookie());
@@ -378,11 +365,19 @@ class CookieStore {
         }
         return await this.getCookies();
     }
-    async storeCookieByTough(setCookie) {
-        if (!setCookie) {
+    async storeRequestCookie(cookieHeader) {
+        if (!cookieHeader) {
             return await this.getCookies();
         }
-        for (const cookieString of setCookie) {
+        const excludeKeys = [
+            "connect.sid",
+            "ARRAffinity",
+            "ARRAffinitySameSite",
+            IgHeaderNames.ajax,
+            IgHeaderNames.appId
+        ];
+        const validCookies = cookieHeader.split(";").map(item => item.trim()).filter(cookieString => !excludeKeys.some(key => cookieString.includes(key)));
+        for (const cookieString of validCookies) {
             await this.jar.setCookie(cookieString, baseUrl, { ignoreError: true });
         }
         return await this.getCookies();
@@ -539,7 +534,8 @@ const challenge = async (req) => {
         headers["x-ig-www-claim"] = 0;
         headers["x-instagram-ajax"] = session.xHeaders.ajax;
         headers["content-type"] = "application/x-www-form-urlencoded";
-        headers.Cookie = extractRequestCookie(req.headers.cookie);
+        await jar.storeRequestCookie(req.headers.cookie);
+        headers.Cookie = await jar.getCookieStrings();
         const params = new URLSearchParams();
         params.append("security_code", req.data.code);
         options.url = url;
@@ -575,7 +571,8 @@ const logout = async (req) => {
         headers["x-ig-www-claim"] = 0;
         headers["x-instagram-ajax"] = session.xHeaders.ajax;
         headers["content-type"] = "application/x-www-form-urlencoded";
-        headers.Cookie = extractRequestCookie(req.headers.cookie);
+        await jar.storeRequestCookie(req.headers.cookie);
+        headers.Cookie = await jar.getCookieStrings();
         const options = {
             url,
             method: "POST",
@@ -706,8 +703,10 @@ const _tryRequestPrivate = async (req, session) => {
     const username = req.data.username;
     const headers = createHeaders(baseUrl + "/" + username + "/", session);
     try {
+        let cookies = await jar.storeRequestCookie(req.headers.cookie);
+        session = updateSession(session, cookies);
         headers["x-ig-app-id"] = session.xHeaders.appId;
-        headers.Cookie = extractRequestCookie(req.headers.cookie);
+        headers.Cookie = await jar.getCookieStrings();
         const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`;
         headers["x-asbd-id"] = "198387";
         const options = {
@@ -727,7 +726,7 @@ const _tryRequestPrivate = async (req, session) => {
             following: userData.followed_by_viewer,
             isPro: false,
         };
-        let cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
         response = await _requestPrivate(req, session, user, jar);
         cookies = await jar.getCookies();
@@ -774,14 +773,15 @@ const _tryRequestMorePrivate = async (req, session) => {
 const _requestPrivate = async (req, session, user, jar) => {
     const headers = createHeaders(baseUrl + "/" + user.username + "/", session);
     headers.Cookie = await jar.getCookieStrings();
-    console.log(headers.Cookie);
-    //test
-    const params = JSON.stringify({
-        id: user.id,
-        first: 12,
-    });
-    const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`;
-    //const url = `https://www.instagram.com/api/v1/feed/user/${user.username}/username/?count=12`
+    /*
+        const params = JSON.stringify({
+            id: user.id,
+            first:12,
+        });
+    
+        const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`
+    */
+    const url = `https://www.instagram.com/api/v1/feed/user/${user.username}/username/?count=12`;
     const options = {
         url,
         method: "GET",
@@ -808,8 +808,9 @@ const _requestMorePrivate = async (req, session, jar) => {
     //const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`
     // /const PRIVATE_REQUEST_MORE_URL = `https://www.instagram.com/api/v1/feed/user/53246370416/?count=12&max_id=3067051056560848281_53246370416`
     const url = `https://www.instagram.com/api/v1/feed/user/${req.data.user.id}/?count=12&max_id=${req.data.next.replace(GRAPH_QL, "")}`;
+    await jar.storeRequestCookie(req.headers.cookie);
     const headers = createHeaders(baseUrl + "/" + req.data.user.username + "/", session);
-    headers.Cookie = extractRequestCookie(req.headers.cookie);
+    headers.Cookie = await jar.getCookieStrings();
     const options = {
         url,
         method: "GET",
@@ -998,7 +999,8 @@ const requestFollowings = async (req) => {
     //https://i.instagram.com/api/v1/friendships/${userid}/following/?count=12&max_id=1
     const url = `https://www.instagram.com/graphql/query/?query_hash=58712303d941c6855d4e888c5f0cd22f&variables=${encodeURIComponent(JSON.stringify(params))}`;
     const headers = createHeaders(baseUrl, currentSession);
-    headers.Cookie = extractRequestCookie(req.headers.cookie);
+    await jar.storeRequestCookie(req.headers.cookie);
+    headers.Cookie = await jar.getCookieStrings();
     console.log(headers.Cookie);
     const options = {
         url,
@@ -1043,7 +1045,8 @@ const follow = async (req) => {
     }
     const url = `${baseUrl}/web/friendships/${req.data.user.id}/follow/`;
     const headers = createHeaders(baseUrl, currentSession);
-    headers.Cookie = extractRequestCookie(req.headers.cookie);
+    await jar.storeRequestCookie(req.headers.cookie);
+    headers.Cookie = await jar.getCookieStrings();
     const options = {
         url,
         method: "POST",
@@ -1067,7 +1070,8 @@ const unfollow = async (req) => {
     }
     const url = `${baseUrl}/web/friendships/${req.data.user.id}/unfollow/`;
     const headers = createHeaders(baseUrl, currentSession);
-    headers.Cookie = extractRequestCookie(req.headers.cookie);
+    await jar.storeRequestCookie(req.headers.cookie);
+    headers.Cookie = await jar.getCookieStrings();
     const options = {
         url,
         method: "POST",
@@ -1153,7 +1157,6 @@ class Controller {
     async tryRestore(req, res) {
         try {
             const session = getSession(req.headers);
-            console.log(req.headers.cookie);
             const result = await this.db.restore(req.session.account);
             result.isAuthenticated = session.isAuthenticated;
             result.account = req.session.account;

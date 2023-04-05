@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosRequestHeaders } from "axios";
-import { baseUrl, createHeaders, getAppId, getClientVersion, getSession, CookieStore, updateSession, extractRequestCookie, logError, testgetSession } from "./util";
+import { baseUrl, createHeaders, getAppId, getClientVersion, getSession, CookieStore, updateSession, logError, testgetSession } from "./util";
 import { IgHeaders, IgRequest, IgResponse, ILoginResponse, ISession } from "@shared";
 
 const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
@@ -178,7 +178,8 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =>
         headers["x-instagram-ajax"] = session.xHeaders.ajax
         headers["content-type"] = "application/x-www-form-urlencoded"
 
-        headers.Cookie = extractRequestCookie(req.headers.cookie);
+        await jar.storeRequestCookie(req.headers.cookie)
+        headers.Cookie = await jar.getCookieStrings()
 
         const params = new URLSearchParams();
         params.append("security_code", req.data.code)
@@ -227,7 +228,9 @@ const logout = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>>  => {
         headers["x-ig-www-claim"] = 0
         headers["x-instagram-ajax"] = session.xHeaders.ajax
         headers["content-type"] = "application/x-www-form-urlencoded"
-        headers.Cookie = extractRequestCookie(req.headers.cookie)
+
+        await jar.storeRequestCookie(req.headers.cookie)
+        headers.Cookie = await jar.getCookieStrings();
 
         const options :AxiosRequestConfig = {
             url,

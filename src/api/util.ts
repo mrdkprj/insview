@@ -280,23 +280,6 @@ const getClientVersion = (data:any) => {
     return version[1]
 }
 
-const extractRequestCookie = (cookieStrings:string | undefined) => {
-
-    if(!cookieStrings) return "";
-
-    const excludeKeys = [
-        "connect.sid",
-        "ARRAffinity",
-        "ARRAffinitySameSite",
-        IgHeaderNames.ajax,
-        IgHeaderNames.appId
-    ]
-
-    const validCookies = cookieStrings.split(";").filter(cookieString => !excludeKeys.some(key => cookieString.includes(key)))
-
-    return validCookies.join(";")
-}
-
 const extractToken = (headers:AxiosResponseHeaders) => {
 
     const setCookieHeader = headers["set-cookie"] || [];
@@ -389,13 +372,23 @@ class CookieStore{
         return await this.getCookies();
     }
 
-    async storeCookieByTough(setCookie:tough.Cookie[] | undefined){
+    async storeRequestCookie(cookieHeader:string | undefined){
 
-        if(!setCookie){
+        if(!cookieHeader){
             return await this.getCookies();
         }
 
-        for (const cookieString of setCookie) {
+        const excludeKeys = [
+            "connect.sid",
+            "ARRAffinity",
+            "ARRAffinitySameSite",
+            IgHeaderNames.ajax,
+            IgHeaderNames.appId
+        ]
+
+        const validCookies = cookieHeader.split(";").map(item => item.trim()).filter(cookieString => !excludeKeys.some(key => cookieString.includes(key)))
+
+        for (const cookieString of validCookies) {
             await this.jar.setCookie(cookieString, baseUrl, {ignoreError:true});
         }
 
@@ -430,4 +423,4 @@ const logError = (ex:any) => {
     return false
 }
 
-export {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, getAppId, getClientVersion, extractRequestCookie, getCookieString, extractToken, updateCookie, CookieStore, logError, testgetSession}
+export {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, getAppId, getClientVersion, getCookieString, extractToken, updateCookie, CookieStore, logError, testgetSession}

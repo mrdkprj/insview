@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
-import {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, CookieStore, extractRequestCookie, logError} from "./util"
+import {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, CookieStore, logError} from "./util"
 import { IMedia, IMediaResponse, IUser, IgRequest, IgResponse, ISession, AuthError} from "@shared";
 
 const GRAPH_QL = "#GRAPH_QL";
@@ -145,9 +145,12 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
 
     try{
 
+        let cookies = await jar.storeRequestCookie(req.headers.cookie)
+        session = updateSession(session, cookies)
+
         headers["x-ig-app-id"] = session.xHeaders.appId
 
-        headers.Cookie = extractRequestCookie(req.headers.cookie)
+        headers.Cookie = await jar.getCookieStrings();
 
         const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`
         headers["x-asbd-id"] = "198387"
@@ -172,7 +175,7 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
             isPro:false,
         }
 
-        let cookies = await jar.storeCookie(response.headers["set-cookie"])
+        cookies = await jar.storeCookie(response.headers["set-cookie"])
         session = updateSession(session, cookies)
 
         response = await _requestPrivate(req, session, user, jar);
@@ -236,16 +239,15 @@ const _requestPrivate = async (req:IgRequest, session:ISession, user:IUser, jar:
 
     const headers = createHeaders(baseUrl + "/" + user.username + "/", session);
     headers.Cookie = await jar.getCookieStrings();
-console.log(headers.Cookie)
-//test
+/*
     const params = JSON.stringify({
         id: user.id,
         first:12,
     });
 
     const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`
-
-    //const url = `https://www.instagram.com/api/v1/feed/user/${user.username}/username/?count=12`
+*/
+    const url = `https://www.instagram.com/api/v1/feed/user/${user.username}/username/?count=12`
 
     const options :AxiosRequestConfig = {
         url,
@@ -281,8 +283,9 @@ const _requestMorePrivate = async (req:IgRequest, session:ISession, jar:CookieSt
     // /const PRIVATE_REQUEST_MORE_URL = `https://www.instagram.com/api/v1/feed/user/53246370416/?count=12&max_id=3067051056560848281_53246370416`
     const url = `https://www.instagram.com/api/v1/feed/user/${req.data.user.id}/?count=12&max_id=${req.data.next.replace(GRAPH_QL, "")}`
 
+    await jar.storeRequestCookie(req.headers.cookie)
     const headers = createHeaders(baseUrl + "/" + req.data.user.username + "/", session);
-    headers.Cookie = extractRequestCookie(req.headers.cookie)
+    headers.Cookie = await jar.getCookieStrings();
 
     const options :AxiosRequestConfig = {
         url,
