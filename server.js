@@ -313,7 +313,13 @@ const getClientVersion = (data) => {
 const extractRequestCookie = (cookieStrings) => {
     if (!cookieStrings)
         return "";
-    const excludeKeys = ["connect.sid", IgHeaderNames.ajax, IgHeaderNames.appId];
+    const excludeKeys = [
+        "connect.sid",
+        "ARRAffinity",
+        "ARRAffinitySameSite",
+        IgHeaderNames.ajax,
+        IgHeaderNames.appId
+    ];
     const validCookies = cookieStrings.split(";").filter(cookieString => !excludeKeys.some(key => cookieString.includes(key)));
     return validCookies.join(";");
 };
@@ -702,7 +708,7 @@ const _tryRequestPrivate = async (req, session) => {
     try {
         headers["x-ig-app-id"] = session.xHeaders.appId;
         headers.Cookie = extractRequestCookie(req.headers.cookie);
-        const url = `https://i.instagram.com/api/v1/users/web_profile_info/?username=${username}`;
+        const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`;
         headers["x-asbd-id"] = "198387";
         const options = {
             url,

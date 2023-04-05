@@ -284,7 +284,13 @@ const extractRequestCookie = (cookieStrings:string | undefined) => {
 
     if(!cookieStrings) return "";
 
-    const excludeKeys = ["connect.sid", IgHeaderNames.ajax, IgHeaderNames.appId]
+    const excludeKeys = [
+        "connect.sid",
+        "ARRAffinity",
+        "ARRAffinitySameSite",
+        IgHeaderNames.ajax,
+        IgHeaderNames.appId
+    ]
 
     const validCookies = cookieStrings.split(";").filter(cookieString => !excludeKeys.some(key => cookieString.includes(key)))
 
