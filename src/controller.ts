@@ -83,7 +83,7 @@ class Controller{
     }
 
     async tryRestore(req:Request, res:Response){
-        console.log("here")
+
         try{
 
             const session = api.getSession(req.headers);

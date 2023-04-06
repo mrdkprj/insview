@@ -70,6 +70,7 @@ function App(){
         try{
 
             const result = await query(username, history, reload, preview);
+            alert(result.status)
             dispatchAuthState({type:AuthAction.toggleAuth, value:{success:result.status, account:result.data.account}})
 
             if(!preview){
