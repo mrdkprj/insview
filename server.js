@@ -496,7 +496,7 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
         console.log(url);
         options.url = url;
         options.method = "GET";
-        options.headers = headers;
+        //options.headers = headers;
         let response = await external_axios_default().request(options);
         let cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);

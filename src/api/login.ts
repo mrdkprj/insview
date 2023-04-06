@@ -120,7 +120,7 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
         console.log(url)
         options.url = url;
         options.method = "GET";
-        options.headers = headers;
+        //options.headers = headers;
 
         let response = await axios.request(options);
 
