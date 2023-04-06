@@ -1155,10 +1155,11 @@ class Controller {
         res.status(400).send(errorMessage);
     }
     async tryRestore(req, res) {
+        console.log("here");
         try {
             const session = getSession(req.headers);
             const result = await this.db.restore(req.session.account);
-            result.isAuthenticated = session.isAuthenticated;
+            result.isAuthenticated = false; //session.isAuthenticated;
             result.account = req.session.account;
             await this.sendResponse(req, res, result, session);
         }

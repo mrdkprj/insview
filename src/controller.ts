@@ -83,14 +83,14 @@ class Controller{
     }
 
     async tryRestore(req:Request, res:Response){
-
+        console.log("here")
         try{
 
             const session = api.getSession(req.headers);
 
             const result = await this.db.restore(req.session.account);
 
-            result.isAuthenticated = session.isAuthenticated;
+            result.isAuthenticated = false//session.isAuthenticated;
             result.account = req.session.account
 
             await this.sendResponse(req, res, result, session);
