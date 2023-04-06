@@ -1135,7 +1135,7 @@ class Controller {
         res.status(200).send(data);
     }
     sendErrorResponse(res, ex, message = "") {
-        let loginRequired = false;
+        let loginRequired = true;
         let errorMessage;
         if (message) {
             errorMessage = message;
@@ -1267,7 +1267,6 @@ class Controller {
                 await this.db.saveHistory(req.session.account, username, newHistory);
                 await this.db.saveMedia(req.session.account, mediaResponse);
             }
-            session.isAuthenticated = false;
             await this.sendResponse(req, res, mediaResponse, session);
         }
         catch (ex) {
@@ -1771,7 +1770,6 @@ app.get("/video", async (req, res) => {
     await server_controller.retrieveMedia(req, res);
 });
 app.post("/query", async (req, res) => {
-    console.log(req.body);
     const username = req.body.username;
     const history = req.body.history;
     const reload = req.body.reload;

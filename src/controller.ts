@@ -60,7 +60,7 @@ class Controller{
 
     sendErrorResponse(res:Response, ex:any, message = ""){
 
-        let loginRequired = false;
+        let loginRequired = true;
 
         let errorMessage
         if(message){
@@ -244,7 +244,7 @@ class Controller{
                 await this.db.saveHistory(req.session.account, username, newHistory);
                 await this.db.saveMedia(req.session.account, mediaResponse);
             }
-            session.isAuthenticated = false
+
             await this.sendResponse(req, res, mediaResponse, session);
 
         }catch(ex:any){
