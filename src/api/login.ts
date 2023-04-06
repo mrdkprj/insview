@@ -12,6 +12,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     const headers = createHeaders(baseUrl, session);
     let cookies = [];
     const jar = new CookieStore();
+    await jar.storeRequestCookie(req.headers.cookie)
 
     const x = 0;
     if(x>0){
@@ -42,7 +43,11 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
             ajax: getClientVersion(response.data)
         }
 
+        await jar.storeCookie(response.headers["set-cookie"])
+
         headers["x-ig-app-id"] = xHeaders.appId
+        headers.Cookie = await jar.getCookieStrings();
+
         options.url = "https://www.instagram.com/api/v1/public/landing_info/";
         options.method = "GET"
         options.headers = headers;
