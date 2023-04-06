@@ -37,7 +37,7 @@ function App(){
     const handleError = useCallback( async (ex:any, message = "") => {
 
         dispatchAuthState({type:AuthAction.toggleAuth, value: {success:ex.data.igAuth}})
-        alert(ex.data.igAuth)
+        window.alert(ex.data.igAuth)
         if(!ex.data.igAuth){
             return openLoginDialog();
         }
@@ -72,7 +72,7 @@ function App(){
             const result = await query(username, history, reload, preview);
 
             dispatchAuthState({type:AuthAction.toggleAuth, value:{success:result.status, account:result.data.account}})
-
+            window.alert(result.status)
             if(!preview){
                 dispatchMediaState({type:MediaAction.update, value: result.data})
                 gridRef.current?.scrollTo(result.data.rowIndex)
