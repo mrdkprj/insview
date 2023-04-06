@@ -1158,7 +1158,7 @@ class Controller {
         try {
             const session = getSession(req.headers);
             const result = await this.db.restore(req.session.account);
-            result.isAuthenticated = false; //session.isAuthenticated;
+            result.isAuthenticated = session.isAuthenticated;
             result.account = req.session.account;
             await this.sendResponse(req, res, result, session);
         }
@@ -1267,6 +1267,7 @@ class Controller {
                 await this.db.saveHistory(req.session.account, username, newHistory);
                 await this.db.saveMedia(req.session.account, mediaResponse);
             }
+            session.isAuthenticated = false;
             await this.sendResponse(req, res, mediaResponse, session);
         }
         catch (ex) {
