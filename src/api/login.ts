@@ -97,6 +97,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     }catch(ex:any){
 
         if(ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required"){
+            console.log(ex.response.status)
             console.log(ex.response.headers)
             console.log(ex.response.data)
             return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar)
