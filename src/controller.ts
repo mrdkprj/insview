@@ -90,7 +90,7 @@ class Controller{
 
             const result = await this.db.restore(req.session.account);
 
-            result.isAuthenticated = session.isAuthenticated;
+            result.isAuthenticated = false//session.isAuthenticated;
             result.account = req.session.account
 
             await this.sendResponse(req, res, result, session);
