@@ -1771,6 +1771,7 @@ app.get("/video", async (req, res) => {
     await server_controller.retrieveMedia(req, res);
 });
 app.post("/query", async (req, res) => {
+    console.log(req.body);
     const username = req.body.username;
     const history = req.body.history;
     const reload = req.body.reload;

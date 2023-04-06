@@ -67,7 +67,7 @@ app.get("/video", async (req:Request, res:Response) => {
 })
 
 app.post("/query", async (req:Request, res:Response) => {
-
+console.log(req.body)
     const username = req.body.username;
     const history = req.body.history;
     const reload = req.body.reload;
