@@ -417,6 +417,7 @@ const login = async (req) => {
     const headers = createHeaders(baseUrl, session);
     let cookies = [];
     const jar = new CookieStore();
+    await jar.storeRequestCookie(req.headers.cookie);
     const x = 0;
     if (x > 0) {
         const s = testgetSession(req.headers);
@@ -440,7 +441,9 @@ const login = async (req) => {
             appId: getAppId(response.data),
             ajax: getClientVersion(response.data)
         };
+        await jar.storeCookie(response.headers["set-cookie"]);
         headers["x-ig-app-id"] = xHeaders.appId;
+        headers.Cookie = await jar.getCookieStrings();
         options.url = "https://www.instagram.com/api/v1/public/landing_info/";
         options.method = "GET";
         options.headers = headers;
@@ -465,6 +468,7 @@ const login = async (req) => {
         options.method = "POST";
         options.data = params;
         options.headers = headers;
+        console.log(headers);
         response = await external_axios_default().request(options);
         console.log("----------auth response-------");
         console.log(response.data);
@@ -478,6 +482,7 @@ const login = async (req) => {
     }
     catch (ex) {
         if (ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required") {
+            console.log(ex.response.headers);
             console.log(ex.response.data);
             return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar);
         }
@@ -492,7 +497,6 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
         const url = "https://www.instagram.com" + checkpoint;
         options.url = url;
         options.method = "GET";
-        options.data = "";
         options.headers = headers;
         let response = await external_axios_default().request(options);
         let cookies = await jar.storeCookie(response.headers["set-cookie"]);

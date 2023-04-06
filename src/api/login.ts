@@ -78,7 +78,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         options.method = "POST"
         options.data = params;
         options.headers = headers;
-
+        console.log(headers)
         response = await axios.request(options);
 
         console.log("----------auth response-------")
@@ -97,6 +97,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     }catch(ex:any){
 
         if(ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required"){
+            console.log(ex.response.headers)
             console.log(ex.response.data)
             return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar)
         }
@@ -119,7 +120,6 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
         const url = "https://www.instagram.com" + checkpoint;
         options.url = url;
         options.method = "GET";
-        options.data = "";
         options.headers = headers;
 
         let response = await axios.request(options);
