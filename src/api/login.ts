@@ -13,7 +13,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     let cookies = [];
     const jar = new CookieStore();
 
-    const x = 10;
+    const x = 0;
     if(x>0){
         const s = testgetSession(req.headers)
         console.log(s.cookies)
