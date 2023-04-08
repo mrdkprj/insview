@@ -456,7 +456,8 @@ const login = async (req) => {
         headers["x-csrftoken"] = session.csrfToken;
         headers["content-type"] = "application/x-www-form-urlencoded";
         const createEncPassword = (pwd) => {
-            return `#PWD_INSTAGRAM_BROWSER:0:${Math.floor(Date.now() / 1000)}:${pwd}`;
+            //return `#PWD_INSTAGRAM_BROWSER:0:${Math.floor(Date.now() / 1000)}:${pwd}`
+            return "#PWD_INSTAGRAM_BROWSER:10:1680860318:AVVQALPz4x/lI5r8rGqJDTHT87RJiToStiQjHp88ouvevzV6dSK+rOtNQ0y+0Lxxzu3AAXPm9C1s1sc9Ol6X/qH8X5P8FP4Hb8CnbaIWqAg8K/zxLj0UpDQeN+uMmqaRiB3r8batT78yAgUGXiw=";
         };
         const params = new URLSearchParams();
         params.append("enc_password", createEncPassword(req.data.password));
