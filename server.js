@@ -486,7 +486,7 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
     console.log("---------- challenge start -------");
     try {
         const options = {};
-        const url = "https://www.instagram.com" + checkpoint;
+        const url = checkpoint; //"https://www.instagram.com" + checkpoint;
         console.log(url);
         options.url = url;
         options.method = "GET";
