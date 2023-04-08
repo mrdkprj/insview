@@ -92,7 +92,7 @@ const emptyResponse = {
     history: {},
     isAuthenticated: false
 };
-const IgHeaderNames = {
+const types_IgHeaderNames = {
     appId: "x_app_id",
     ajax: "x_ajax"
 };
@@ -202,10 +202,10 @@ const getSession = (headers) => {
             if (key === "ds_user_id") {
                 session.userId = cookie.value;
             }
-            if (key === IgHeaderNames.appId.toLowerCase()) {
+            if (key === types_IgHeaderNames.appId.toLowerCase()) {
                 session.xHeaders.appId = cookie.value;
             }
-            if (key === IgHeaderNames.ajax.toLowerCase()) {
+            if (key === types_IgHeaderNames.ajax.toLowerCase()) {
                 session.xHeaders.ajax = cookie.value;
             }
             session.cookies.push(cookie);
@@ -234,7 +234,7 @@ const updateSession = (currentSession, cookies, xHeaders) => {
         const today = new Date();
         const expires = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
         const xAjaxCookie = new (external_tough_cookie_default()).Cookie();
-        xAjaxCookie.key = IgHeaderNames.ajax;
+        xAjaxCookie.key = types_IgHeaderNames.ajax;
         xAjaxCookie.value = xHeaders.ajax;
         xAjaxCookie.expires = expires;
         xAjaxCookie.path = "/";
@@ -242,7 +242,7 @@ const updateSession = (currentSession, cookies, xHeaders) => {
         xAjaxCookie.maxAge = 31449600;
         updatedCookies[xAjaxCookie.key] = xAjaxCookie;
         const xAppIdCookie = new (external_tough_cookie_default()).Cookie();
-        xAppIdCookie.key = IgHeaderNames.appId;
+        xAppIdCookie.key = types_IgHeaderNames.appId;
         xAppIdCookie.value = xHeaders.appId;
         xAppIdCookie.expires = expires;
         xAppIdCookie.path = "/";
@@ -373,8 +373,8 @@ class CookieStore {
             "connect.sid",
             "ARRAffinity",
             "ARRAffinitySameSite",
-            IgHeaderNames.ajax,
-            IgHeaderNames.appId
+            types_IgHeaderNames.ajax,
+            types_IgHeaderNames.appId
         ];
         const validCookies = cookieHeader.split(";").map(item => item.trim()).filter(cookieString => !excludeKeys.some(key => cookieString.includes(key)));
         for (const cookieString of validCookies) {
@@ -418,17 +418,6 @@ const login = async (req) => {
     let cookies = [];
     const jar = new CookieStore();
     await jar.storeRequestCookie(req.headers.cookie);
-    const x = 0;
-    if (x > 0) {
-        const s = testgetSession(req.headers);
-        console.log(s.cookies);
-        const data = { account, success: s.isAuthenticated, challenge: false, endpoint: "" };
-        return {
-            data,
-            session: s
-        };
-        //throw new Error("not now")
-    }
     try {
         const options = {};
         headers.Cookie = "ig_cb=1;";
@@ -456,8 +445,7 @@ const login = async (req) => {
         headers["x-csrftoken"] = session.csrfToken;
         headers["content-type"] = "application/x-www-form-urlencoded";
         const createEncPassword = (pwd) => {
-            //return `#PWD_INSTAGRAM_BROWSER:0:${Math.floor(Date.now() / 1000)}:${pwd}`
-            return "#PWD_INSTAGRAM_BROWSER:10:1680860318:AVVQALPz4x/lI5r8rGqJDTHT87RJiToStiQjHp88ouvevzV6dSK+rOtNQ0y+0Lxxzu3AAXPm9C1s1sc9Ol6X/qH8X5P8FP4Hb8CnbaIWqAg8K/zxLj0UpDQeN+uMmqaRiB3r8batT78yAgUGXiw=";
+            return `#PWD_INSTAGRAM_BROWSER:0:${Math.floor(Date.now() / 1000)}:${pwd}`;
         };
         const params = new URLSearchParams();
         params.append("enc_password", createEncPassword(req.data.password));
@@ -483,7 +471,12 @@ const login = async (req) => {
     catch (ex) {
         if (ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required") {
             console.log(ex.response.data);
-            return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar);
+            //return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar)
+            const data = { account, success: session.isAuthenticated, challenge: true, endpoint: "https://www.instagram.com" + ex.response.data.checkpoint_url };
+            return {
+                data,
+                session
+            };
         }
         logError(ex);
         throw new Error("Login failed");
@@ -540,6 +533,9 @@ const challenge = async (req) => {
         headers["content-type"] = "application/x-www-form-urlencoded";
         await jar.storeRequestCookie(req.headers.cookie);
         headers.Cookie = await jar.getCookieStrings();
+        //
+        await requestChallenge(req.data.account, req.data.endpoint, headers, session, jar);
+        //
         const params = new URLSearchParams();
         params.append("security_code", req.data.code);
         options.url = url;

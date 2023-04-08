@@ -14,19 +14,6 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     const jar = new CookieStore();
     await jar.storeRequestCookie(req.headers.cookie)
 
-    const x = 0;
-    if(x>0){
-        const s = testgetSession(req.headers)
-        console.log(s.cookies)
-        const data = {account, success:s.isAuthenticated, challenge:false, endpoint:""};
-
-        return {
-            data,
-            session:s
-        }
-
-       //throw new Error("not now")
-    }
     try{
 
         const options :AxiosRequestConfig= {};
@@ -98,7 +85,13 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
         if(ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required"){
             console.log(ex.response.data)
-            return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar)
+            //return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar)
+            const data = {account, success:session.isAuthenticated, challenge:true, endpoint:"https://www.instagram.com" + ex.response.data.checkpoint_url};
+
+            return {
+                data,
+                session
+            }
         }
 
         logError(ex)
@@ -185,7 +178,9 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =>
 
         await jar.storeRequestCookie(req.headers.cookie)
         headers.Cookie = await jar.getCookieStrings()
-
+//
+await requestChallenge(req.data.account, req.data.endpoint, headers, session, jar)
+//
         const params = new URLSearchParams();
         params.append("security_code", req.data.code)
 
