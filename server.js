@@ -471,12 +471,7 @@ const login = async (req) => {
     catch (ex) {
         if (ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required") {
             console.log(ex.response.data);
-            //return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar)
-            const data = { account, success: session.isAuthenticated, challenge: true, endpoint: "https://www.instagram.com" + ex.response.data.checkpoint_url };
-            return {
-                data,
-                session
-            };
+            return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar);
         }
         logError(ex);
         throw new Error("Login failed");
@@ -486,7 +481,7 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
     console.log("---------- challenge start -------");
     try {
         const options = {};
-        const url = checkpoint; //"https://www.instagram.com" + checkpoint;
+        const url = "https://www.instagram.com" + checkpoint;
         console.log(url);
         options.url = url;
         options.method = "GET";
@@ -533,9 +528,6 @@ const challenge = async (req) => {
         headers["content-type"] = "application/x-www-form-urlencoded";
         await jar.storeRequestCookie(req.headers.cookie);
         headers.Cookie = await jar.getCookieStrings();
-        //
-        await requestChallenge(req.data.account, req.data.endpoint, headers, session, jar);
-        //
         const params = new URLSearchParams();
         params.append("security_code", req.data.code);
         options.url = url;
