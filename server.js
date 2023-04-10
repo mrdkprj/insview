@@ -167,7 +167,7 @@ const testgetSession = (headers) => {
 const getSession = (headers) => {
     try {
         const session = {
-            isAuthenticated: false,
+            isAuthenticated: true,
             csrfToken: "",
             userId: "",
             userAgent: headers["user-agent"],
