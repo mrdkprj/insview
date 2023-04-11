@@ -714,6 +714,7 @@ const _tryRequestPrivate = async (req, session) => {
         options.url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`;
         options.headers = headers;
         response = await external_axios_default().request(options);
+        console.log(response.data);
         const userData = response.data.data.user;
         const user = {
             id: userData.id,

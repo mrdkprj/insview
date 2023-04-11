@@ -170,7 +170,7 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
         options.headers = headers
 
         response = await axios.request(options);
-
+console.log(response.data)
         const userData = response.data.data.user;
 
         const user :IUser = {
