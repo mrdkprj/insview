@@ -169,7 +169,7 @@ const getSession = (headers) => {
         const session = {
             isAuthenticated: true,
             csrfToken: "",
-            userId: "",
+            userId: process.env.USER_ID,
             userAgent: headers["user-agent"],
             cookies: [],
             expires: null,
@@ -682,7 +682,8 @@ const _tryRequestPrivate = async (req, session) => {
         session = updateSession(session, cookies);
         headers["x-ig-app-id"] = session.xHeaders.appId;
         headers.Cookie = await jar.getCookieStrings();
-        const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`;
+        //const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`
+        const url = baseUrl + "/" + username + "/";
         headers["x-asbd-id"] = "198387";
         const options = {
             url,
@@ -690,7 +691,14 @@ const _tryRequestPrivate = async (req, session) => {
             headers,
         };
         let response = await external_axios_default().request(options);
-        const userData = response.data.data.user;
+        //const userData = response.data.data.user;
+        const userData = {
+            id: extractUserId(response.data),
+            full_name: username,
+            profile_pic_url: "",
+            biography: "",
+            followed_by_viewer: false,
+        };
         const user = {
             id: userData.id,
             igId: userData.id,

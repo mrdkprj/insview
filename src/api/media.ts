@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
-import {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, CookieStore, logError} from "./util"
+import {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, CookieStore, logError, extractUserId} from "./util"
 import { IMedia, IMediaResponse, IUser, IgRequest, IgResponse, ISession, AuthError} from "@shared";
 
 const GRAPH_QL = "#GRAPH_QL";
@@ -152,7 +152,8 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
 
         headers.Cookie = await jar.getCookieStrings();
 
-        const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`
+        //const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`
+        const url = baseUrl + "/" + username + "/"
         headers["x-asbd-id"] = "198387"
         const options :AxiosRequestConfig = {
             url,
@@ -162,7 +163,14 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
 
         let response = await axios.request(options);
 
-        const userData = response.data.data.user;
+        //const userData = response.data.data.user;
+        const userData = {
+            id:extractUserId(response.data),
+            full_name:username,
+            profile_pic_url:"",
+            biography:"",
+            followed_by_viewer:false,
+        }
 
         const user :IUser = {
             id: userData.id,
