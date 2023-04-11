@@ -691,7 +691,6 @@ const _tryRequestPrivate = async (req, session) => {
             headers,
         };
         let response = await external_axios_default().request(options);
-        console.log(response.data);
         //const userData = response.data.data.user;
         const userData = {
             id: extractUserId(response.data),

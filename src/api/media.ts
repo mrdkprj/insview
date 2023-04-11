@@ -162,7 +162,7 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
         }
 
         let response = await axios.request(options);
-console.log(response.data)
+
         //const userData = response.data.data.user;
         const userData = {
             id:extractUserId(response.data),
