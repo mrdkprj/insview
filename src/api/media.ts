@@ -1,6 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
-import {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, CookieStore, logError} from "./util"
-import { IMedia, IMediaResponse, IUser, IgRequest, IgResponse, ISession, AuthError} from "@shared";
+import {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, CookieStore, logError, getAppId, getClientVersion} from "./util"
+import { IMedia, IMediaResponse, IUser, IgRequest, IgResponse, ISession, AuthError, IgHeaders} from "@shared";
 
 const GRAPH_QL = "#GRAPH_QL";
 const IMAGE_URL = "/image?url="
@@ -141,26 +141,35 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
 
     const jar = new CookieStore();
     const username = req.data.username;
-    const headers = createHeaders(baseUrl + "/" + username + "/", session);
+    const headers = createHeaders(baseUrl, session);
+    let cookies = await jar.storeRequestCookie(req.headers.cookie)
+    session = updateSession(session, cookies)
 
     try{
 
-        let cookies = await jar.storeRequestCookie(req.headers.cookie)
-        session = updateSession(session, cookies)
-
-        headers["x-ig-app-id"] = session.xHeaders.appId
-
-        headers.Cookie = await jar.getCookieStrings();
-
-        const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`
-        headers["x-asbd-id"] = "198387"
         const options :AxiosRequestConfig = {
-            url,
+            url:baseUrl,
             method: "GET",
             headers,
         }
 
         let response = await axios.request(options);
+
+        const xHeaders :IgHeaders = {
+            appId: getAppId(response.data),
+            ajax: getClientVersion(response.data)
+        }
+
+        await jar.storeCookie(response.headers["set-cookie"])
+
+        headers["x-ig-app-id"] = xHeaders.appId
+        headers.Cookie = await jar.getCookieStrings();
+        headers["x-asbd-id"] = "198387"
+
+        options.url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`
+        options.headers = headers
+
+        response = await axios.request(options);
 
         const userData = response.data.data.user;
 

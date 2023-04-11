@@ -693,20 +693,27 @@ const _tryRequestPrivate = async (req, session) => {
     }
     const jar = new CookieStore();
     const username = req.data.username;
-    const headers = createHeaders(baseUrl + "/" + username + "/", session);
+    const headers = createHeaders(baseUrl, session);
+    let cookies = await jar.storeRequestCookie(req.headers.cookie);
+    session = updateSession(session, cookies);
     try {
-        let cookies = await jar.storeRequestCookie(req.headers.cookie);
-        session = updateSession(session, cookies);
-        headers["x-ig-app-id"] = session.xHeaders.appId;
-        headers.Cookie = await jar.getCookieStrings();
-        const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`;
-        headers["x-asbd-id"] = "198387";
         const options = {
-            url,
+            url: baseUrl,
             method: "GET",
             headers,
         };
         let response = await external_axios_default().request(options);
+        const xHeaders = {
+            appId: getAppId(response.data),
+            ajax: getClientVersion(response.data)
+        };
+        await jar.storeCookie(response.headers["set-cookie"]);
+        headers["x-ig-app-id"] = xHeaders.appId;
+        headers.Cookie = await jar.getCookieStrings();
+        headers["x-asbd-id"] = "198387";
+        options.url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`;
+        options.headers = headers;
+        response = await external_axios_default().request(options);
         const userData = response.data.data.user;
         const user = {
             id: userData.id,
