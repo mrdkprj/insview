@@ -169,7 +169,7 @@ const getSession = (headers) => {
         const session = {
             isAuthenticated: true,
             csrfToken: "",
-            userId: process.env.USER_ID,
+            userId: "",
             userAgent: headers["user-agent"],
             cookies: [],
             expires: null,

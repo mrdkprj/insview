@@ -1,5 +1,5 @@
 import axios, {AxiosRequestConfig, AxiosResponse, AxiosResponseHeaders, Method} from "axios";
-import {IMediaResponse, IHistory, IUser, IAuthResponse, IFollowing, RequestError, IResponse} from "@shared"
+import {IMediaResponse, IHistory, IUser, IAuthResponse, IFollowing, RequestError, IResponse, emptyMedia} from "@shared"
 
 const createOptions = (url:string, method:Method, data:any) :AxiosRequestConfig => {
 
@@ -28,20 +28,33 @@ const throwError = (ex:any) => {
 
 const query = async (username: string, history:IHistory, reload:boolean, preview:boolean) : Promise<IResponse<IMediaResponse>> => {
 
+    const url = "https://m.youtube.com/watch?v=F_d8CyDSAAk&list=RDGMEMCMFH2exzjBeE_zAHHJOdxg&index=28";
+    const method = "GET";
+    const options:AxiosRequestConfig  = {
+        method,
+        url,
+        withCredentials:true
+    }
+/*
     const url = "/query";
     const method = "POST";
     const data = {username, history, reload, preview};
 
     const options = createOptions(url, method, data);
+*/
 
     try{
         const result :AxiosResponse<IMediaResponse> = await axios.request(options);
-
         return {
             status: getState(result.headers),
             data: result.data,
         }
-
+/*
+        return {
+            status: getState(result.headers),
+            data: result.data,
+        }
+*/
     }catch(ex:any){
         return throwError(ex)
     }

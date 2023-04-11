@@ -95,7 +95,7 @@ const getSession = (headers:any) :ISession => {
         const session :ISession = {
             isAuthenticated:true,
             csrfToken:"",
-            userId:process.env.USER_ID,
+            userId:"",
             userAgent: headers["user-agent"],
             cookies:[],
             expires: null,
