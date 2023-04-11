@@ -272,27 +272,6 @@ const updateSession = (currentSession, cookies, xHeaders) => {
     });
     return session;
 };
-/*
-const updateSession = (currentSession:ISession, headers:any) => {
-
-    currentSession.cookies = [];
-
-    const cookies = headers["set-cookie"] instanceof Array ? headers["set-cookie"] : [headers["set-cookie"]];
-
-    cookies.forEach((cookieString:string) => {
-
-        const cookie = Cookie.parse(cookieString);
-
-        if(!cookie) return;
-
-        currentSession.cookies.push(cookie)
-
-    })
-
-    return currentSession;
-
-}
-*/
 const createHeaders = (referer, session) => {
     const headers = baseRequestHeaders;
     headers["origin"] = "https://www.instagram.com";
@@ -309,6 +288,10 @@ const getAppId = (data) => {
 const getClientVersion = (data) => {
     const version = data.match(/"client_revision":(.*),"tier"/);
     return version[1];
+};
+const extractUserId = (data) => {
+    const userId = data.match(/{"query":{"query_hash":".*","user_id":"(.*)","include_chaining"/);
+    return userId[1];
 };
 const extractToken = (headers) => {
     const setCookieHeader = headers["set-cookie"] || [];
@@ -707,14 +690,14 @@ const _tryRequestPrivate = async (req, session) => {
             appId: getAppId(response.data),
             ajax: getClientVersion(response.data)
         };
+        console.log(response.headers["set-cookie"]);
         await jar.storeCookie(response.headers["set-cookie"]);
         headers["x-ig-app-id"] = xHeaders.appId;
         headers.Cookie = await jar.getCookieStrings();
         headers["x-asbd-id"] = "198387";
-        options.url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`;
+        options.url = `https://i.instagram.com/api/v1/users/web_profile_info/?username=${username}`;
         options.headers = headers;
         response = await external_axios_default().request(options);
-        console.log(response.data);
         const userData = response.data.data.user;
         const user = {
             id: userData.id,

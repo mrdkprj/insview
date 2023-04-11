@@ -236,27 +236,6 @@ const updateSession = (currentSession:ISession, cookies:tough.Cookie[], xHeaders
     return session;
 
 }
-/*
-const updateSession = (currentSession:ISession, headers:any) => {
-
-    currentSession.cookies = [];
-
-    const cookies = headers["set-cookie"] instanceof Array ? headers["set-cookie"] : [headers["set-cookie"]];
-
-    cookies.forEach((cookieString:string) => {
-
-        const cookie = Cookie.parse(cookieString);
-
-        if(!cookie) return;
-
-        currentSession.cookies.push(cookie)
-
-    })
-
-    return currentSession;
-
-}
-*/
 
 const createHeaders = (referer:string, session:ISession) :AxiosRequestHeaders => {
 
@@ -278,6 +257,11 @@ const getAppId = (data:any) => {
 const getClientVersion = (data:any) => {
     const version = data.match(/"client_revision":(.*),"tier"/)
     return version[1]
+}
+
+const extractUserId = (data:any) => {
+    const userId = data.match(/{"query":{"query_hash":".*","user_id":"(.*)","include_chaining"/)
+    return userId[1]
 }
 
 const extractToken = (headers:AxiosResponseHeaders) => {
@@ -423,4 +407,4 @@ const logError = (ex:any) => {
     return false
 }
 
-export {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, getAppId, getClientVersion, getCookieString, extractToken, updateCookie, CookieStore, logError, testgetSession}
+export {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, getAppId, getClientVersion, getCookieString, extractToken, updateCookie, CookieStore, logError, testgetSession, extractUserId}

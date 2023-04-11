@@ -159,18 +159,18 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
             appId: getAppId(response.data),
             ajax: getClientVersion(response.data)
         }
-
+console.log(response.headers["set-cookie"])
         await jar.storeCookie(response.headers["set-cookie"])
 
         headers["x-ig-app-id"] = xHeaders.appId
         headers.Cookie = await jar.getCookieStrings();
         headers["x-asbd-id"] = "198387"
 
-        options.url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`
+        options.url = `https://i.instagram.com/api/v1/users/web_profile_info/?username=${username}`
         options.headers = headers
 
         response = await axios.request(options);
-console.log(response.data)
+
         const userData = response.data.data.user;
 
         const user :IUser = {
