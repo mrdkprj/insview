@@ -1742,7 +1742,7 @@ app.use(external_express_session_default()({
 }));
 app.use((req, res, next) => {
     const passthru = ["/login", "/logout", "/challenge"];
-    if (!isProduction)
+    if (isProduction)
         req.session.account = process.env.ACCOUNT;
     if (req.session.account || passthru.includes(req.path) || req.method === "GET") {
         next();
