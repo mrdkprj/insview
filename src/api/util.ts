@@ -391,12 +391,11 @@ class CookieStore{
 
 const logError = (ex:any) => {
 
-    if(ex.response && ex.response.headers["content-type"].includes("html")){
-        return false;
-    }
-
     const errorData = ex.response ? ex.response.data : ex;
-    console.log(errorData)
+
+    if(ex.response && !ex.response.headers["content-type"].includes("html")){
+        console.log(errorData)
+    }
     console.log(errorData.message)
 
     if(ex.response && ex.response.data){
