@@ -380,8 +380,7 @@ const logError = (ex) => {
     console.log(errorData);
     console.log(errorData.message);
     if (ex.response && ex.response.data) {
-        //return ex.response.data.require_login
-        return false;
+        return ex.response.data.require_login;
     }
     return false;
 };
@@ -401,6 +400,7 @@ const login = async (req) => {
     let cookies = [];
     const jar = new CookieStore();
     await jar.storeRequestCookie(req.headers.cookie);
+    console.log("---------- login start2 ----------");
     try {
         const options = {};
         headers.Cookie = "ig_cb=1;";
@@ -1726,8 +1726,7 @@ app.use(external_express_session_default()({
 }));
 app.use((req, res, next) => {
     const passthru = ["/login", "/logout", "/challenge"];
-    if (isProduction)
-        req.session.account = process.env.ACCOUNT;
+    //if(isProduction) req.session.account = process.env.ACCOUNT;
     if (req.session.account || passthru.includes(req.path) || req.method === "GET") {
         next();
     }

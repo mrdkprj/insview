@@ -400,8 +400,7 @@ const logError = (ex:any) => {
     console.log(errorData.message)
 
     if(ex.response && ex.response.data){
-        //return ex.response.data.require_login
-        return false
+       return ex.response.data.require_login
     }
 
     return false

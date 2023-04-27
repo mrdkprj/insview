@@ -13,7 +13,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     let cookies = [];
     const jar = new CookieStore();
     await jar.storeRequestCookie(req.headers.cookie)
-
+    console.log("---------- login start2 ----------")
     try{
 
         const options :AxiosRequestConfig= {};
