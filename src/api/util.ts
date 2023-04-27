@@ -264,6 +264,11 @@ const extractUserId = (data:any) => {
     return userId[1]
 }
 
+const extractCsrfToken = (data:any) => {
+    const token = data.match(/{"raw":"{"config":{"csrf_token":"(.*)","viewer":/)
+    return token[1]
+}
+
 const extractToken = (headers:AxiosResponseHeaders) => {
 
     const setCookieHeader = headers["set-cookie"] || [];
@@ -405,4 +410,4 @@ const logError = (ex:any) => {
     return false
 }
 
-export {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, getAppId, getClientVersion, getCookieString, extractToken, updateCookie, CookieStore, logError, testgetSession, extractUserId}
+export {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, getAppId, getClientVersion, getCookieString, extractToken, updateCookie, CookieStore, logError, testgetSession, extractUserId, extractCsrfToken}

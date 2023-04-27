@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosRequestHeaders } from "axios";
-import { baseUrl, createHeaders, getAppId, getClientVersion, getSession, CookieStore, updateSession, logError, testgetSession } from "./util";
+import { baseUrl, createHeaders, getAppId, getClientVersion, getSession, CookieStore, updateSession, logError, testgetSession, extractCsrfToken } from "./util";
 import { IgHeaders, IgRequest, IgResponse, ILoginResponse, ISession } from "@shared";
 
 const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
@@ -30,20 +30,25 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
             ajax: getClientVersion(response.data)
         }
 
-        await jar.storeCookie(response.headers["set-cookie"])
+        session.csrfToken = extractCsrfToken(response.data)
+
+        cookies = await jar.storeCookie(response.headers["set-cookie"])
 
         headers["x-ig-app-id"] = xHeaders.appId
         headers.Cookie = await jar.getCookieStrings();
-
+        session = updateSession(session, cookies, xHeaders)
+/*
         options.url = "https://www.instagram.com/api/v1/public/landing_info/";
         options.method = "GET"
         options.headers = headers;
 
         response = await axios.request(options);
-        console.log("---------- login start2 ----------")
+
+
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies, xHeaders)
         headers.Cookie = await jar.getCookieStrings()
+*/
 
         headers["x-ig-www-claim"] = 0
         headers["x-instagram-ajax"] = xHeaders.ajax

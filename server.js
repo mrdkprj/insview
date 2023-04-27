@@ -293,6 +293,10 @@ const extractUserId = (data) => {
     const userId = data.match(/{"query":{"query_hash":".*","user_id":"(.*)","include_chaining"/);
     return userId[1];
 };
+const extractCsrfToken = (data) => {
+    const token = data.match(/{"raw":"{"config":{"csrf_token":"(.*)","viewer":/);
+    return token[1];
+};
 const extractToken = (headers) => {
     const setCookieHeader = headers["set-cookie"] || [];
     const cookies = setCookieHeader.map(c => Cookie.parse(c) || new tough.Cookie());
@@ -411,17 +415,23 @@ const login = async (req) => {
             appId: getAppId(response.data),
             ajax: getClientVersion(response.data)
         };
-        await jar.storeCookie(response.headers["set-cookie"]);
+        session.csrfToken = extractCsrfToken(response.data);
+        cookies = await jar.storeCookie(response.headers["set-cookie"]);
         headers["x-ig-app-id"] = xHeaders.appId;
         headers.Cookie = await jar.getCookieStrings();
-        options.url = "https://www.instagram.com/api/v1/public/landing_info/";
-        options.method = "GET";
-        options.headers = headers;
-        response = await external_axios_default().request(options);
-        console.log("---------- login start2 ----------");
-        cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies, xHeaders);
-        headers.Cookie = await jar.getCookieStrings();
+        /*
+                options.url = "https://www.instagram.com/api/v1/public/landing_info/";
+                options.method = "GET"
+                options.headers = headers;
+        
+                response = await axios.request(options);
+        
+        
+                cookies = await jar.storeCookie(response.headers["set-cookie"]);
+                session = updateSession(session, cookies, xHeaders)
+                headers.Cookie = await jar.getCookieStrings()
+        */
         headers["x-ig-www-claim"] = 0;
         headers["x-instagram-ajax"] = xHeaders.ajax;
         headers["x-csrftoken"] = session.csrfToken;
