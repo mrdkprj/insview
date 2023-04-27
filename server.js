@@ -400,7 +400,6 @@ const login = async (req) => {
     let cookies = [];
     const jar = new CookieStore();
     await jar.storeRequestCookie(req.headers.cookie);
-    console.log("---------- login start2 ----------");
     try {
         const options = {};
         headers.Cookie = "ig_cb=1;";
@@ -420,6 +419,7 @@ const login = async (req) => {
         options.method = "GET";
         options.headers = headers;
         response = await external_axios_default().request(options);
+        console.log("---------- login start2 ----------");
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies, xHeaders);
         headers.Cookie = await jar.getCookieStrings();
