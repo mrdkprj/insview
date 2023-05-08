@@ -1,7 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosRequestHeaders } from "axios";
-import { baseUrl, createHeaders, getAppId, getClientVersion, getSession, CookieStore, updateSession, logError, testgetSession, extractCsrfToken } from "./util";
+import { baseUrl, createHeaders, getAppId, getClientVersion, getSession, CookieStore, updateSession, logError, extractCsrfToken } from "./util";
 import { IgHeaders, IgRequest, IgResponse, ILoginResponse, ISession } from "@shared";
-import fs from "fs"
 
 const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 

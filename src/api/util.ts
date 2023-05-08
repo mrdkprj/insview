@@ -12,81 +12,6 @@ const baseRequestHeaders :AxiosRequestHeaders = {
     "Accept-Language": "en-US",
     "Authority": "www.instagram.com",
 }
-
-const testgetSession = (headers:any) :ISession => {
-
-
-    try{
-
-        const session :ISession = {
-            isAuthenticated:false,
-            csrfToken:"",
-            userId:"",
-            userAgent: headers["user-agent"],
-            cookies:[],
-            expires: null,
-            xHeaders:{appId:"", ajax:""}
-        }
-        const raw = headers.cookie.split(";")
-        const csr = 'ds_user_id=52714401302; ig_nrcb=1; x_app_id=1217981644879628; shbid="15034\\05452714401302\\0541712195954:01f7931a8b0d8dc4d30c957fa7ace0a9b50b2638b19a86c3b81f3f78420ebcd04cc6c0a0"; shbts="1680659954\\05452714401302\\0541712195954:01f79414060218a7aa5ff9f6de1f113b1143acdad97ef3b0291ced0d17ee50e89cc2debd"; x_ajax=1007248582; mid=ZC0dFAAAAAFlb-H1ejriRkECJYwD; ig_did=806A8103-7A23-4196-881D-1892E5FD0E41; sessionid=52714401302%3AUkASXPHheJJ6XI%3A24%3AAYemykVpBE2GUdhj93xXB_hbXw7ZcwDm6klVQpz6Pg; rur="EAG\\05452714401302\\0541712215459:01f73254288bfade4ee70b196d8dbaea53ed87343d01d27ccd60e0340ad6274a0f594922"'
-        const cs = csr.split(";").filter(e => !raw.includes(e))
-        const cookies = cs
-
-        cookies.forEach((cookieString:string) => {
-
-            const cookie = Cookie.parse(cookieString);
-
-            if(!cookie){
-                return
-            }
-
-            const key = cookie.key.toLowerCase();
-
-            if(key === "sessionid" && cookie.value){
-
-                session.isAuthenticated = true;
-
-                if(!cookie.expires){
-                    const expires = new Date();
-                    expires.setTime(expires.getTime() + (8*60*60*1000));
-                    cookie.expires = expires
-                }
-
-
-                if(cookie.expires !== "Infinity"){
-                    session.expires = cookie.expires;
-                }
-
-            }
-
-            if(key === "csrftoken"){
-                session.csrfToken = cookie.value;
-            }
-
-            if(key === "ds_user_id"){
-                session.userId = cookie.value;
-            }
-
-            if(key === IgHeaderNames.appId.toLowerCase()){
-                session.xHeaders.appId = cookie.value;
-            }
-
-            if(key === IgHeaderNames.ajax.toLowerCase()){
-                session.xHeaders.ajax = cookie.value;
-            }
-
-            session.cookies.push(cookie);
-
-        })
-
-        return session;
-
-    }catch(ex:any){
-        console.log(ex.message);
-        throw new Error("cookie error")
-    }
-}
-
 const getSession = (headers:any) :ISession => {
 
 
@@ -411,4 +336,4 @@ const logError = (ex:any) => {
     return false
 }
 
-export {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, getAppId, getClientVersion, getCookieString, extractToken, updateCookie, CookieStore, logError, testgetSession, extractUserId, extractCsrfToken}
+export {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, getAppId, getClientVersion, getCookieString, extractToken, updateCookie, CookieStore, logError, extractUserId, extractCsrfToken}

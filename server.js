@@ -92,7 +92,7 @@ const emptyResponse = {
     history: {},
     isAuthenticated: false
 };
-const types_IgHeaderNames = {
+const IgHeaderNames = {
     appId: "x_app_id",
     ajax: "x_ajax"
 };
@@ -110,59 +110,6 @@ const baseRequestHeaders = {
     "Accept-Encoding": "gzip, deflate",
     "Accept-Language": "en-US",
     "Authority": "www.instagram.com",
-};
-const testgetSession = (headers) => {
-    try {
-        const session = {
-            isAuthenticated: false,
-            csrfToken: "",
-            userId: "",
-            userAgent: headers["user-agent"],
-            cookies: [],
-            expires: null,
-            xHeaders: { appId: "", ajax: "" }
-        };
-        const raw = headers.cookie.split(";");
-        const csr = 'ds_user_id=52714401302; ig_nrcb=1; x_app_id=1217981644879628; shbid="15034\\05452714401302\\0541712195954:01f7931a8b0d8dc4d30c957fa7ace0a9b50b2638b19a86c3b81f3f78420ebcd04cc6c0a0"; shbts="1680659954\\05452714401302\\0541712195954:01f79414060218a7aa5ff9f6de1f113b1143acdad97ef3b0291ced0d17ee50e89cc2debd"; x_ajax=1007248582; mid=ZC0dFAAAAAFlb-H1ejriRkECJYwD; ig_did=806A8103-7A23-4196-881D-1892E5FD0E41; sessionid=52714401302%3AUkASXPHheJJ6XI%3A24%3AAYemykVpBE2GUdhj93xXB_hbXw7ZcwDm6klVQpz6Pg; rur="EAG\\05452714401302\\0541712215459:01f73254288bfade4ee70b196d8dbaea53ed87343d01d27ccd60e0340ad6274a0f594922"';
-        const cs = csr.split(";").filter(e => !raw.includes(e));
-        const cookies = cs;
-        cookies.forEach((cookieString) => {
-            const cookie = Cookie.parse(cookieString);
-            if (!cookie) {
-                return;
-            }
-            const key = cookie.key.toLowerCase();
-            if (key === "sessionid" && cookie.value) {
-                session.isAuthenticated = true;
-                if (!cookie.expires) {
-                    const expires = new Date();
-                    expires.setTime(expires.getTime() + (8 * 60 * 60 * 1000));
-                    cookie.expires = expires;
-                }
-                if (cookie.expires !== "Infinity") {
-                    session.expires = cookie.expires;
-                }
-            }
-            if (key === "csrftoken") {
-                session.csrfToken = cookie.value;
-            }
-            if (key === "ds_user_id") {
-                session.userId = cookie.value;
-            }
-            if (key === IgHeaderNames.appId.toLowerCase()) {
-                session.xHeaders.appId = cookie.value;
-            }
-            if (key === IgHeaderNames.ajax.toLowerCase()) {
-                session.xHeaders.ajax = cookie.value;
-            }
-            session.cookies.push(cookie);
-        });
-        return session;
-    }
-    catch (ex) {
-        console.log(ex.message);
-        throw new Error("cookie error");
-    }
 };
 const getSession = (headers) => {
     try {
@@ -202,10 +149,10 @@ const getSession = (headers) => {
             if (key === "ds_user_id") {
                 session.userId = cookie.value;
             }
-            if (key === types_IgHeaderNames.appId.toLowerCase()) {
+            if (key === IgHeaderNames.appId.toLowerCase()) {
                 session.xHeaders.appId = cookie.value;
             }
-            if (key === types_IgHeaderNames.ajax.toLowerCase()) {
+            if (key === IgHeaderNames.ajax.toLowerCase()) {
                 session.xHeaders.ajax = cookie.value;
             }
             session.cookies.push(cookie);
@@ -234,7 +181,7 @@ const updateSession = (currentSession, cookies, xHeaders) => {
         const today = new Date();
         const expires = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
         const xAjaxCookie = new (external_tough_cookie_default()).Cookie();
-        xAjaxCookie.key = types_IgHeaderNames.ajax;
+        xAjaxCookie.key = IgHeaderNames.ajax;
         xAjaxCookie.value = xHeaders.ajax;
         xAjaxCookie.expires = expires;
         xAjaxCookie.path = "/";
@@ -242,7 +189,7 @@ const updateSession = (currentSession, cookies, xHeaders) => {
         xAjaxCookie.maxAge = 31449600;
         updatedCookies[xAjaxCookie.key] = xAjaxCookie;
         const xAppIdCookie = new (external_tough_cookie_default()).Cookie();
-        xAppIdCookie.key = types_IgHeaderNames.appId;
+        xAppIdCookie.key = IgHeaderNames.appId;
         xAppIdCookie.value = xHeaders.appId;
         xAppIdCookie.expires = expires;
         xAppIdCookie.path = "/";
@@ -361,8 +308,8 @@ class CookieStore {
             "connect.sid",
             "ARRAffinity",
             "ARRAffinitySameSite",
-            types_IgHeaderNames.ajax,
-            types_IgHeaderNames.appId
+            IgHeaderNames.ajax,
+            IgHeaderNames.appId
         ];
         const validCookies = cookieHeader.split(";").map(item => item.trim()).filter(cookieString => !excludeKeys.some(key => cookieString.includes(key)));
         for (const cookieString of validCookies) {
