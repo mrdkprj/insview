@@ -133,6 +133,7 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
 
         console.log("---------- challenge response -------")
         console.log(response.data)
+        console.log(response.headers)
 
         cookies = await jar.storeCookie(response.headers["set-cookie"])
         session = updateSession(session, cookies)

@@ -438,6 +438,7 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
         response = await external_axios_default().request(options);
         console.log("---------- challenge response -------");
         console.log(response.data);
+        console.log(response.headers);
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
         if (response.data.type && response.data.type === "CHALLENGE") {
