@@ -41,6 +41,7 @@ app.use((req:Request, res:Response, next) => {
     const passthru = ["/login", "/logout", "/challenge"]
 
     //if(isProduction) req.session.account = process.env.ACCOUNT;
+    console.log(req.session)
 
     if(req.session.account || passthru.includes(req.path) || req.method === "GET"){
         next()
