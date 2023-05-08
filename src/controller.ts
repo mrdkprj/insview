@@ -271,7 +271,8 @@ class Controller{
             await this.sendResponse(req, res, igResponse.data, igResponse.session);
 
         }catch(ex:any){
-
+            console.log("try query more error")
+            console.log(ex)
             return this.sendErrorResponse(res, ex);
 
         }
@@ -293,7 +294,8 @@ class Controller{
             await this.sendResponse(req, res, igResponse.data, igResponse.session);
 
         }catch(ex:any){
-
+            console.log("tryReload error")
+            console.log(ex)
             return this.sendErrorResponse(res, ex);
 
         }

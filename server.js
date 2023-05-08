@@ -992,7 +992,6 @@ const requestFollowings = async (req) => {
     const headers = createHeaders(baseUrl, currentSession);
     await jar.storeRequestCookie(req.headers.cookie);
     headers.Cookie = await jar.getCookieStrings();
-    console.log(headers.Cookie);
     const options = {
         url,
         method: "GET",
@@ -1277,6 +1276,8 @@ class Controller {
             await this.sendResponse(req, res, igResponse.data, igResponse.session);
         }
         catch (ex) {
+            console.log("try query more error");
+            console.log(ex);
             return this.sendErrorResponse(res, ex);
         }
     }
@@ -1289,6 +1290,8 @@ class Controller {
             await this.sendResponse(req, res, igResponse.data, igResponse.session);
         }
         catch (ex) {
+            console.log("tryReload error");
+            console.log(ex);
             return this.sendErrorResponse(res, ex);
         }
     }
