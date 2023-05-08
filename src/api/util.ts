@@ -169,7 +169,8 @@ const createHeaders = (referer:string, session:ISession) :AxiosRequestHeaders =>
     headers["referer"] = referer
     headers["x-requested-with"] = "XMLHttpRequest"
     headers["x-csrftoken"] = session.csrfToken;
-    headers["user-agent"] = "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"//session.userAgent;
+    headers["user-agent"] = session.userAgent;
+    //"Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
 
     return headers;
 }
