@@ -294,7 +294,8 @@ const extractUserId = (data) => {
     return userId[1];
 };
 const extractCsrfToken = (data) => {
-    const token = data.match(/{"raw":"{"config":{"csrf_token":"(.*)","viewer":/);
+    const token = data.match(/{"raw":"{\\"config\\":{\\"csrf_token\\":\\"(.*)\\",\\"viewer\\":/);
+    //{"raw":"{\"config\":{\"csrf_token\":\"FDLgSfTPUrTDsYHfIoapicYTDCL9JjHH\",\"viewer\":null,\"
     return token[1];
 };
 const extractToken = (headers) => {
@@ -426,7 +427,6 @@ const login = async (req) => {
                 options.headers = headers;
         
                 response = await axios.request(options);
-        
         
                 cookies = await jar.storeCookie(response.headers["set-cookie"]);
                 session = updateSession(session, cookies, xHeaders)
@@ -691,8 +691,9 @@ const _tryRequestPrivate = async (req, session) => {
         session = updateSession(session, cookies);
         headers["x-ig-app-id"] = session.xHeaders.appId;
         headers.Cookie = await jar.getCookieStrings();
-        //const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`
-        const url = baseUrl + "/" + username + "/";
+        const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`;
+        // use when web_profile no longer works
+        //const url = baseUrl + "/" + username + "/"
         headers["x-asbd-id"] = "198387";
         const options = {
             url,
@@ -700,14 +701,17 @@ const _tryRequestPrivate = async (req, session) => {
             headers,
         };
         let response = await external_axios_default().request(options);
-        //const userData = response.data.data.user;
+        const userData = response.data.data.user;
+        /*
+        // use when web_profile no longer works
         const userData = {
-            id: extractUserId(response.data),
-            full_name: username,
-            profile_pic_url: "",
-            biography: "",
-            followed_by_viewer: false,
-        };
+            id:extractUserId(response.data),
+            full_name:username,
+            profile_pic_url:"",
+            biography:"",
+            followed_by_viewer:false,
+        }
+*/
         const user = {
             id: userData.id,
             igId: userData.id,
@@ -767,6 +771,7 @@ const _requestPrivate = async (req, session, user, jar) => {
         first: 12,
     });
     const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`;
+    // use when query hash no longer works
     //const url = `https://www.instagram.com/api/v1/feed/user/${user.username}/username/?count=12`
     const options = {
         url,
@@ -777,9 +782,12 @@ const _requestPrivate = async (req, session, user, jar) => {
     if (response.headers["content-type"].includes("html")) {
         throw new Error("Auth error");
     }
-    if (!response.data.items) {
-        throw new Error("Response error");
-    }
+    /*
+    // use when query hash no longer works
+        if(!response.data.items){
+            throw new Error("Response error")
+        }
+    */
     await jar.storeCookie(response.headers["set-cookie"]);
     return response;
 };
@@ -790,7 +798,7 @@ const _requestMorePrivate = async (req, session, jar) => {
         after: req.data.next.replace(GRAPH_QL, "")
     });
     const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`;
-    // /const PRIVATE_REQUEST_MORE_URL = `https://www.instagram.com/api/v1/feed/user/53246370416/?count=12&max_id=3067051056560848281_53246370416`
+    // use when query hash no longer works
     //const url = `https://www.instagram.com/api/v1/feed/user/${req.data.user.id}/?count=12&max_id=${req.data.next.replace(GRAPH_QL, "")}`
     await jar.storeRequestCookie(req.headers.cookie);
     const headers = createHeaders(baseUrl + "/" + req.data.user.username + "/", session);
@@ -804,110 +812,49 @@ const _requestMorePrivate = async (req, session, jar) => {
     if (response.headers["content-type"].includes("html")) {
         throw new Error("Auth error");
     }
-    if (!response.data.items) {
-        throw new Error("Response error");
-    }
+    /*
+    // use when query hash no longer works
+        if(!response.data.items){
+            throw new Error("Response error")
+        }
+    */
     await jar.storeCookie(response.headers["set-cookie"]);
     return response;
 };
 /*
-    image_versions2.candidates[0].url
-    media_type : 1 = img, 2 = video,
-    product_type: clips
-    pk = id
-[4].video_versions[0]
-*/
-const _formatMedia = (data, session, user) => {
-    const media = [];
-    const mediaNode = data.items;
-    mediaNode.forEach((data) => {
-        if (data.carousel_media) {
-            data.carousel_media.forEach((child) => {
-                const isVideo = child.media_type == 2;
-                const mediaUrl = isVideo ? _getVideoUrl(child.video_versions[0].url) : _getImageUrl(child.image_versions2.candidates[0].url);
-                const thumbnailUrl = _getImageUrl(child.image_versions2.candidates[0].url);
-                const permalink = isVideo ? `${VIDEO_PERMALINK_URL}${child.code}` : `${IMAGE_PERMALINK_URL}${child.code}`;
-                media.push({
-                    id: child.pk,
-                    media_url: mediaUrl,
-                    taggedUsers: child.usertags ? child.usertags.in.map((edge) => {
-                        return {
-                            id: edge.user.pk,
-                            igId: edge.user.pk,
-                            username: edge.user.username,
-                            name: edge.user.full_name,
-                            profileImage: _getImageUrl(edge.user.profile_pic_url),
-                            biography: "",
-                        };
-                    }) : [],
-                    thumbnail_url: thumbnailUrl,
-                    isVideo,
-                    permalink
-                });
-            });
-        }
-        else {
-            const isVideo = data.media_type == 2;
-            const mediaUrl = isVideo ? _getVideoUrl(data.video_versions[0].url) : _getImageUrl(data.image_versions2.candidates[0].url);
-            const thumbnailUrl = _getImageUrl(data.image_versions2.candidates[0].url);
-            const permalink = isVideo ? `${VIDEO_PERMALINK_URL}${data.code}` : `${IMAGE_PERMALINK_URL}${data.code}`;
-            media.push({
-                id: data.pk,
-                media_url: mediaUrl,
-                taggedUsers: data.usertags ? data.usertags.in.map((edge) => {
-                    return {
-                        id: edge.user.pk,
-                        igId: edge.user.pk,
-                        username: edge.user.username,
-                        name: edge.user.full_name,
-                        profileImage: _getImageUrl(edge.user.profile_pic_url),
-                        biography: "",
-                    };
-                }) : [],
-                thumbnail_url: thumbnailUrl,
-                isVideo,
-                permalink
-            });
-        }
-    });
-    const rowIndex = 0;
-    const next = data.next_max_id ? GRAPH_QL + data.next_max_id : "";
-    const username = user.username;
-    const history = { [username]: user };
-    return { username, media, user, rowIndex, next, history, isAuthenticated: session.isAuthenticated };
-};
-/*
+// use when query hash no longer works
 const _formatMedia = (data:any, session:ISession, user:IUser) : IMediaResponse => {
 
     const media :IMedia[] = [];
 
-    const mediaNode = data.user.edge_owner_to_timeline_media;
+    const mediaNode = data.items
 
-    mediaNode.edges.forEach( (data:any) => {
+    mediaNode.forEach( (data:any) => {
 
-        if(data.node.edge_sidecar_to_children){
+        if(data.carousel_media){
 
-            data.node.edge_sidecar_to_children.edges.forEach((child:any) =>{
+            data.carousel_media.forEach((child:any) =>{
 
-                const isVideo = child.node.is_video
-                const mediaUrl = isVideo ? _getVideoUrl(child.node.video_url) : _getImageUrl(child.node.display_url)
-                const thumbnail_url = _getImageUrl(child.node.display_url)
-                const permalink = isVideo ? `${VIDEO_PERMALINK_URL}${child.node.shortcode}` : `${IMAGE_PERMALINK_URL}${child.node.shortcode}`
+
+                const isVideo = child.media_type == 2
+                const mediaUrl = isVideo ? _getVideoUrl(child.video_versions[0].url) : _getImageUrl(child.image_versions2.candidates[0].url)
+                const thumbnailUrl = _getImageUrl(child.image_versions2.candidates[0].url)
+                const permalink = isVideo ? `${VIDEO_PERMALINK_URL}${child.code}` : `${IMAGE_PERMALINK_URL}${child.code}`
 
                 media.push({
-                    id:child.node.id,
+                    id:child.pk,
                     media_url: mediaUrl,
-                    taggedUsers: child.node.edge_media_to_tagged_user.edges.map((edge:any) => {
+                    taggedUsers: child.usertags ? child.usertags.in.map((edge:any) => {
                         return {
-                            id:edge.node.user.id,
-                            igId:edge.node.user.id,
-                            username:edge.node.user.username,
-                            name:edge.node.user.full_name,
-                            profileImage: _getImageUrl(edge.node.user.profile_pic_url),
+                            id:edge.user.pk,
+                            igId:edge.user.pk,
+                            username:edge.user.username,
+                            name:edge.user.full_name,
+                            profileImage: _getImageUrl(edge.user.profile_pic_url),
                             biography:"",
                         }
-                    }),
-                    thumbnail_url,
+                    }) : [],
+                    thumbnail_url: thumbnailUrl,
                     isVideo,
                     permalink
                 })
@@ -916,24 +863,24 @@ const _formatMedia = (data:any, session:ISession, user:IUser) : IMediaResponse =
 
         }else{
 
-            const isVideo = data.node.is_video
-            const mediaUrl = isVideo ? _getVideoUrl(data.node.video_url) : _getImageUrl(data.node.display_url)
-            const thumbnailUrl = isVideo ? _getImageUrl(data.node.thumbnail_src) : mediaUrl
-            const permalink = isVideo ? `${VIDEO_PERMALINK_URL}${data.node.shortcode}` : `${IMAGE_PERMALINK_URL}${data.node.shortcode}`
+            const isVideo = data.media_type == 2
+            const mediaUrl = isVideo ? _getVideoUrl(data.video_versions[0].url) : _getImageUrl(data.image_versions2.candidates[0].url)
+            const thumbnailUrl = _getImageUrl(data.image_versions2.candidates[0].url)
+            const permalink = isVideo ? `${VIDEO_PERMALINK_URL}${data.code}` : `${IMAGE_PERMALINK_URL}${data.code}`
 
             media.push({
-                id:data.node.id,
+                id:data.pk,
                 media_url: mediaUrl,
-                taggedUsers: data.node.edge_media_to_tagged_user.edges.map((edge:any) => {
+                taggedUsers: data.usertags ? data.usertags.in.map((edge:any) => {
                     return {
-                        id:edge.node.user.id,
-                        igId:edge.node.user.id,
-                        username:edge.node.user.username,
-                        name:edge.node.user.full_name,
-                        profileImage: _getImageUrl(edge.node.user.profile_pic_url),
+                        id:edge.user.pk,
+                        igId:edge.user.pk,
+                        username:edge.user.username,
+                        name:edge.user.full_name,
+                        profileImage: _getImageUrl(edge.user.profile_pic_url),
                         biography:"",
                     }
-                }),
+                }) : [],
                 thumbnail_url: thumbnailUrl,
                 isVideo,
                 permalink
@@ -944,7 +891,7 @@ const _formatMedia = (data:any, session:ISession, user:IUser) : IMediaResponse =
 
     const rowIndex = 0;
 
-    const next = mediaNode.page_info.has_next_page ? GRAPH_QL + mediaNode.page_info.end_cursor : "";
+    const next = data.next_max_id ? GRAPH_QL + data.next_max_id : "";
 
     const username = user.username;
 
@@ -953,7 +900,67 @@ const _formatMedia = (data:any, session:ISession, user:IUser) : IMediaResponse =
     return {username, media, user, rowIndex, next, history, isAuthenticated: session.isAuthenticated};
 
 }
+
 */
+const _formatMedia = (data, session, user) => {
+    const media = [];
+    const mediaNode = data.data.user.edge_owner_to_timeline_media;
+    mediaNode.edges.forEach((data) => {
+        if (data.node.edge_sidecar_to_children) {
+            data.node.edge_sidecar_to_children.edges.forEach((child) => {
+                const isVideo = child.node.is_video;
+                const mediaUrl = isVideo ? _getVideoUrl(child.node.video_url) : _getImageUrl(child.node.display_url);
+                const thumbnail_url = _getImageUrl(child.node.display_url);
+                const permalink = isVideo ? `${VIDEO_PERMALINK_URL}${child.node.shortcode}` : `${IMAGE_PERMALINK_URL}${child.node.shortcode}`;
+                media.push({
+                    id: child.node.id,
+                    media_url: mediaUrl,
+                    taggedUsers: child.node.edge_media_to_tagged_user.edges.map((edge) => {
+                        return {
+                            id: edge.node.user.id,
+                            igId: edge.node.user.id,
+                            username: edge.node.user.username,
+                            name: edge.node.user.full_name,
+                            profileImage: _getImageUrl(edge.node.user.profile_pic_url),
+                            biography: "",
+                        };
+                    }),
+                    thumbnail_url,
+                    isVideo,
+                    permalink
+                });
+            });
+        }
+        else {
+            const isVideo = data.node.is_video;
+            const mediaUrl = isVideo ? _getVideoUrl(data.node.video_url) : _getImageUrl(data.node.display_url);
+            const thumbnailUrl = isVideo ? _getImageUrl(data.node.thumbnail_src) : mediaUrl;
+            const permalink = isVideo ? `${VIDEO_PERMALINK_URL}${data.node.shortcode}` : `${IMAGE_PERMALINK_URL}${data.node.shortcode}`;
+            media.push({
+                id: data.node.id,
+                media_url: mediaUrl,
+                taggedUsers: data.node.edge_media_to_tagged_user.edges.map((edge) => {
+                    return {
+                        id: edge.node.user.id,
+                        igId: edge.node.user.id,
+                        username: edge.node.user.username,
+                        name: edge.node.user.full_name,
+                        profileImage: _getImageUrl(edge.node.user.profile_pic_url),
+                        biography: "",
+                    };
+                }),
+                thumbnail_url: thumbnailUrl,
+                isVideo,
+                permalink
+            });
+        }
+    });
+    const rowIndex = 0;
+    const next = mediaNode.page_info.has_next_page ? GRAPH_QL + mediaNode.page_info.end_cursor : "";
+    const username = user.username;
+    const history = { [username]: user };
+    return { username, media, user, rowIndex, next, history, isAuthenticated: session.isAuthenticated };
+};
 const downloadMedia = async (url) => {
     const options = {
         url,

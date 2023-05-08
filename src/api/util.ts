@@ -265,7 +265,8 @@ const extractUserId = (data:any) => {
 }
 
 const extractCsrfToken = (data:any) => {
-    const token = data.match(/{"raw":"{"config":{"csrf_token":"(.*)","viewer":/)
+    const token = data.match(/{"raw":"{\\"config\\":{\\"csrf_token\\":\\"(.*)\\",\\"viewer\\":/)
+    //{"raw":"{\"config\":{\"csrf_token\":\"FDLgSfTPUrTDsYHfIoapicYTDCL9JjHH\",\"viewer\":null,\"
     return token[1]
 }
 

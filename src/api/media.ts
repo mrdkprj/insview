@@ -152,8 +152,9 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
 
         headers.Cookie = await jar.getCookieStrings();
 
-        //const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`
-        const url = baseUrl + "/" + username + "/"
+        const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`
+        // use when web_profile no longer works
+        //const url = baseUrl + "/" + username + "/"
         headers["x-asbd-id"] = "198387"
         const options :AxiosRequestConfig = {
             url,
@@ -163,7 +164,10 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
 
         let response = await axios.request(options);
 
-        //const userData = response.data.data.user;
+        const userData = response.data.data.user;
+
+        /*
+        // use when web_profile no longer works
         const userData = {
             id:extractUserId(response.data),
             full_name:username,
@@ -171,7 +175,7 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
             biography:"",
             followed_by_viewer:false,
         }
-
+*/
         const user :IUser = {
             id: userData.id,
             igId: userData.id,
@@ -251,7 +255,7 @@ const _requestPrivate = async (req:IgRequest, session:ISession, user:IUser, jar:
     });
 
     const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`
-
+    // use when query hash no longer works
     //const url = `https://www.instagram.com/api/v1/feed/user/${user.username}/username/?count=12`
 
     const options :AxiosRequestConfig = {
@@ -266,10 +270,12 @@ const _requestPrivate = async (req:IgRequest, session:ISession, user:IUser, jar:
         throw new Error("Auth error")
     }
 
+/*
+// use when query hash no longer works
     if(!response.data.items){
         throw new Error("Response error")
     }
-
+*/
     await jar.storeCookie(response.headers["set-cookie"])
 
     return response;
@@ -285,7 +291,7 @@ const _requestMorePrivate = async (req:IgRequest, session:ISession, jar:CookieSt
     });
 
     const url = `https://www.instagram.com/graphql/query/?query_hash=${process.env.QUERY_HASH}&variables=${encodeURIComponent(params)}`
-    // /const PRIVATE_REQUEST_MORE_URL = `https://www.instagram.com/api/v1/feed/user/53246370416/?count=12&max_id=3067051056560848281_53246370416`
+    // use when query hash no longer works
     //const url = `https://www.instagram.com/api/v1/feed/user/${req.data.user.id}/?count=12&max_id=${req.data.next.replace(GRAPH_QL, "")}`
 
     await jar.storeRequestCookie(req.headers.cookie)
@@ -304,10 +310,12 @@ const _requestMorePrivate = async (req:IgRequest, session:ISession, jar:CookieSt
         throw new Error("Auth error")
     }
 
+/*
+// use when query hash no longer works
     if(!response.data.items){
         throw new Error("Response error")
     }
-
+*/
     await jar.storeCookie(response.headers["set-cookie"])
 
     return response;
@@ -315,12 +323,7 @@ const _requestMorePrivate = async (req:IgRequest, session:ISession, jar:CookieSt
 }
 
 /*
-    image_versions2.candidates[0].url
-    media_type : 1 = img, 2 = video,
-    product_type: clips
-    pk = id
-[4].video_versions[0]
-*/
+// use when query hash no longer works
 const _formatMedia = (data:any, session:ISession, user:IUser) : IMediaResponse => {
 
     const media :IMedia[] = [];
@@ -399,12 +402,12 @@ const _formatMedia = (data:any, session:ISession, user:IUser) : IMediaResponse =
 
 }
 
-/*
+*/
 const _formatMedia = (data:any, session:ISession, user:IUser) : IMediaResponse => {
 
     const media :IMedia[] = [];
 
-    const mediaNode = data.user.edge_owner_to_timeline_media;
+    const mediaNode = data.data.user.edge_owner_to_timeline_media;
 
     mediaNode.edges.forEach( (data:any) => {
 
@@ -476,7 +479,7 @@ const _formatMedia = (data:any, session:ISession, user:IUser) : IMediaResponse =
     return {username, media, user, rowIndex, next, history, isAuthenticated: session.isAuthenticated};
 
 }
-*/
+
 const downloadMedia = async (url:string) => {
 
     const options :AxiosRequestConfig = {
