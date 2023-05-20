@@ -229,7 +229,7 @@ const createHeaders = (referer, session) => {
     return headers;
 };
 const getAppId = (data) => {
-    const x = 0;
+    const x = 10;
     if (x > 0)
         return "1217981644879628";
     const appIds = data.match(/"customHeaders":{"X-IG-App-ID":"(.*)","X-IG-D"/);

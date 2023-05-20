@@ -175,7 +175,7 @@ const createHeaders = (referer:string, session:ISession) :AxiosRequestHeaders =>
 }
 
 const getAppId = (data:any) => {
-    const x = 0
+    const x = 10
     if(x > 0) return "1217981644879628"
     const appIds = data.match(/"customHeaders":{"X-IG-App-ID":"(.*)","X-IG-D"/)
     return appIds[1]
