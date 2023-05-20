@@ -169,13 +169,14 @@ const createHeaders = (referer:string, session:ISession) :AxiosRequestHeaders =>
     headers["referer"] = referer
     headers["x-requested-with"] = "XMLHttpRequest"
     headers["x-csrftoken"] = session.csrfToken;
-    headers["user-agent"] = "Mozilla/5.0 (Linux; Android 8.0.0; SM-G955U Build/R16NW) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Mobile Safari/537.36"//session.userAgent;
-    //"Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
+    headers["user-agent"] = "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"//session.userAgent;
 
     return headers;
 }
 
 const getAppId = (data:any) => {
+    const x = 0
+    if(x > 0) return "1217981644879628"
     const appIds = data.match(/"customHeaders":{"X-IG-App-ID":"(.*)","X-IG-D"/)
     return appIds[1]
 }

@@ -54,6 +54,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         headers["x-instagram-ajax"] = xHeaders.ajax
         headers["x-csrftoken"] = session.csrfToken;
         headers["content-type"] = "application/x-www-form-urlencoded"
+        headers["X-Web-Device-Id"] = "795B28EA-78DD-4ADB-A9B6-EB0AA2724C92"
 
         const createEncPassword = (pwd:string) => {
             return `#PWD_INSTAGRAM_BROWSER:0:${Math.floor(Date.now() / 1000)}:${pwd}`
