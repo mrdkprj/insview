@@ -135,7 +135,6 @@ export interface ISession {
     isAuthenticated:boolean;
     csrfToken:string;
     userId:string;
-    userAgent:string;
     cookies: Cookie[];
     expires: Date | null;
     xHeaders:IgHeaders;

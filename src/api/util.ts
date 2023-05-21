@@ -18,10 +18,9 @@ const getSession = (headers:any) :ISession => {
     try{
 
         const session :ISession = {
-            isAuthenticated:true,
+            isAuthenticated:false,
             csrfToken:"",
             userId:"",
-            userAgent: headers["user-agent"],
             cookies:[],
             expires: null,
             xHeaders:{appId:"", ajax:""}
@@ -94,7 +93,6 @@ const updateSession = (currentSession:ISession, cookies:tough.Cookie[], xHeaders
         isAuthenticated:false,
         csrfToken:currentSession.csrfToken,
         userId:currentSession.userId,
-        userAgent: currentSession.userAgent,
         cookies:[],
         expires: currentSession.expires,
         xHeaders: xHeaders ?? currentSession.xHeaders,

@@ -8,11 +8,12 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
     const account = req.data.account;
 
-    let session = getSession(req.headers);
+    //let session = getSession(req.headers);
+    let session = getSession({});
     const headers = createHeaders(baseUrl, session);
     let cookies = [];
     const jar = new CookieStore();
-    await jar.storeRequestCookie(req.headers.cookie)
+    //await jar.storeRequestCookie(req.headers.cookie)
 
     try{
 

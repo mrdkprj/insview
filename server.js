@@ -114,10 +114,9 @@ const baseRequestHeaders = {
 const getSession = (headers) => {
     try {
         const session = {
-            isAuthenticated: true,
+            isAuthenticated: false,
             csrfToken: "",
             userId: "",
-            userAgent: headers["user-agent"],
             cookies: [],
             expires: null,
             xHeaders: { appId: "", ajax: "" }
@@ -169,7 +168,6 @@ const updateSession = (currentSession, cookies, xHeaders) => {
         isAuthenticated: false,
         csrfToken: currentSession.csrfToken,
         userId: currentSession.userId,
-        userAgent: currentSession.userAgent,
         cookies: [],
         expires: currentSession.expires,
         xHeaders: xHeaders !== null && xHeaders !== void 0 ? xHeaders : currentSession.xHeaders,
@@ -354,11 +352,12 @@ var external_axios_default = /*#__PURE__*/__webpack_require__.n(external_axios_n
 const login = async (req) => {
     console.log("---------- login start ----------");
     const account = req.data.account;
-    let session = getSession(req.headers);
+    //let session = getSession(req.headers);
+    let session = getSession({});
     const headers = createHeaders(baseUrl, session);
     let cookies = [];
     const jar = new CookieStore();
-    await jar.storeRequestCookie(req.headers.cookie);
+    //await jar.storeRequestCookie(req.headers.cookie)
     try {
         const options = {};
         headers.Cookie = "ig_cb=1;";
