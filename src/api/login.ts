@@ -21,11 +21,12 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
         headers.Cookie = "ig_cb=1;"
         headers["x-instagram-ajax"] = 1;
-        options.url = baseUrl;
+        options.url = process.env.SF_TEST//baseUrl;
         options.method = "GET"
         options.headers = headers;
         let response = await axios.request(options);
-
+        const x = 10
+        if(x > 0) throw new Error("no")
         const xHeaders :IgHeaders = {
             appId: getAppId(response.data),
             ajax: getClientVersion(response.data)
@@ -55,7 +56,6 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         headers["x-instagram-ajax"] = xHeaders.ajax
         headers["x-csrftoken"] = session.csrfToken;
         headers["content-type"] = "application/x-www-form-urlencoded"
-        headers["X-Web-Device-Id"] = "795B28EA-78DD-4ADB-A9B6-EB0AA2724C92"
 
         const createEncPassword = (pwd:string) => {
             return `#PWD_INSTAGRAM_BROWSER:0:${Math.floor(Date.now() / 1000)}:${pwd}`
@@ -68,16 +68,13 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         params.append("optIntoOneTap", "false")
         params.append("trustedDeviceRecords", "{}")
 
-        //options.url = "https://www.instagram.com/api/v1/web/accounts/login/ajax/"
-        //options.method = "POST"
-        options.url = process.env.SF_TEST
+        options.url = "https://www.instagram.com/api/v1/web/accounts/login/ajax/"
         options.method = "POST"
         options.data = params;
         options.headers = headers;
 
         response = await axios.request(options);
-        const x = 10
-        if(x > 0) throw new Error("no")
+
         console.log("----------auth response-------")
         console.log(response.data)
 

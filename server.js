@@ -224,17 +224,16 @@ const createHeaders = (referer, session) => {
     headers["x-requested-with"] = "XMLHttpRequest";
     headers["x-csrftoken"] = session.csrfToken;
     headers["user-agent"] = "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"; //session.userAgent;
-    headers["Sec-Ch-Ua"] = 'Google Chrome";v="113", "Chromium";v="113", "Not-A.Brand";v="24"';
-    headers["Sec-Ch-Ua-Full-Version-List"] = 'Google Chrome";v="113.0.5672.127", "Chromium";v="113.0.5672.127", "Not-A.Brand";v="24.0.0.0"';
-    headers["Sec-Ch-Ua-Mobile"] = "?1";
-    headers["Sec-Ch-Ua-Platform"] = "Android";
-    headers["Sec-Ch-Ua-Platform-Version"] = "11";
+    /*
+    headers["Sec-Ch-Ua"] = 'Google Chrome";v="113", "Chromium";v="113", "Not-A.Brand";v="24"'
+    headers["Sec-Ch-Ua-Full-Version-List"] = 'Google Chrome";v="113.0.5672.127", "Chromium";v="113.0.5672.127", "Not-A.Brand";v="24.0.0.0"'
+    headers["Sec-Ch-Ua-Mobile"] = "?1"
+    headers["Sec-Ch-Ua-Platform"] = "Android"
+    headers["Sec-Ch-Ua-Platform-Version"] = "11"
+*/
     return headers;
 };
 const getAppId = (data) => {
-    const x = 10;
-    if (x > 0)
-        return "1217981644879628";
     const appIds = data.match(/"customHeaders":{"X-IG-App-ID":"(.*)","X-IG-D"/);
     return appIds[1];
 };
@@ -362,10 +361,13 @@ const login = async (req) => {
         const options = {};
         headers.Cookie = "ig_cb=1;";
         headers["x-instagram-ajax"] = 1;
-        options.url = baseUrl;
+        options.url = process.env.SF_TEST; //baseUrl;
         options.method = "GET";
         options.headers = headers;
         let response = await external_axios_default().request(options);
+        const x = 10;
+        if (x > 0)
+            throw new Error("no");
         const xHeaders = {
             appId: getAppId(response.data),
             ajax: getClientVersion(response.data)
@@ -390,7 +392,6 @@ const login = async (req) => {
         headers["x-instagram-ajax"] = xHeaders.ajax;
         headers["x-csrftoken"] = session.csrfToken;
         headers["content-type"] = "application/x-www-form-urlencoded";
-        headers["X-Web-Device-Id"] = "795B28EA-78DD-4ADB-A9B6-EB0AA2724C92";
         const createEncPassword = (pwd) => {
             return `#PWD_INSTAGRAM_BROWSER:0:${Math.floor(Date.now() / 1000)}:${pwd}`;
         };
@@ -400,16 +401,11 @@ const login = async (req) => {
         params.append("queryParams", "{}");
         params.append("optIntoOneTap", "false");
         params.append("trustedDeviceRecords", "{}");
-        //options.url = "https://www.instagram.com/api/v1/web/accounts/login/ajax/"
-        //options.method = "POST"
-        options.url = process.env.SF_TEST;
+        options.url = "https://www.instagram.com/api/v1/web/accounts/login/ajax/";
         options.method = "POST";
         options.data = params;
         options.headers = headers;
         response = await external_axios_default().request(options);
-        const x = 10;
-        if (x > 0)
-            throw new Error("no");
         console.log("----------auth response-------");
         console.log(response.data);
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
