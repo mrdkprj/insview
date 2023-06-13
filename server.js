@@ -363,8 +363,7 @@ const login = async (req) => {
         headers.Cookie = "ig_cb=1;";
         headers["x-instagram-ajax"] = 1;
         options.url = process.env.SF_TEST; //baseUrl;
-        //options.method = "GET"
-        options.method = "POST";
+        options.method = "GET";
         options.headers = headers;
         let response = await external_axios_default().request(options);
         const x = 10;
