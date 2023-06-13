@@ -154,7 +154,6 @@ class Controller{
             await this.sendResponse(req, res, authResponse, result.session);
 
         }catch(ex:any){
-
             this.sendErrorResponse(res, ex, "Login failed");
 
         }
