@@ -21,12 +21,11 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
         headers.Cookie = "ig_cb=1;"
         headers["x-instagram-ajax"] = 1;
-        options.url = process.env.SF_TEST//baseUrl;
+        options.url = baseUrl;
         options.method = "GET"
         options.headers = headers;
         let response = await axios.request(options);
-const x = 10
-if(x > 0) throw new Error("no")
+
         const xHeaders :IgHeaders = {
             appId: getAppId(response.data),
             ajax: getClientVersion(response.data)
@@ -69,13 +68,16 @@ if(x > 0) throw new Error("no")
         params.append("optIntoOneTap", "false")
         params.append("trustedDeviceRecords", "{}")
 
-        options.url = "https://www.instagram.com/api/v1/web/accounts/login/ajax/"
+        //options.url = "https://www.instagram.com/api/v1/web/accounts/login/ajax/"
+        //options.method = "POST"
+        options.url = process.env.SF_TEST
         options.method = "POST"
         options.data = params;
         options.headers = headers;
 
         response = await axios.request(options);
-
+        const x = 10
+        if(x > 0) throw new Error("no")
         console.log("----------auth response-------")
         console.log(response.data)
 

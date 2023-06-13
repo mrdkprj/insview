@@ -362,13 +362,10 @@ const login = async (req) => {
         const options = {};
         headers.Cookie = "ig_cb=1;";
         headers["x-instagram-ajax"] = 1;
-        options.url = process.env.SF_TEST; //baseUrl;
+        options.url = baseUrl;
         options.method = "GET";
         options.headers = headers;
         let response = await external_axios_default().request(options);
-        const x = 10;
-        if (x > 0)
-            throw new Error("no");
         const xHeaders = {
             appId: getAppId(response.data),
             ajax: getClientVersion(response.data)
@@ -403,11 +400,16 @@ const login = async (req) => {
         params.append("queryParams", "{}");
         params.append("optIntoOneTap", "false");
         params.append("trustedDeviceRecords", "{}");
-        options.url = "https://www.instagram.com/api/v1/web/accounts/login/ajax/";
+        //options.url = "https://www.instagram.com/api/v1/web/accounts/login/ajax/"
+        //options.method = "POST"
+        options.url = process.env.SF_TEST;
         options.method = "POST";
         options.data = params;
         options.headers = headers;
         response = await external_axios_default().request(options);
+        const x = 10;
+        if (x > 0)
+            throw new Error("no");
         console.log("----------auth response-------");
         console.log(response.data);
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
