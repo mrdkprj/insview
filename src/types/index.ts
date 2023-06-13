@@ -138,6 +138,7 @@ export interface ISession {
     cookies: Cookie[];
     expires: Date | null;
     xHeaders:IgHeaders;
+    userAgent?:string;
 }
 
 

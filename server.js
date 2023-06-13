@@ -223,14 +223,9 @@ const createHeaders = (referer, session) => {
     headers["referer"] = referer;
     headers["x-requested-with"] = "XMLHttpRequest";
     headers["x-csrftoken"] = session.csrfToken;
-    headers["user-agent"] = "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"; //session.userAgent;
-    /*
-    headers["Sec-Ch-Ua"] = 'Google Chrome";v="113", "Chromium";v="113", "Not-A.Brand";v="24"'
-    headers["Sec-Ch-Ua-Full-Version-List"] = 'Google Chrome";v="113.0.5672.127", "Chromium";v="113.0.5672.127", "Not-A.Brand";v="24.0.0.0"'
-    headers["Sec-Ch-Ua-Mobile"] = "?1"
-    headers["Sec-Ch-Ua-Platform"] = "Android"
-    headers["Sec-Ch-Ua-Platform-Version"] = "11"
-*/
+    if (session.userAgent) {
+        headers["user-agent"] = session.userAgent; //"Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36";
+    }
     return headers;
 };
 const getAppId = (data) => {
@@ -353,6 +348,7 @@ const login = async (req) => {
     const account = req.data.account;
     //let session = getSession(req.headers);
     let session = getSession({});
+    session.userAgent = req.headers["user-agent"];
     const headers = createHeaders(baseUrl, session);
     let cookies = [];
     const jar = new CookieStore();
@@ -361,13 +357,10 @@ const login = async (req) => {
         const options = {};
         headers.Cookie = "ig_cb=1;";
         headers["x-instagram-ajax"] = 1;
-        options.url = process.env.SF_TEST; //baseUrl;
+        options.url = baseUrl;
         options.method = "GET";
         options.headers = headers;
         let response = await external_axios_default().request(options);
-        const x = 10;
-        if (x > 0)
-            throw new Error("no");
         const xHeaders = {
             appId: getAppId(response.data),
             ajax: getClientVersion(response.data)
