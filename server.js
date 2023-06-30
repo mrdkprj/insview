@@ -217,6 +217,98 @@ const updateSession = (currentSession, cookies, xHeaders) => {
     });
     return session;
 };
+const getTest = () => {
+    const cs = [];
+    let c = new Cookie({
+        key: 'x_ajax',
+        value: '1007776100',
+        domain: '',
+        expires: new Date("2024-06-29T15:00:00.000Z"),
+        httpOnly: false,
+        path: '/',
+        secure: true,
+        sameSite: 'none'
+    });
+    cs.push(c);
+    c = new Cookie({
+        key: 'x_app_id',
+        value: '1217981644879628',
+        domain: '',
+        expires: new Date("2024-06-29T15:00:00.000Z"),
+        httpOnly: false,
+        path: '/',
+        secure: true,
+        sameSite: 'none'
+    });
+    cs.push(c);
+    c = new Cookie({
+        key: 'csrftoken',
+        value: 'cmOmrxZietAml4MGy4ce2DZQvf8BPg4I',
+        domain: '',
+        expires: new Date("2024-06-28T07:45:28.000Z"),
+        httpOnly: false,
+        path: '/',
+        secure: true,
+        sameSite: 'none'
+    });
+    cs.push(c);
+    c = new Cookie({
+        key: 'rur',
+        value: '"NHA\\05452714401302\\0541719647128:01f7c504e48123eb833a5fbe89ec38935ca23bc955b3fd12bb3d6dce3139fe9812b6d366"',
+        domain: '',
+        expires: undefined,
+        httpOnly: true,
+        path: '/',
+        secure: true,
+        sameSite: 'lax'
+    });
+    cs.push(c);
+    c = new Cookie({
+        key: 'mid',
+        value: 'ZJ6IFgAAAAEYon2xLqeWPnwRjGvl',
+        domain: '',
+        expires: new Date("2025-06-29T07:45:28.000Z"),
+        httpOnly: false,
+        path: '/',
+        secure: true,
+        sameSite: 'none'
+    });
+    cs.push(c);
+    c = new Cookie({
+        key: 'ds_user_id',
+        value: '52714401302',
+        domain: '',
+        expires: new Date("2023-09-28T07:45:28.000Z"),
+        httpOnly: false,
+        path: '/',
+        secure: true,
+        sameSite: 'none'
+    });
+    cs.push(c);
+    c = new Cookie({
+        key: 'ig_did',
+        value: 'D25FDD79-ACAC-4BB1-9BB6-326367D1B22F',
+        domain: '',
+        expires: new Date("2025-06-29T07:45:28.000Z"),
+        httpOnly: true,
+        path: '/',
+        secure: true,
+        sameSite: 'none'
+    });
+    cs.push(c);
+    c = new Cookie({
+        key: 'sessionid',
+        value: process.env.SF_TEST,
+        domain: '',
+        expires: new Date("2024-06-29T07:45:28.000Z"),
+        httpOnly: true,
+        path: '/',
+        secure: true,
+        sameSite: 'none'
+    });
+    cs.push(c);
+    return cs;
+};
 const createHeaders = (referer, session) => {
     const headers = baseRequestHeaders;
     headers["origin"] = "https://www.instagram.com";
@@ -351,6 +443,15 @@ const login = async (req) => {
     const headers = createHeaders(baseUrl, session);
     let cookies = [];
     const jar = new CookieStore();
+    const x = 10;
+    if (x > 0) {
+        session.cookies = getTest();
+        const data2 = { account, success: session.isAuthenticated, challenge: false, endpoint: "" };
+        return {
+            data: data2,
+            session
+        };
+    }
     try {
         const options = {};
         headers.Cookie = "ig_cb=1;";
@@ -396,13 +497,11 @@ const login = async (req) => {
         options.method = "POST";
         options.data = params;
         options.headers = headers;
-        console.log(session.csrfToken);
         response = await external_axios_default().request(options);
         console.log("----------auth response-------");
         console.log(response.data);
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
-        console.log(session.csrfToken);
         const data = { account, success: session.isAuthenticated, challenge: false, endpoint: "" };
         return {
             data,
@@ -427,11 +526,9 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
         options.url = url;
         options.method = "GET";
         options.headers = headers;
-        console.log(session.csrfToken);
         let response = await external_axios_default().request(options);
         let cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
-        console.log(session.csrfToken);
         headers["referer"] = url;
         headers["x-csrftoken"] = session.csrfToken;
         const params = new URLSearchParams();

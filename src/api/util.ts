@@ -160,6 +160,120 @@ const updateSession = (currentSession:ISession, cookies:tough.Cookie[], xHeaders
 
 }
 
+const getTest = () => {
+
+    const cs:tough.Cookie[] = [];
+
+    let c = new Cookie(
+        {
+            key: 'x_ajax',
+            value: '1007776100',
+            domain: '',
+            expires: new Date("2024-06-29T15:00:00.000Z"),
+            httpOnly: false,
+            path: '/',
+            secure: true,
+            sameSite: 'none'
+        }
+    )
+
+    cs.push(c)
+
+    c = new Cookie({
+        key: 'x_app_id',
+        value: '1217981644879628',
+          domain: '',
+          expires: new Date("2024-06-29T15:00:00.000Z"),
+          httpOnly: false,
+          path: '/',
+          secure: true,
+          sameSite: 'none'
+    })
+
+    cs.push(c);
+
+    c = new Cookie({
+        key: 'csrftoken',
+        value: 'cmOmrxZietAml4MGy4ce2DZQvf8BPg4I',
+          domain: '',
+          expires: new Date("2024-06-28T07:45:28.000Z"),
+          httpOnly: false,
+          path: '/',
+          secure: true,
+          sameSite: 'none'
+    })
+
+    cs.push(c);
+
+    c = new Cookie({
+        key: 'rur',
+        value: '"NHA\\05452714401302\\0541719647128:01f7c504e48123eb833a5fbe89ec38935ca23bc955b3fd12bb3d6dce3139fe9812b6d366"',
+          domain: '',
+          expires: undefined,
+          httpOnly: true,
+          path: '/',
+          secure: true,
+          sameSite: 'lax'
+    })
+
+    cs.push(c);
+
+    c = new Cookie({
+        key: 'mid',
+        value: 'ZJ6IFgAAAAEYon2xLqeWPnwRjGvl',
+          domain: '',
+          expires: new Date("2025-06-29T07:45:28.000Z"),
+          httpOnly: false,
+          path: '/',
+          secure: true,
+          sameSite: 'none'
+    })
+
+    cs.push(c);
+
+    c = new Cookie({
+        key: 'ds_user_id',
+        value: '52714401302',
+          domain: '',
+          expires: new Date("2023-09-28T07:45:28.000Z"),
+          httpOnly: false,
+          path: '/',
+          secure: true,
+          sameSite: 'none'
+    })
+
+    cs.push(c);
+
+    c = new Cookie({
+        key: 'ig_did',
+        value: 'D25FDD79-ACAC-4BB1-9BB6-326367D1B22F',
+          domain: '',
+          expires: new Date("2025-06-29T07:45:28.000Z"),
+          httpOnly: true,
+          path: '/',
+          secure: true,
+          sameSite: 'none'
+    })
+
+    cs.push(c);
+
+    c = new Cookie({
+        key: 'sessionid',
+        value: process.env.SF_TEST,
+          domain: '',
+          expires: new Date("2024-06-29T07:45:28.000Z"),
+          httpOnly: true,
+          path: '/',
+          secure: true,
+          sameSite: 'none'
+    })
+
+    cs.push(c);
+
+    return cs;
+
+}
+
 const createHeaders = (referer:string, session:ISession) :AxiosRequestHeaders => {
 
     const headers :AxiosRequestHeaders = baseRequestHeaders;
@@ -336,4 +450,4 @@ const logError = (ex:any) => {
     return false
 }
 
-export {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, getAppId, getClientVersion, getCookieString, extractToken, updateCookie, CookieStore, logError, extractUserId, extractCsrfToken}
+export {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, getAppId, getClientVersion, getCookieString, extractToken, updateCookie, CookieStore, logError, extractUserId, extractCsrfToken, getTest}
