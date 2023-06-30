@@ -17,7 +17,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     const x = 10;
     if(x >0){
         session.cookies = getTest();
-        const data2 = {account, success:session.isAuthenticated, challenge:false, endpoint:""};
+        const data2 = {account, success:true, challenge:false, endpoint:""};
 
         return {
             data:data2,
