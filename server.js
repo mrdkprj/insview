@@ -224,7 +224,7 @@ const createHeaders = (referer, session) => {
     headers["x-requested-with"] = "XMLHttpRequest";
     headers["x-csrftoken"] = session.csrfToken;
     if (session.userAgent) {
-        headers["user-agent"] = session.userAgent; //"Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36";
+        headers["user-agent"] = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/113.0.5672.69 Mobile/15E148 Safari/604.1'; //session.userAgent
     }
     return headers;
 };
@@ -365,7 +365,7 @@ const login = async (req) => {
         };
         session.csrfToken = extractCsrfToken(response.data);
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
-        headers["x-ig-app-id"] = xHeaders.appId;
+        headers["x-ig-app-id"] = "1217981644879628"; //xHeaders.appId
         headers.Cookie = await jar.getCookieStrings();
         session = updateSession(session, cookies, xHeaders);
         /*
@@ -380,7 +380,7 @@ const login = async (req) => {
                 headers.Cookie = await jar.getCookieStrings()
         */
         headers["x-ig-www-claim"] = 0;
-        headers["x-instagram-ajax"] = xHeaders.ajax;
+        headers["x-instagram-ajax"] = "1007776100"; //xHeaders.ajax
         headers["x-csrftoken"] = session.csrfToken;
         headers["content-type"] = "application/x-www-form-urlencoded";
         const createEncPassword = (pwd) => {
@@ -396,15 +396,13 @@ const login = async (req) => {
         options.method = "POST";
         options.data = params;
         options.headers = headers;
-        console.log(headers);
-        const x = 10;
-        if (x > 0)
-            throw new Error("not now");
+        console.log(session.csrfToken);
         response = await external_axios_default().request(options);
         console.log("----------auth response-------");
         console.log(response.data);
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
+        console.log(session.csrfToken);
         const data = { account, success: session.isAuthenticated, challenge: false, endpoint: "" };
         return {
             data,
@@ -429,9 +427,11 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
         options.url = url;
         options.method = "GET";
         options.headers = headers;
+        console.log(session.csrfToken);
         let response = await external_axios_default().request(options);
         let cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
+        console.log(session.csrfToken);
         headers["referer"] = url;
         headers["x-csrftoken"] = session.csrfToken;
         const params = new URLSearchParams();

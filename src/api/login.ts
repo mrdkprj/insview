@@ -34,7 +34,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
         cookies = await jar.storeCookie(response.headers["set-cookie"])
 
-        headers["x-ig-app-id"] = xHeaders.appId
+        headers["x-ig-app-id"] = "1217981644879628"//xHeaders.appId
         headers.Cookie = await jar.getCookieStrings();
         session = updateSession(session, cookies, xHeaders)
 
@@ -51,7 +51,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 */
 
         headers["x-ig-www-claim"] = 0
-        headers["x-instagram-ajax"] = xHeaders.ajax
+        headers["x-instagram-ajax"] = "1007776100"//xHeaders.ajax
         headers["x-csrftoken"] = session.csrfToken;
         headers["content-type"] = "application/x-www-form-urlencoded"
 
@@ -70,10 +70,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         options.method = "POST"
         options.data = params;
         options.headers = headers;
-console.log(headers)
-
-        const x = 10;
-        if(x > 0) throw new Error("not now")
+        console.log(session.csrfToken)
         response = await axios.request(options);
 
         console.log("----------auth response-------")
@@ -81,7 +78,7 @@ console.log(headers)
 
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
-
+        console.log(session.csrfToken)
         const data = {account, success:session.isAuthenticated, challenge:false, endpoint:""};
 
         return {
@@ -116,12 +113,12 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
         options.url = url;
         options.method = "GET";
         options.headers = headers;
-
+        console.log(session.csrfToken)
         let response = await axios.request(options);
 
         let cookies = await jar.storeCookie(response.headers["set-cookie"])
         session = updateSession(session, cookies)
-
+        console.log(session.csrfToken)
         headers["referer"] = url
         headers["x-csrftoken"] = session.csrfToken;
 
