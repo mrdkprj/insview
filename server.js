@@ -346,13 +346,11 @@ var external_axios_default = /*#__PURE__*/__webpack_require__.n(external_axios_n
 const login = async (req) => {
     console.log("---------- login start ----------");
     const account = req.data.account;
-    //let session = getSession(req.headers);
     let session = getSession({});
     session.userAgent = req.headers["user-agent"];
     const headers = createHeaders(baseUrl, session);
     let cookies = [];
     const jar = new CookieStore();
-    //await jar.storeRequestCookie(req.headers.cookie)
     try {
         const options = {};
         headers.Cookie = "ig_cb=1;";
@@ -398,6 +396,10 @@ const login = async (req) => {
         options.method = "POST";
         options.data = params;
         options.headers = headers;
+        console.log(headers);
+        const x = 10;
+        if (x > 0)
+            throw new Error("not now");
         response = await external_axios_default().request(options);
         console.log("----------auth response-------");
         console.log(response.data);

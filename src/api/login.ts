@@ -8,13 +8,11 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
     const account = req.data.account;
 
-    //let session = getSession(req.headers);
     let session = getSession({});
     session.userAgent = req.headers["user-agent"];
     const headers = createHeaders(baseUrl, session);
     let cookies = [];
     const jar = new CookieStore();
-    //await jar.storeRequestCookie(req.headers.cookie)
 
     try{
 
@@ -72,7 +70,10 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
         options.method = "POST"
         options.data = params;
         options.headers = headers;
+console.log(headers)
 
+        const x = 10;
+        if(x > 0) throw new Error("not now")
         response = await axios.request(options);
 
         console.log("----------auth response-------")
