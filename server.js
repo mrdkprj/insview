@@ -506,7 +506,7 @@ const remoteChallenge = async (req) => {
     await jar.storeRequestCookie(req.headers.cookie);
     headers.Cookie = await jar.getCookieStrings();
     try {
-        options.url = url;
+        options.url = process.env.API_URL + "/challenge";
         options.data = {
             endpoint: req.data.endpoint,
             account: req.data.account,

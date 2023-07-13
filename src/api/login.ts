@@ -233,7 +233,7 @@ const remoteChallenge = async (req:IgRequest) : Promise<IgResponse<ILoginRespons
 
     try{
 
-        options.url = url;
+        options.url = process.env.API_URL + "/challenge";
         options.data = {
             endpoint:req.data.endpoint,
             account:req.data.account,
