@@ -13,6 +13,7 @@ declare global {
             AZ_KEY:string;
             AZ_DB_ID:string;
             ACCOUNT:string;
+            API_URL:string
         }
     }
   }

@@ -1,8 +1,17 @@
 import axios, { AxiosRequestConfig, AxiosRequestHeaders } from "axios";
-import { baseUrl, createHeaders, getAppId, getClientVersion, getSession, CookieStore, updateSession, logError, extractCsrfToken,getTest } from "./util";
+import { baseUrl, createHeaders, getAppId, getClientVersion, getSession, CookieStore, updateSession, logError, extractCsrfToken } from "./util";
 import { IgHeaders, IgRequest, IgResponse, ILoginResponse, ISession } from "@shared";
 
+const isProduction = process.env.NODE_ENV === "production";
+
 const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
+
+    if(isProduction) return await remoteLogin(req)
+
+    return await localLogin(req);
+}
+
+const remoteLogin = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
     console.log("---------- login start ----------")
 
@@ -14,16 +23,50 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
     let cookies = [];
     const jar = new CookieStore();
 
-    const x = 10;
-    if(x >0){
-        session.cookies = getTest();
-        const data2 = {account, success:true, challenge:false, endpoint:""};
+    try{
+
+        const options :AxiosRequestConfig= {};
+
+        options.url = process.env.API_URL + "/login";
+        options.method = "POST"
+        options.headers = headers;
+        options.data = {
+            account,
+            password:req.data.password
+        }
+
+        const response = await axios.request(options);
+        console.log("----------auth response-------")
+        console.log(response.data)
+
+        cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        session = updateSession(session, cookies);
 
         return {
-            data:data2,
+            data:response.data,
             session
         }
+
+    }catch(ex:any){
+
+        logError(ex)
+
+        throw new Error("Login failed")
+
     }
+}
+
+const localLogin = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
+
+    console.log("---------- login start ----------")
+
+    const account = req.data.account;
+
+    let session = getSession({});
+    session.userAgent = req.headers["user-agent"];
+    const headers = createHeaders(baseUrl, session);
+    let cookies = [];
+    const jar = new CookieStore();
 
     try{
 
@@ -45,7 +88,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
         cookies = await jar.storeCookie(response.headers["set-cookie"])
 
-        headers["x-ig-app-id"] = "1217981644879628"//xHeaders.appId
+        headers["x-ig-app-id"] = xHeaders.appId
         headers.Cookie = await jar.getCookieStrings();
         session = updateSession(session, cookies, xHeaders)
 
@@ -62,7 +105,7 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 */
 
         headers["x-ig-www-claim"] = 0
-        headers["x-instagram-ajax"] = "1007776100"//xHeaders.ajax
+        headers["x-instagram-ajax"] = xHeaders.ajax
         headers["x-csrftoken"] = session.csrfToken;
         headers["content-type"] = "application/x-www-form-urlencoded"
 
@@ -111,7 +154,6 @@ const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 }
 
 const requestChallenge = async (account:string, checkpoint:string, headers:AxiosRequestHeaders, session:ISession, jar:CookieStore) :Promise<IgResponse<ILoginResponse>> => {
-
 
     console.log("---------- challenge start -------")
 
@@ -170,6 +212,57 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
 }
 
 const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
+    if(isProduction) return await remoteChallenge(req)
+
+    return await localChallenge(req);
+}
+
+const remoteChallenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
+
+    console.log("-------------- code verification start ---------")
+
+    const url = req.data.endpoint;
+
+    const jar = new CookieStore();
+    const options :AxiosRequestConfig = {}
+    let session = getSession(req.headers);
+    const headers = createHeaders(url, session);
+
+    await jar.storeRequestCookie(req.headers.cookie)
+    headers.Cookie = await jar.getCookieStrings()
+
+    try{
+
+        options.url = url;
+        options.data = {
+            endpoint:req.data.endpoint,
+            account:req.data.account,
+            code:req.data.code,
+        };
+        options.method = "POST"
+        options.headers = headers;
+
+        const response = await axios.request(options);
+
+        const cookies = await jar.storeCookie(response.headers["set-cookie"])
+        session = updateSession(session, cookies);
+
+        console.log(response.data)
+
+        return {
+            data:response.data,
+            session
+        }
+
+    }catch(ex:any){
+        return {
+            data:{account:req.data.account, success:false, challenge:true, endpoint:req.data.endpoint},
+            session
+        }
+    }
+}
+
+const localChallenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
     console.log("-------------- code verification start ---------")
 
@@ -221,6 +314,16 @@ const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =>
 }
 
 const logout = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>>  => {
+    if(isProduction) return await remoteLogout(req)
+
+    return await localLogout(req);
+}
+
+const remoteLogout = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>>  => {
+    return await localLogout(req);
+}
+
+const localLogout = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>>  => {
 
     const jar = new CookieStore();
 

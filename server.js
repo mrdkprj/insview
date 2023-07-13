@@ -217,98 +217,6 @@ const updateSession = (currentSession, cookies, xHeaders) => {
     });
     return session;
 };
-const getTest = () => {
-    const cs = [];
-    let c = new Cookie({
-        key: 'x_ajax',
-        value: '1007776100',
-        domain: '',
-        expires: new Date("2024-06-29T15:00:00.000Z"),
-        httpOnly: false,
-        path: '/',
-        secure: true,
-        sameSite: 'none'
-    });
-    cs.push(c);
-    c = new Cookie({
-        key: 'x_app_id',
-        value: '1217981644879628',
-        domain: '',
-        expires: new Date("2024-06-29T15:00:00.000Z"),
-        httpOnly: false,
-        path: '/',
-        secure: true,
-        sameSite: 'none'
-    });
-    cs.push(c);
-    c = new Cookie({
-        key: 'csrftoken',
-        value: 'cmOmrxZietAml4MGy4ce2DZQvf8BPg4I',
-        domain: '',
-        expires: new Date("2024-06-28T07:45:28.000Z"),
-        httpOnly: false,
-        path: '/',
-        secure: true,
-        sameSite: 'none'
-    });
-    cs.push(c);
-    c = new Cookie({
-        key: 'rur',
-        value: '"NHA\\05452714401302\\0541719647128:01f7c504e48123eb833a5fbe89ec38935ca23bc955b3fd12bb3d6dce3139fe9812b6d366"',
-        domain: '',
-        expires: undefined,
-        httpOnly: true,
-        path: '/',
-        secure: true,
-        sameSite: 'lax'
-    });
-    cs.push(c);
-    c = new Cookie({
-        key: 'mid',
-        value: 'ZJ6IFgAAAAEYon2xLqeWPnwRjGvl',
-        domain: '',
-        expires: new Date("2025-06-29T07:45:28.000Z"),
-        httpOnly: false,
-        path: '/',
-        secure: true,
-        sameSite: 'none'
-    });
-    cs.push(c);
-    c = new Cookie({
-        key: 'ds_user_id',
-        value: '52714401302',
-        domain: '',
-        expires: new Date("2023-09-28T07:45:28.000Z"),
-        httpOnly: false,
-        path: '/',
-        secure: true,
-        sameSite: 'none'
-    });
-    cs.push(c);
-    c = new Cookie({
-        key: 'ig_did',
-        value: 'D25FDD79-ACAC-4BB1-9BB6-326367D1B22F',
-        domain: '',
-        expires: new Date("2025-06-29T07:45:28.000Z"),
-        httpOnly: true,
-        path: '/',
-        secure: true,
-        sameSite: 'none'
-    });
-    cs.push(c);
-    c = new Cookie({
-        key: 'sessionid',
-        value: process.env.SF_TEST,
-        domain: '',
-        expires: new Date("2024-06-29T07:45:28.000Z"),
-        httpOnly: true,
-        path: '/',
-        secure: true,
-        sameSite: 'none'
-    });
-    cs.push(c);
-    return cs;
-};
 const createHeaders = (referer, session) => {
     const headers = baseRequestHeaders;
     headers["origin"] = "https://www.instagram.com";
@@ -316,7 +224,7 @@ const createHeaders = (referer, session) => {
     headers["x-requested-with"] = "XMLHttpRequest";
     headers["x-csrftoken"] = session.csrfToken;
     if (session.userAgent) {
-        headers["user-agent"] = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/113.0.5672.69 Mobile/15E148 Safari/604.1'; //session.userAgent
+        headers["user-agent"] = session.userAgent;
     }
     return headers;
 };
@@ -334,7 +242,6 @@ const extractUserId = (data) => {
 };
 const extractCsrfToken = (data) => {
     const token = data.match(/{"raw":"{\\"config\\":{\\"csrf_token\\":\\"(.*)\\",\\"viewer\\":/);
-    //{"raw":"{\"config\":{\"csrf_token\":\"FDLgSfTPUrTDsYHfIoapicYTDCL9JjHH\",\"viewer\":null,\"
     return token[1];
 };
 const extractToken = (headers) => {
@@ -435,7 +342,13 @@ var external_axios_default = /*#__PURE__*/__webpack_require__.n(external_axios_n
 ;// CONCATENATED MODULE: ./src/api/login.ts
 
 
+const isProduction = "production" === "production";
 const login = async (req) => {
+    if (isProduction)
+        return await remoteLogin(req);
+    return await localLogin(req);
+};
+const remoteLogin = async (req) => {
     console.log("---------- login start ----------");
     const account = req.data.account;
     let session = getSession({});
@@ -443,15 +356,38 @@ const login = async (req) => {
     const headers = createHeaders(baseUrl, session);
     let cookies = [];
     const jar = new CookieStore();
-    const x = 10;
-    if (x > 0) {
-        session.cookies = getTest();
-        const data2 = { account, success: true, challenge: false, endpoint: "" };
+    try {
+        const options = {};
+        options.url = process.env.API_URL + "/login";
+        options.method = "POST";
+        options.headers = headers;
+        options.data = {
+            account,
+            password: req.data.password
+        };
+        const response = await external_axios_default().request(options);
+        console.log("----------auth response-------");
+        console.log(response.data);
+        cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        session = updateSession(session, cookies);
         return {
-            data: data2,
+            data: response.data,
             session
         };
     }
+    catch (ex) {
+        logError(ex);
+        throw new Error("Login failed");
+    }
+};
+const localLogin = async (req) => {
+    console.log("---------- login start ----------");
+    const account = req.data.account;
+    let session = getSession({});
+    session.userAgent = req.headers["user-agent"];
+    const headers = createHeaders(baseUrl, session);
+    let cookies = [];
+    const jar = new CookieStore();
     try {
         const options = {};
         headers.Cookie = "ig_cb=1;";
@@ -466,7 +402,7 @@ const login = async (req) => {
         };
         session.csrfToken = extractCsrfToken(response.data);
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
-        headers["x-ig-app-id"] = "1217981644879628"; //xHeaders.appId
+        headers["x-ig-app-id"] = xHeaders.appId;
         headers.Cookie = await jar.getCookieStrings();
         session = updateSession(session, cookies, xHeaders);
         /*
@@ -481,7 +417,7 @@ const login = async (req) => {
                 headers.Cookie = await jar.getCookieStrings()
         */
         headers["x-ig-www-claim"] = 0;
-        headers["x-instagram-ajax"] = "1007776100"; //xHeaders.ajax
+        headers["x-instagram-ajax"] = xHeaders.ajax;
         headers["x-csrftoken"] = session.csrfToken;
         headers["content-type"] = "application/x-www-form-urlencoded";
         const createEncPassword = (pwd) => {
@@ -556,6 +492,45 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
     }
 };
 const challenge = async (req) => {
+    if (isProduction)
+        return await remoteChallenge(req);
+    return await localChallenge(req);
+};
+const remoteChallenge = async (req) => {
+    console.log("-------------- code verification start ---------");
+    const url = req.data.endpoint;
+    const jar = new CookieStore();
+    const options = {};
+    let session = getSession(req.headers);
+    const headers = createHeaders(url, session);
+    await jar.storeRequestCookie(req.headers.cookie);
+    headers.Cookie = await jar.getCookieStrings();
+    try {
+        options.url = url;
+        options.data = {
+            endpoint: req.data.endpoint,
+            account: req.data.account,
+            code: req.data.code,
+        };
+        options.method = "POST";
+        options.headers = headers;
+        const response = await external_axios_default().request(options);
+        const cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        session = updateSession(session, cookies);
+        console.log(response.data);
+        return {
+            data: response.data,
+            session
+        };
+    }
+    catch (ex) {
+        return {
+            data: { account: req.data.account, success: false, challenge: true, endpoint: req.data.endpoint },
+            session
+        };
+    }
+};
+const localChallenge = async (req) => {
     console.log("-------------- code verification start ---------");
     const url = req.data.endpoint;
     const jar = new CookieStore();
@@ -593,6 +568,14 @@ const challenge = async (req) => {
     }
 };
 const logout = async (req) => {
+    if (isProduction)
+        return await remoteLogout(req);
+    return await localLogout(req);
+};
+const remoteLogout = async (req) => {
+    return await localLogout(req);
+};
+const localLogout = async (req) => {
     const jar = new CookieStore();
     let session = getSession(req.headers);
     if (!session.isAuthenticated)
@@ -1770,8 +1753,8 @@ var _a;
 
 
 const port = process.env.PORT || 5000;
-const isProduction = "production" === "production";
-const publicDir = isProduction ? "./public" : "../public";
+const server_isProduction = "production" === "production";
+const publicDir = server_isProduction ? "./public" : "../public";
 const app = external_express_default()();
 const server_controller = new controller(model.db);
 const store = model.store((external_express_session_default()));
@@ -1786,10 +1769,10 @@ app.use(external_express_session_default()({
     resave: false,
     saveUninitialized: true,
     cookie: {
-        secure: isProduction ? true : false,
+        secure: server_isProduction ? true : false,
         httpOnly: true,
         maxAge: 31449600,
-        sameSite: isProduction ? "none" : "strict"
+        sameSite: server_isProduction ? "none" : "strict"
     }
 }));
 app.use((req, res, next) => {
