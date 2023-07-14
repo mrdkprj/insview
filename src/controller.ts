@@ -1,6 +1,6 @@
 import {Request, Response} from "express";
 import type { Cookie } from "tough-cookie";
-import { emptyResponse } from "./constants"
+import { AuthError, RequestError, emptyResponse } from "./entity"
 import * as api from "./api/instagram"
 
 declare module "express-session" {

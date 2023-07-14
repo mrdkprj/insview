@@ -1,4 +1,5 @@
 import axios, {AxiosRequestConfig, AxiosResponse, AxiosResponseHeaders, Method} from "axios";
+import { RequestError } from "../entity";
 
 const createOptions = (url:string, method:Method, data:any) :AxiosRequestConfig => {
 

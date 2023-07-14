@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig } from "axios";
 import { baseUrl, createHeaders, getSession, updateSession, CookieStore, logError } from "./util";
+import { AuthError, RequestError } from "../entity";
 
 const requestFollowings = async (req:IgRequest) : Promise<IgResponse<IFollowing>> => {
 

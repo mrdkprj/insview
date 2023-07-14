@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, CookieStore, logError} from "./util"
+import { AuthError, RequestError } from "../entity";
 
 const GRAPH_QL = "#GRAPH_QL";
 const IMAGE_URL = "/image?url="

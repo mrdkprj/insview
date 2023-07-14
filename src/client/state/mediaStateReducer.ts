@@ -1,5 +1,5 @@
 
-import {emptyUser} from "../../constants";
+import {emptyUser} from "../../entity";
 
 interface IMediaState {
     locked: boolean;

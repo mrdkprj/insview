@@ -4,30 +4,6 @@ import {Store} from "express-session"
 
 declare global {
 
-    class AuthError extends Error {
-
-        detail:ErrorDetail;
-
-        constructor(detail:ErrorDetail) {
-            super(detail.message)
-            this.name = "AuthError"
-            this.detail = detail
-            Object.setPrototypeOf(this, AuthError.prototype);
-        }
-    }
-
-    class RequestError extends Error {
-
-        requireLogin:boolean;
-
-        constructor(message:string, requireLogin:boolean) {
-            super(message)
-            this.name = "RequestError"
-            this.requireLogin = requireLogin;
-            Object.setPrototypeOf(this, RequestError.prototype);
-        }
-    }
-
     interface IResponse<T> {
         status: boolean;
         data: T;

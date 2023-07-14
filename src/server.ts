@@ -4,6 +4,7 @@ import session from "express-session";
 import cors from "cors";
 import Controller from "./controller"
 import model from "./db/model"
+import { AuthError } from "./entity";
 
 const port = process.env.PORT || 5000
 

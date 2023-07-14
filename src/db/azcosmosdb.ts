@@ -1,4 +1,4 @@
-import {emptyResponse} from "../constants";
+import {emptyResponse} from "../entity";
 import {CosmosClient, Database} from "@azure/cosmos";
 import {create, IContainerConfig} from "./azureContext"
 

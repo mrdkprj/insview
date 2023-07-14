@@ -48,7 +48,23 @@ var external_express_session_default = /*#__PURE__*/__webpack_require__.n(extern
 ;// CONCATENATED MODULE: external "cors"
 const external_cors_namespaceObject = require("cors");
 var external_cors_default = /*#__PURE__*/__webpack_require__.n(external_cors_namespaceObject);
-;// CONCATENATED MODULE: ./src/constants.ts
+;// CONCATENATED MODULE: ./src/entity.ts
+class AuthError extends Error {
+    constructor(detail) {
+        super(detail.message);
+        this.name = "AuthError";
+        this.detail = detail;
+        Object.setPrototypeOf(this, AuthError.prototype);
+    }
+}
+class RequestError extends Error {
+    constructor(message, requireLogin) {
+        super(message);
+        this.name = "RequestError";
+        this.requireLogin = requireLogin;
+        Object.setPrototypeOf(this, RequestError.prototype);
+    }
+}
 const emptyMedia = {
     id: "",
     media_url: "",
@@ -335,6 +351,7 @@ var external_axios_default = /*#__PURE__*/__webpack_require__.n(external_axios_n
 ;// CONCATENATED MODULE: ./src/api/login.ts
 
 
+
 const isProduction = "production" === "production";
 const login = async (req) => {
     if (isProduction)
@@ -606,6 +623,7 @@ const localLogout = async (req) => {
 
 
 ;// CONCATENATED MODULE: ./src/api/media.ts
+
 
 
 const GRAPH_QL = "#GRAPH_QL";
@@ -994,6 +1012,7 @@ const downloadMedia = async (url) => {
 
 
 ;// CONCATENATED MODULE: ./src/api/follow.ts
+
 
 
 const requestFollowings = async (req) => {
@@ -1738,6 +1757,7 @@ const dbprovider =  false ? 0 : new db_azure();
 
 ;// CONCATENATED MODULE: ./src/server.ts
 var _a;
+
 
 
 
