@@ -2,7 +2,6 @@ import path from "path";
 import express, {Request, Response} from "express";
 import session from "express-session";
 import cors from "cors";
-import { AuthError } from "@shared"
 import Controller from "./controller"
 import model from "./db/model"
 
@@ -43,7 +42,7 @@ app.use((req:Request, res:Response, next) => {
     if(req.session.account || passthru.includes(req.path) || req.method === "GET"){
         next()
     }else{
-        controller.sendErrorResponse(res, new AuthError(""))
+        controller.sendErrorResponse(res, new AuthError({message:"Session expired", data:{}, requireLogin:true}))
     }
 
 })

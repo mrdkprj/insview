@@ -1,7 +1,6 @@
 import { memo, useCallback, useRef } from "react";
 import { FixedSizeList } from "react-window";
 import { css } from "@emotion/react";
-import { IFollowing, IUser} from "@shared";
 import Dialog from "@parts/Dialog"
 import AppBar from "@parts/AppBar"
 import LinkButton from "@parts/LinkButton"

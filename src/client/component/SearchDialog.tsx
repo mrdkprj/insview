@@ -1,5 +1,4 @@
 import {RefObject, ChangeEvent, MouseEvent, useState, createRef, useEffect} from "react";
-import {IHistory} from "@shared";
 import Dialog from "@parts/Dialog"
 import AppBar from "@parts/AppBar"
 import LinkButton from "@parts/LinkButton"

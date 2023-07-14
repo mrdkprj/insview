@@ -1,6 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosRequestHeaders } from "axios";
 import { baseUrl, createHeaders, getAppId, getClientVersion, getSession, CookieStore, updateSession, logError, extractCsrfToken } from "./util";
-import { IgHeaders, IgRequest, IgResponse, ILoginResponse, ISession } from "@shared";
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -49,9 +48,9 @@ const remoteLogin = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> 
 
     }catch(ex:any){
 
-        logError(ex)
+        const error = logError(ex)
 
-        throw new Error("Login failed")
+        throw new AuthError(error)
 
     }
 }
@@ -147,9 +146,9 @@ const localLogin = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =
             return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar)
         }
 
-        logError(ex)
+        const error = logError(ex)
 
-        throw new Error("Login failed")
+        throw new AuthError(error)
     }
 }
 
@@ -199,13 +198,13 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
             }
         }
 
-        throw new Error("Challenge request failed");
+        throw new AuthError({message:"Challenge request failed",data:{account:account, success:false, challenge: true, endpoint:url}, requireLogin:true});
 
     }catch(ex:any){
 
-        logError(ex)
+        const error = logError(ex)
 
-        throw new Error("Challenge request failed")
+        throw new AuthError(error)
 
     }
 
@@ -255,10 +254,12 @@ const remoteChallenge = async (req:IgRequest) : Promise<IgResponse<ILoginRespons
         }
 
     }catch(ex:any){
-        return {
-            data:{account:req.data.account, success:false, challenge:true, endpoint:req.data.endpoint},
-            session
-        }
+
+        const error = logError(ex);
+        error.data = {account:req.data.account, success:false, challenge:true, endpoint:req.data.endpoint};
+
+        throw new AuthError(error);
+
     }
 }
 
@@ -329,7 +330,7 @@ const localLogout = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> 
 
     let session = getSession(req.headers);
 
-    if(!session.isAuthenticated) throw new Error("Already logged out")
+    if(!session.isAuthenticated) throw new RequestError("Already logged out", false)
 
     try{
 

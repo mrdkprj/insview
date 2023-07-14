@@ -2,7 +2,6 @@ import { FixedSizeGrid } from "react-window";
 import SmartDisplayIcon from '@mui/icons-material/SmartDisplay';
 import { css } from "@emotion/react";
 import {RefObject, memo, createRef, useEffect, Fragment, useState, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
-import {IMedia, IUser} from "@shared";
 import ImageDialog from "./ImageDialog";
 
 interface GridProps {

@@ -1,5 +1,4 @@
-import {emptyResponse, IHistory, IMediaResponse} from "@shared";
-import {IDatabase, IHistoryTable, IMediaTable} from "../types/IDatabase";
+import {emptyResponse} from "../constants";
 import {CosmosClient, Database} from "@azure/cosmos";
 import {create, IContainerConfig} from "./azureContext"
 

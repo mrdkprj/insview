@@ -1,5 +1,4 @@
 import axios, {AxiosRequestConfig, AxiosResponse, AxiosResponseHeaders, Method} from "axios";
-import {IMediaResponse, IHistory, IUser, IAuthResponse, IFollowing, RequestError, IResponse} from "@shared"
 
 const createOptions = (url:string, method:Method, data:any) :AxiosRequestConfig => {
 
@@ -22,7 +21,7 @@ const getState = (headers:AxiosResponseHeaders) :boolean => {
 
 const throwError = (ex:any) => {
 
-    throw new RequestError(ex.response.data, {igAuth: ex.response.headers["ig-auth"] === "true"})
+    throw new RequestError(ex.response.data.message, ex.response.headers["ig-auth"] === "true")
 
 }
 

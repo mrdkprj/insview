@@ -3,7 +3,6 @@ import { FixedSizeList as List } from 'react-window';
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import DownloadForOfflineIcon from '@mui/icons-material/DownloadForOffline';
 import { css } from "@emotion/react";
-import { IMedia, IUser } from "@shared";
 import LinkButton from "@parts/LinkButton";
 
 interface ImageDialogProps {

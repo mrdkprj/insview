@@ -1,5 +1,3 @@
-import { ILoginResponse } from "@shared";
-
 interface IAuthAction {
     type: string;
     value?: any;

@@ -20,7 +20,6 @@ import useWindowDimensions from "./dimensions";
 import {appStateReducer, initialAppState, AppAction} from "./state/appStateReducer";
 import {mediaStateReducer, initialMediaState, MediaAction} from "./state/mediaStateReducer";
 import {authStateReducer, initialAuthState, AuthAction} from "./state/authStateReducer";
-import { IHistory, IUser } from "@shared";
 
 
 function App(){
@@ -34,7 +33,7 @@ function App(){
     const [mediaState, dispatchMediaState] = useReducer(mediaStateReducer, initialMediaState);
     const [authState, dispatchAuthState] = useReducer(authStateReducer, initialAuthState);
 
-    const handleError = useCallback( async (ex:any, message = "") => {
+    const handleError = useCallback( async (ex:any) => {
 
         dispatchAuthState({type:AuthAction.toggleAuth, value: {success:ex.data.igAuth}})
 
@@ -42,11 +41,7 @@ function App(){
             return openLoginDialog();
         }
 
-        if(message){
-            dispatchAppState({type:AppAction.showError, value: message})
-        }else{
-            dispatchAppState({type:AppAction.showError, value: ex.message})
-        }
+        dispatchAppState({type:AppAction.showError, value: ex.message})
 
     },[]);
 
@@ -165,7 +160,7 @@ function App(){
 
         }catch(ex:any){
 
-            handleError(ex, "Update history failed")
+            handleError(ex)
 
         }finally{
 
@@ -199,7 +194,7 @@ function App(){
 
         }catch(ex:any){
 
-            handleError(ex, "Login attempt failed")
+            handleError(ex)
 
         }finally{
 
@@ -320,7 +315,7 @@ function App(){
             return true;
 
         }catch(ex:any){
-            handleError(ex, "Logout attempt failed")
+            handleError(ex)
             return false;
         }finally{
             dispatchAppState({type:AppAction.end})
@@ -361,7 +356,7 @@ function App(){
             return true;
 
         }catch(ex:any){
-            handleError(ex, "Follow/Unfollow failed")
+            handleError(ex)
             return false;
         }finally{
             dispatchAppState({type:AppAction.end})

@@ -6,7 +6,6 @@ import CloseIcon from "@mui/icons-material/Close";
 import FavoriteIcon from "@mui/icons-material/Favorite"
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder"
 import Grid from "./Grid"
-import { IMedia, IUser } from "@shared";
 
 interface PreviewDialogProps {
     user:IUser;

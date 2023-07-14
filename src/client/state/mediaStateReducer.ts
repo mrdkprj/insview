@@ -1,5 +1,5 @@
 
-import {emptyUser, IFollowing, IHistory, IMedia, IUser} from "@shared";
+import {emptyUser} from "../../constants";
 
 interface IMediaState {
     locked: boolean;

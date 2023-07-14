@@ -1,6 +1,5 @@
 import sqlite3 from "sqlite3";
-import {emptyResponse, IHistory, IMediaResponse} from "@shared";
-import {IDatabase, IHistoryTable, IMediaTable} from "../types/IDatabase";
+import {emptyResponse} from "../constants";
 
 class sqlitedb implements IDatabase{
 

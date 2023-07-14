@@ -1,7 +1,6 @@
 import {Request, Response} from "express";
 import type { Cookie } from "tough-cookie";
-import { IAuthResponse, IHistory, IMediaResponse, ISession, IUser, emptyResponse, AuthError } from "@shared"
-import { IDatabase } from "types/IDatabase";
+import { emptyResponse } from "./constants"
 import * as api from "./api/instagram"
 
 declare module "express-session" {
@@ -58,28 +57,19 @@ class Controller{
 
     }
 
-    sendErrorResponse(res:Response, ex:any, message = ""){
+    sendErrorResponse(res:Response, ex:any){
 
-        let loginRequired = true;
+        const data = ex instanceof AuthError ? ex.detail : {message:ex.message}
 
-        let errorMessage
-        if(message){
-            errorMessage = message;
-        }else{
-            errorMessage = ex.response ? ex.response.data.message : ex.message;
+        if(ex instanceof AuthError){
+            res.set({"ig-auth":ex.detail.requireLogin});
         }
 
-        if(ex.response){
-            loginRequired = ex.response.data.require_login
+        if(ex instanceof RequestError){
+            res.set({"ig-auth":ex.requireLogin});
         }
 
-        if(ex instanceof AuthError || loginRequired){
-            res.set({"ig-auth":false});
-        }else{
-            res.set({"ig-auth":true});
-        }
-
-        res.status(400).send(errorMessage)
+        res.status(400).send(data)
     }
 
     async tryRestore(req:Request, res:Response){
@@ -97,7 +87,7 @@ class Controller{
 
         }catch(ex:any){
 
-            this.sendErrorResponse(res, ex, "Restore failed");
+            this.sendErrorResponse(res, new Error("Restore failed"))
         }
 
     }
@@ -129,11 +119,11 @@ class Controller{
     async tryLogin(req:Request, res:any, account:string, password:string){
 
         if(!account || !password){
-            return this.sendErrorResponse(res, {message:"Username/password required"});
+            return this.sendErrorResponse(res, new Error("Username/password required"));
         }
 
         if(account !== process.env.ACCOUNT){
-            return this.sendErrorResponse(res, {message:"Unauthorized account"});
+            return this.sendErrorResponse(res, new Error("Unauthorized account"))
         }
 
         try{
@@ -154,7 +144,7 @@ class Controller{
             await this.sendResponse(req, res, authResponse, result.session);
 
         }catch(ex:any){
-            this.sendErrorResponse(res, ex, "Login failed");
+            this.sendErrorResponse(res, ex);
 
         }
     }
@@ -180,7 +170,7 @@ class Controller{
 
         }catch(ex:any){
 
-            this.sendErrorResponse(res, ex, "Challenge failed");
+            this.sendErrorResponse(res, ex);
 
         }
 
@@ -248,7 +238,6 @@ class Controller{
 
         }catch(ex:any){
             console.log("try query error")
-            console.log(ex)
             return this.sendErrorResponse(res, ex);
 
         }
@@ -271,7 +260,6 @@ class Controller{
 
         }catch(ex:any){
             console.log("try query more error")
-            console.log(ex)
             return this.sendErrorResponse(res, ex);
 
         }
@@ -294,7 +282,6 @@ class Controller{
 
         }catch(ex:any){
             console.log("tryReload error")
-            console.log(ex)
             return this.sendErrorResponse(res, ex);
 
         }
@@ -359,7 +346,7 @@ class Controller{
 
         }catch(ex:any){
 
-            this.sendErrorResponse(res, ex, "Update failed");
+            this.sendErrorResponse(res, new Error("Update failed"))
         }
     }
 
@@ -373,7 +360,7 @@ class Controller{
 
         }catch(ex:any){
 
-            this.sendErrorResponse(res, ex, "Delete failed");
+            this.sendErrorResponse(res, new Error("Delete failed"))
 
         }
 
@@ -384,7 +371,7 @@ class Controller{
         try{
 
             if(!req.query.url || typeof req.query.url !== "string"){
-                throw new Error("no url specified")
+                return this.sendErrorResponse(res, new Error("no url specified"));
             }
 
             const result = await api.downloadMedia(req.query.url)
@@ -399,7 +386,7 @@ class Controller{
 
         }catch(ex:any){
 
-            this.sendErrorResponse(res, ex, "Media not found");
+            this.sendErrorResponse(res, new Error("Media not found"))
 
         }
     }

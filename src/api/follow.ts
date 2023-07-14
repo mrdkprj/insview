@@ -1,6 +1,5 @@
 import axios, { AxiosRequestConfig } from "axios";
-import { baseUrl, createHeaders, getSession, updateSession, CookieStore } from "./util";
-import { AuthError, IFollowing, IgRequest, IgResponse, IUser } from "@shared";
+import { baseUrl, createHeaders, getSession, updateSession, CookieStore, logError } from "./util";
 
 const requestFollowings = async (req:IgRequest) : Promise<IgResponse<IFollowing>> => {
 
@@ -17,32 +16,40 @@ const requestFollowings = async (req:IgRequest) : Promise<IgResponse<IFollowing>
         first:20
     }
 
-    //https://i.instagram.com/api/v1/friendships/${userid}/following/?count=12&max_id=1
-    const url = `https://www.instagram.com/graphql/query/?query_hash=58712303d941c6855d4e888c5f0cd22f&variables=${encodeURIComponent(JSON.stringify(params))}`
+    try{
+        //https://i.instagram.com/api/v1/friendships/${userid}/following/?count=12&max_id=1
+        const url = `https://www.instagram.com/graphql/query/?query_hash=58712303d941c6855d4e888c5f0cd22f&variables=${encodeURIComponent(JSON.stringify(params))}`
 
-    const headers = createHeaders(baseUrl, currentSession);
-    await jar.storeRequestCookie(req.headers.cookie)
-    headers.Cookie = await jar.getCookieStrings();
+        const headers = createHeaders(baseUrl, currentSession);
+        await jar.storeRequestCookie(req.headers.cookie)
+        headers.Cookie = await jar.getCookieStrings();
 
-    const options :AxiosRequestConfig = {
-        url,
-        method: "GET",
-        headers,
-    }
+        const options :AxiosRequestConfig = {
+            url,
+            method: "GET",
+            headers,
+        }
 
-    const response = await axios.request(options);
+        const response = await axios.request(options);
 
-    if(response.headers["content-type"].includes("html")){
-        throw new AuthError("Auth error")
-    }
+        if(response.headers["content-type"].includes("html")){
+            throw new AuthError({message:"Session expired", data:{}, requireLogin:true})
+        }
 
-    const cookies = await jar.storeCookie(response.headers["set-cookie"])
-    const data = _formatFollowings(response.data);
-    const session = updateSession(currentSession, cookies);
+        const cookies = await jar.storeCookie(response.headers["set-cookie"])
+        const data = _formatFollowings(response.data);
+        const session = updateSession(currentSession, cookies);
 
-    return {
-        data,
-        session
+        return {
+            data,
+            session
+        }
+
+    }catch(ex:any){
+
+        const error = logError(ex);
+        throw new RequestError(error.message, error.requireLogin)
+
     }
 }
 
@@ -79,31 +86,38 @@ const follow = async (req:IgRequest) => {
     const currentSession = getSession(req.headers);
 
     if(!currentSession.isAuthenticated){
-        throw new AuthError("")
+        throw new AuthError({message:"Session expired", data:{}, requireLogin:true})
     }
 
-    const url = `${baseUrl}/web/friendships/${req.data.user.id}/follow/`
+    try{
 
-    const headers = createHeaders(baseUrl, currentSession);
-    await jar.storeRequestCookie(req.headers.cookie);
-    headers.Cookie = await jar.getCookieStrings();
+        const url = `${baseUrl}/web/friendships/${req.data.user.id}/follow/`
 
-    const options :AxiosRequestConfig = {
-        url,
-        method: "POST",
-        headers,
-        withCredentials:true
-    }
+        const headers = createHeaders(baseUrl, currentSession);
+        await jar.storeRequestCookie(req.headers.cookie);
+        headers.Cookie = await jar.getCookieStrings();
 
-    const response = await axios.request(options);
+        const options :AxiosRequestConfig = {
+            url,
+            method: "POST",
+            headers,
+            withCredentials:true
+        }
 
-    const cookies = await jar.storeCookie(response.headers["set-cookie"])
-    const data = response.data;
-    const session = updateSession(currentSession, cookies);
+        const response = await axios.request(options);
 
-    return {
-        data,
-        session
+        const cookies = await jar.storeCookie(response.headers["set-cookie"])
+        const data = response.data;
+        const session = updateSession(currentSession, cookies);
+
+        return {
+            data,
+            session
+        }
+
+    }catch(ex:any){
+        const error = logError(ex);
+        throw new RequestError(error.message, error.requireLogin)
     }
 }
 
@@ -114,31 +128,38 @@ const unfollow = async (req:IgRequest) => {
     const currentSession = getSession(req.headers);
 
     if(!currentSession.isAuthenticated){
-        throw new AuthError("")
+        throw new AuthError({message:"Session expired", data:{}, requireLogin:true})
     }
 
-    const url = `${baseUrl}/web/friendships/${req.data.user.id}/unfollow/`
+    try{
 
-    const headers = createHeaders(baseUrl, currentSession);
-    await jar.storeRequestCookie(req.headers.cookie);
-    headers.Cookie = await jar.getCookieStrings();
+        const url = `${baseUrl}/web/friendships/${req.data.user.id}/unfollow/`
 
-    const options :AxiosRequestConfig = {
-        url,
-        method: "POST",
-        headers,
-        withCredentials:true
-    }
+        const headers = createHeaders(baseUrl, currentSession);
+        await jar.storeRequestCookie(req.headers.cookie);
+        headers.Cookie = await jar.getCookieStrings();
 
-    const response = await axios.request(options);
+        const options :AxiosRequestConfig = {
+            url,
+            method: "POST",
+            headers,
+            withCredentials:true
+        }
 
-    const cookies = await jar.storeCookie(response.headers["set-cookie"])
-    const data = response.data;
-    const session = updateSession(currentSession, cookies);
+        const response = await axios.request(options);
 
-    return {
-        data,
-        session
+        const cookies = await jar.storeCookie(response.headers["set-cookie"])
+        const data = response.data;
+        const session = updateSession(currentSession, cookies);
+
+        return {
+            data,
+            session
+        }
+
+    }catch(ex:any){
+        const error = logError(ex);
+        throw new RequestError(error.message, error.requireLogin)
     }
 }
 

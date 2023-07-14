@@ -48,23 +48,7 @@ var external_express_session_default = /*#__PURE__*/__webpack_require__.n(extern
 ;// CONCATENATED MODULE: external "cors"
 const external_cors_namespaceObject = require("cors");
 var external_cors_default = /*#__PURE__*/__webpack_require__.n(external_cors_namespaceObject);
-;// CONCATENATED MODULE: ./src/types/index.ts
-class AuthError extends Error {
-    constructor(message) {
-        super(message);
-        this.name = "REQUIRE_LOGIN";
-        this.message = "You need to login";
-        Object.setPrototypeOf(this, AuthError.prototype);
-    }
-}
-class RequestError extends Error {
-    constructor(message, data) {
-        super(message);
-        this.name = "RequestError";
-        this.data = data;
-        Object.setPrototypeOf(this, RequestError.prototype);
-    }
-}
+;// CONCATENATED MODULE: ./src/constants.ts
 const emptyMedia = {
     id: "",
     media_url: "",
@@ -92,18 +76,17 @@ const emptyResponse = {
     history: {},
     isAuthenticated: false
 };
-const IgHeaderNames = {
-    appId: "x_app_id",
-    ajax: "x_ajax"
-};
 
 ;// CONCATENATED MODULE: external "tough-cookie"
 const external_tough_cookie_namespaceObject = require("tough-cookie");
 var external_tough_cookie_default = /*#__PURE__*/__webpack_require__.n(external_tough_cookie_namespaceObject);
 ;// CONCATENATED MODULE: ./src/api/util.ts
 
-
 const baseUrl = "https://www.instagram.com";
+const IgHeaderNames = {
+    appId: "x_app_id",
+    ajax: "x_ajax"
+};
 const Cookie = (external_tough_cookie_default()).Cookie;
 const baseRequestHeaders = {
     "Accept": "*/*",
@@ -324,15 +307,25 @@ class CookieStore {
     }
 }
 const logError = (ex) => {
+    const hasResponse = !!ex.response;
     const errorData = ex.response ? ex.response.data : ex;
-    if (ex.response && !ex.response.headers["content-type"].includes("html")) {
-        console.log(errorData);
+    const message = hasResponse ? ex.response.data.message : ex.message;
+    let data = hasResponse ? ex.response.data : "";
+    if (hasResponse && ex.response.headers["content-type"].includes("html")) {
+        data = "";
     }
-    console.log(errorData.message);
+    console.log("----------- Error Logging ----------");
+    console.log(`message: ${message}`);
+    console.log(`data: ${errorData}`);
+    console.log("------------------------------------");
     if (ex.response && ex.response.data) {
         return ex.response.data.require_login;
     }
-    return false;
+    return {
+        message,
+        data,
+        requireLogin: hasResponse ? ex.response.data.require_login : false
+    };
 };
 
 
@@ -376,8 +369,8 @@ const remoteLogin = async (req) => {
         };
     }
     catch (ex) {
-        logError(ex);
-        throw new Error("Login failed");
+        const error = logError(ex);
+        throw new AuthError(error);
     }
 };
 const localLogin = async (req) => {
@@ -449,8 +442,8 @@ const localLogin = async (req) => {
             console.log(ex.response.data);
             return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar);
         }
-        logError(ex);
-        throw new Error("Login failed");
+        const error = logError(ex);
+        throw new AuthError(error);
     }
 };
 const requestChallenge = async (account, checkpoint, headers, session, jar) => {
@@ -484,11 +477,11 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
                 session
             };
         }
-        throw new Error("Challenge request failed");
+        throw new AuthError({ message: "Challenge request failed", data: { account: account, success: false, challenge: true, endpoint: url }, requireLogin: true });
     }
     catch (ex) {
-        logError(ex);
-        throw new Error("Challenge request failed");
+        const error = logError(ex);
+        throw new AuthError(error);
     }
 };
 const challenge = async (req) => {
@@ -524,10 +517,9 @@ const remoteChallenge = async (req) => {
         };
     }
     catch (ex) {
-        return {
-            data: { account: req.data.account, success: false, challenge: true, endpoint: req.data.endpoint },
-            session
-        };
+        const error = logError(ex);
+        error.data = { account: req.data.account, success: false, challenge: true, endpoint: req.data.endpoint };
+        throw new AuthError(error);
     }
 };
 const localChallenge = async (req) => {
@@ -579,7 +571,7 @@ const localLogout = async (req) => {
     const jar = new CookieStore();
     let session = getSession(req.headers);
     if (!session.isAuthenticated)
-        throw new Error("Already logged out");
+        throw new RequestError("Already logged out", false);
     try {
         const url = "https://www.instagram.com/api/v1/web/accounts/logout/ajax/";
         const headers = createHeaders(baseUrl, session);
@@ -614,7 +606,6 @@ const localLogout = async (req) => {
 
 
 ;// CONCATENATED MODULE: ./src/api/media.ts
-
 
 
 const GRAPH_QL = "#GRAPH_QL";
@@ -713,7 +704,7 @@ const _formatGraph = (data) => {
 };
 const _tryRequestPrivate = async (req, session) => {
     if (!session.isAuthenticated) {
-        throw new AuthError("");
+        throw new AuthError({ message: "Session expired", data: {}, requireLogin: true });
     }
     const jar = new CookieStore();
     const username = req.data.username;
@@ -766,15 +757,14 @@ const _tryRequestPrivate = async (req, session) => {
         };
     }
     catch (ex) {
-        const requireLogin = logError(ex);
-        if (requireLogin)
-            throw new AuthError("");
-        throw new Error("Private media request failed");
+        console.log("Private media request failed");
+        const error = logError(ex);
+        throw new RequestError(error.message, error.requireLogin);
     }
 };
 const _tryRequestMorePrivate = async (req, session) => {
     if (!session.isAuthenticated) {
-        throw new AuthError("");
+        throw new AuthError({ message: "Session expired", data: {}, requireLogin: true });
     }
     const jar = new CookieStore();
     try {
@@ -789,10 +779,9 @@ const _tryRequestMorePrivate = async (req, session) => {
         };
     }
     catch (ex) {
-        const requireLogin = logError(ex);
-        if (requireLogin)
-            throw new AuthError("");
-        throw new Error("Private querymore failed");
+        console.log("Private querymore failed");
+        const error = logError(ex);
+        throw new RequestError(error.message, error.requireLogin);
     }
 };
 const _requestPrivate = async (req, session, user, jar) => {
@@ -812,12 +801,12 @@ const _requestPrivate = async (req, session, user, jar) => {
     };
     const response = await external_axios_default().request(options);
     if (response.headers["content-type"].includes("html")) {
-        throw new Error("Auth error");
+        throw new AuthError({ message: "Request private failed", data: {}, requireLogin: false });
     }
     /*
     // use when query hash no longer works
         if(!response.data.items){
-            throw new Error("Response error")
+    
         }
     */
     await jar.storeCookie(response.headers["set-cookie"]);
@@ -842,12 +831,12 @@ const _requestMorePrivate = async (req, session, jar) => {
     };
     const response = await external_axios_default().request(options);
     if (response.headers["content-type"].includes("html")) {
-        throw new Error("Auth error");
+        throw new AuthError({ message: "Request more private failed.", data: {}, requireLogin: false });
     }
     /*
     // use when query hash no longer works
         if(!response.data.items){
-            throw new Error("Response error")
+    
         }
     */
     await jar.storeCookie(response.headers["set-cookie"]);
@@ -1007,7 +996,6 @@ const downloadMedia = async (url) => {
 ;// CONCATENATED MODULE: ./src/api/follow.ts
 
 
-
 const requestFollowings = async (req) => {
     const jar = new CookieStore();
     const currentSession = getSession(req.headers);
@@ -1019,27 +1007,33 @@ const requestFollowings = async (req) => {
         id: currentSession.userId,
         first: 20
     };
-    //https://i.instagram.com/api/v1/friendships/${userid}/following/?count=12&max_id=1
-    const url = `https://www.instagram.com/graphql/query/?query_hash=58712303d941c6855d4e888c5f0cd22f&variables=${encodeURIComponent(JSON.stringify(params))}`;
-    const headers = createHeaders(baseUrl, currentSession);
-    await jar.storeRequestCookie(req.headers.cookie);
-    headers.Cookie = await jar.getCookieStrings();
-    const options = {
-        url,
-        method: "GET",
-        headers,
-    };
-    const response = await external_axios_default().request(options);
-    if (response.headers["content-type"].includes("html")) {
-        throw new AuthError("Auth error");
+    try {
+        //https://i.instagram.com/api/v1/friendships/${userid}/following/?count=12&max_id=1
+        const url = `https://www.instagram.com/graphql/query/?query_hash=58712303d941c6855d4e888c5f0cd22f&variables=${encodeURIComponent(JSON.stringify(params))}`;
+        const headers = createHeaders(baseUrl, currentSession);
+        await jar.storeRequestCookie(req.headers.cookie);
+        headers.Cookie = await jar.getCookieStrings();
+        const options = {
+            url,
+            method: "GET",
+            headers,
+        };
+        const response = await external_axios_default().request(options);
+        if (response.headers["content-type"].includes("html")) {
+            throw new AuthError({ message: "Session expired", data: {}, requireLogin: true });
+        }
+        const cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        const data = _formatFollowings(response.data);
+        const session = updateSession(currentSession, cookies);
+        return {
+            data,
+            session
+        };
     }
-    const cookies = await jar.storeCookie(response.headers["set-cookie"]);
-    const data = _formatFollowings(response.data);
-    const session = updateSession(currentSession, cookies);
-    return {
-        data,
-        session
-    };
+    catch (ex) {
+        const error = logError(ex);
+        throw new RequestError(error.message, error.requireLogin);
+    }
 };
 const _formatFollowings = (data) => {
     const dataNode = data.data.user.edge_follow;
@@ -1063,51 +1057,63 @@ const follow = async (req) => {
     const jar = new CookieStore();
     const currentSession = getSession(req.headers);
     if (!currentSession.isAuthenticated) {
-        throw new AuthError("");
+        throw new AuthError({ message: "Session expired", data: {}, requireLogin: true });
     }
-    const url = `${baseUrl}/web/friendships/${req.data.user.id}/follow/`;
-    const headers = createHeaders(baseUrl, currentSession);
-    await jar.storeRequestCookie(req.headers.cookie);
-    headers.Cookie = await jar.getCookieStrings();
-    const options = {
-        url,
-        method: "POST",
-        headers,
-        withCredentials: true
-    };
-    const response = await external_axios_default().request(options);
-    const cookies = await jar.storeCookie(response.headers["set-cookie"]);
-    const data = response.data;
-    const session = updateSession(currentSession, cookies);
-    return {
-        data,
-        session
-    };
+    try {
+        const url = `${baseUrl}/web/friendships/${req.data.user.id}/follow/`;
+        const headers = createHeaders(baseUrl, currentSession);
+        await jar.storeRequestCookie(req.headers.cookie);
+        headers.Cookie = await jar.getCookieStrings();
+        const options = {
+            url,
+            method: "POST",
+            headers,
+            withCredentials: true
+        };
+        const response = await external_axios_default().request(options);
+        const cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        const data = response.data;
+        const session = updateSession(currentSession, cookies);
+        return {
+            data,
+            session
+        };
+    }
+    catch (ex) {
+        const error = logError(ex);
+        throw new RequestError(error.message, error.requireLogin);
+    }
 };
 const unfollow = async (req) => {
     const jar = new CookieStore();
     const currentSession = getSession(req.headers);
     if (!currentSession.isAuthenticated) {
-        throw new AuthError("");
+        throw new AuthError({ message: "Session expired", data: {}, requireLogin: true });
     }
-    const url = `${baseUrl}/web/friendships/${req.data.user.id}/unfollow/`;
-    const headers = createHeaders(baseUrl, currentSession);
-    await jar.storeRequestCookie(req.headers.cookie);
-    headers.Cookie = await jar.getCookieStrings();
-    const options = {
-        url,
-        method: "POST",
-        headers,
-        withCredentials: true
-    };
-    const response = await external_axios_default().request(options);
-    const cookies = await jar.storeCookie(response.headers["set-cookie"]);
-    const data = response.data;
-    const session = updateSession(currentSession, cookies);
-    return {
-        data,
-        session
-    };
+    try {
+        const url = `${baseUrl}/web/friendships/${req.data.user.id}/unfollow/`;
+        const headers = createHeaders(baseUrl, currentSession);
+        await jar.storeRequestCookie(req.headers.cookie);
+        headers.Cookie = await jar.getCookieStrings();
+        const options = {
+            url,
+            method: "POST",
+            headers,
+            withCredentials: true
+        };
+        const response = await external_axios_default().request(options);
+        const cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        const data = response.data;
+        const session = updateSession(currentSession, cookies);
+        return {
+            data,
+            session
+        };
+    }
+    catch (ex) {
+        const error = logError(ex);
+        throw new RequestError(error.message, error.requireLogin);
+    }
 };
 
 
@@ -1156,25 +1162,15 @@ class Controller {
         res.set({ "ig-auth": session.isAuthenticated });
         res.status(200).send(data);
     }
-    sendErrorResponse(res, ex, message = "") {
-        let loginRequired = true;
-        let errorMessage;
-        if (message) {
-            errorMessage = message;
+    sendErrorResponse(res, ex) {
+        const data = ex instanceof AuthError ? ex.detail : { message: ex.message };
+        if (ex instanceof AuthError) {
+            res.set({ "ig-auth": ex.detail.requireLogin });
         }
-        else {
-            errorMessage = ex.response ? ex.response.data.message : ex.message;
+        if (ex instanceof RequestError) {
+            res.set({ "ig-auth": ex.requireLogin });
         }
-        if (ex.response) {
-            loginRequired = ex.response.data.require_login;
-        }
-        if (ex instanceof AuthError || loginRequired) {
-            res.set({ "ig-auth": false });
-        }
-        else {
-            res.set({ "ig-auth": true });
-        }
-        res.status(400).send(errorMessage);
+        res.status(400).send(data);
     }
     async tryRestore(req, res) {
         try {
@@ -1185,7 +1181,7 @@ class Controller {
             await this.sendResponse(req, res, result, session);
         }
         catch (ex) {
-            this.sendErrorResponse(res, ex, "Restore failed");
+            this.sendErrorResponse(res, new Error("Restore failed"));
         }
     }
     async restoreBySession(req) {
@@ -1208,10 +1204,10 @@ class Controller {
     }
     async tryLogin(req, res, account, password) {
         if (!account || !password) {
-            return this.sendErrorResponse(res, { message: "Username/password required" });
+            return this.sendErrorResponse(res, new Error("Username/password required"));
         }
         if (account !== process.env.ACCOUNT) {
-            return this.sendErrorResponse(res, { message: "Unauthorized account" });
+            return this.sendErrorResponse(res, new Error("Unauthorized account"));
         }
         try {
             const result = await login({ data: { account, password }, headers: req.headers });
@@ -1226,7 +1222,7 @@ class Controller {
             await this.sendResponse(req, res, authResponse, result.session);
         }
         catch (ex) {
-            this.sendErrorResponse(res, ex, "Login failed");
+            this.sendErrorResponse(res, ex);
         }
     }
     async tryChallenge(req, res, account, code, endpoint) {
@@ -1243,7 +1239,7 @@ class Controller {
             await this.sendResponse(req, res, authResponse, result.session);
         }
         catch (ex) {
-            this.sendErrorResponse(res, ex, "Challenge failed");
+            this.sendErrorResponse(res, ex);
         }
     }
     async tryLogout(req, res) {
@@ -1293,7 +1289,6 @@ class Controller {
         }
         catch (ex) {
             console.log("try query error");
-            console.log(ex);
             return this.sendErrorResponse(res, ex);
         }
     }
@@ -1309,7 +1304,6 @@ class Controller {
         }
         catch (ex) {
             console.log("try query more error");
-            console.log(ex);
             return this.sendErrorResponse(res, ex);
         }
     }
@@ -1323,7 +1317,6 @@ class Controller {
         }
         catch (ex) {
             console.log("tryReload error");
-            console.log(ex);
             return this.sendErrorResponse(res, ex);
         }
     }
@@ -1360,7 +1353,7 @@ class Controller {
             res.status(200).send({ status: "done" });
         }
         catch (ex) {
-            this.sendErrorResponse(res, ex, "Update failed");
+            this.sendErrorResponse(res, new Error("Update failed"));
         }
     }
     async tryDeleteHistory(_req, res, account, currentUsername, deleteUsername, history) {
@@ -1370,13 +1363,13 @@ class Controller {
             res.status(200).send({ status: "done" });
         }
         catch (ex) {
-            this.sendErrorResponse(res, ex, "Delete failed");
+            this.sendErrorResponse(res, new Error("Delete failed"));
         }
     }
     async retrieveMedia(req, res) {
         try {
             if (!req.query.url || typeof req.query.url !== "string") {
-                throw new Error("no url specified");
+                return this.sendErrorResponse(res, new Error("no url specified"));
             }
             const result = await downloadMedia(req.query.url);
             Object.entries(result.headers).forEach(([key, value]) => res.setHeader(key, value));
@@ -1386,7 +1379,7 @@ class Controller {
             result.data.pipe(res);
         }
         catch (ex) {
-            this.sendErrorResponse(res, ex, "Media not found");
+            this.sendErrorResponse(res, new Error("Media not found"));
         }
     }
 }
@@ -1751,7 +1744,6 @@ var _a;
 
 
 
-
 const port = process.env.PORT || 5000;
 const server_isProduction = "production" === "production";
 const publicDir = server_isProduction ? "./public" : "../public";
@@ -1781,7 +1773,7 @@ app.use((req, res, next) => {
         next();
     }
     else {
-        server_controller.sendErrorResponse(res, new AuthError(""));
+        server_controller.sendErrorResponse(res, new AuthError({ message: "Session expired", data: {}, requireLogin: true }));
     }
 });
 app.get("/", (_req, res) => {

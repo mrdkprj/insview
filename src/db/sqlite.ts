@@ -1,5 +1,3 @@
-import { IDatabase } from "../types/IDatabase";
-import { IDatabaseProvider } from "../types/IDatabaseProvider";
 import sqliteStoreFactory from "express-session-sqlite"
 import sqlitedb from "./sqlitedb"
 import * as sqlite3 from "sqlite3"
