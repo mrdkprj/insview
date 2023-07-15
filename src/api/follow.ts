@@ -34,7 +34,7 @@ const requestFollowings = async (req:IgRequest) : Promise<IgResponse<IFollowing>
         const response = await axios.request(options);
 
         if(response.headers["content-type"].includes("html")){
-            throw new AuthError({message:"Session expired", data:{}, requireLogin:true})
+            throw new AuthError({message:"", data:{}, requireLogin:true})
         }
 
         const cookies = await jar.storeCookie(response.headers["set-cookie"])
@@ -87,7 +87,7 @@ const follow = async (req:IgRequest) => {
     const currentSession = getSession(req.headers);
 
     if(!currentSession.isAuthenticated){
-        throw new AuthError({message:"Session expired", data:{}, requireLogin:true})
+        throw new AuthError({message:"", data:{}, requireLogin:true})
     }
 
     try{
@@ -129,7 +129,7 @@ const unfollow = async (req:IgRequest) => {
     const currentSession = getSession(req.headers);
 
     if(!currentSession.isAuthenticated){
-        throw new AuthError({message:"Session expired", data:{}, requireLogin:true})
+        throw new AuthError({message:"", data:{}, requireLogin:true})
     }
 
     try{

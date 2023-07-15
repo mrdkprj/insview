@@ -42,7 +42,7 @@ const remoteLogin = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> 
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
 
-        if(!response.data.authenticated){
+        if(response.data.authenticated == false){
             throw new AuthError({message:"Account or password wrong", data:response.data, requireLogin:true})
         }
 

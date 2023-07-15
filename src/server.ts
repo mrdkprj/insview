@@ -43,7 +43,7 @@ app.use((req:Request, res:Response, next) => {
     if(req.session.account || passthru.includes(req.path) || req.method === "GET"){
         next()
     }else{
-        controller.sendErrorResponse(res, new AuthError({message:"Session expired", data:{}, requireLogin:true}))
+        controller.sendErrorResponse(res, new AuthError({message:"", data:{}, requireLogin:true}))
     }
 
 })

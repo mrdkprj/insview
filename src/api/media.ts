@@ -136,7 +136,7 @@ const _formatGraph = (data:any) :IMediaResponse =>{
 const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgResponse<IMediaResponse>> => {
 
     if(!session.isAuthenticated){
-        throw new AuthError({message:"Session expired", data:{}, requireLogin:true})
+        throw new AuthError({message:"", data:{}, requireLogin:true})
     }
 
     const jar = new CookieStore();
@@ -212,7 +212,7 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
 const _tryRequestMorePrivate = async (req:IgRequest, session:ISession) : Promise<IgResponse<IMediaResponse>> => {
 
     if(!session.isAuthenticated){
-        throw new AuthError({message:"Session expired", data:{}, requireLogin:true})
+        throw new AuthError({message:"", data:{}, requireLogin:true})
     }
 
     const jar = new CookieStore();

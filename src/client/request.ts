@@ -22,7 +22,7 @@ const getState = (headers:AxiosResponseHeaders) :boolean => {
 
 const throwError = (ex:any) => {
 
-    throw new RequestError(ex.response.data.message, ex.response.headers["ig-auth"] === "true")
+    throw new RequestError(ex.response.data.message, ex.response.headers["ig-auth"] === "false")
 
 }
 

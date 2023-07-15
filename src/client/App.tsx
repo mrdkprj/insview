@@ -37,11 +37,13 @@ function App(){
 
         dispatchAuthState({type:AuthAction.toggleAuth, value: {success:!ex.requireLogin}})
 
-        if(ex instanceof RequestError && ex.requireLogin){
-            return openLoginDialog();
+        if(ex.requireLogin){
+            openLoginDialog();
         }
 
-        dispatchAppState({type:AppAction.showError, value: ex.message})
+        if(ex.message){
+            dispatchAppState({type:AppAction.showError, value: ex.message})
+        }
 
     },[]);
 

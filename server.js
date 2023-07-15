@@ -324,7 +324,7 @@ class CookieStore {
 }
 const logError = (ex) => {
     const hasResponse = !!ex.response;
-    const errorData = ex.response ? ex.response.data : ex;
+    const errorData = hasResponse ? ex.response.data : ex;
     const message = hasResponse ? ex.response.data.message : ex.message;
     let data = hasResponse ? ex.response.data : "";
     if (hasResponse && ex.response.headers["content-type"].includes("html")) {
@@ -334,9 +334,6 @@ const logError = (ex) => {
     console.log(`message: ${message}`);
     console.log(`data: ${JSON.stringify(errorData)}`);
     console.log("------------------------------------");
-    if (ex.response && ex.response.data) {
-        return ex.response.data.require_login;
-    }
     return {
         message,
         data,
@@ -380,7 +377,7 @@ const remoteLogin = async (req) => {
         console.log(response.data);
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
-        if (!response.data.authenticated) {
+        if (response.data.authenticated == false) {
             throw new AuthError({ message: "Account or password wrong", data: response.data, requireLogin: true });
         }
         return {
@@ -725,7 +722,7 @@ const _formatGraph = (data) => {
 };
 const _tryRequestPrivate = async (req, session) => {
     if (!session.isAuthenticated) {
-        throw new AuthError({ message: "Session expired", data: {}, requireLogin: true });
+        throw new AuthError({ message: "", data: {}, requireLogin: true });
     }
     const jar = new CookieStore();
     const username = req.data.username;
@@ -785,7 +782,7 @@ const _tryRequestPrivate = async (req, session) => {
 };
 const _tryRequestMorePrivate = async (req, session) => {
     if (!session.isAuthenticated) {
-        throw new AuthError({ message: "Session expired", data: {}, requireLogin: true });
+        throw new AuthError({ message: "", data: {}, requireLogin: true });
     }
     const jar = new CookieStore();
     try {
@@ -1042,7 +1039,7 @@ const requestFollowings = async (req) => {
         };
         const response = await external_axios_default().request(options);
         if (response.headers["content-type"].includes("html")) {
-            throw new AuthError({ message: "Session expired", data: {}, requireLogin: true });
+            throw new AuthError({ message: "", data: {}, requireLogin: true });
         }
         const cookies = await jar.storeCookie(response.headers["set-cookie"]);
         const data = _formatFollowings(response.data);
@@ -1079,7 +1076,7 @@ const follow = async (req) => {
     const jar = new CookieStore();
     const currentSession = getSession(req.headers);
     if (!currentSession.isAuthenticated) {
-        throw new AuthError({ message: "Session expired", data: {}, requireLogin: true });
+        throw new AuthError({ message: "", data: {}, requireLogin: true });
     }
     try {
         const url = `${baseUrl}/web/friendships/${req.data.user.id}/follow/`;
@@ -1110,7 +1107,7 @@ const unfollow = async (req) => {
     const jar = new CookieStore();
     const currentSession = getSession(req.headers);
     if (!currentSession.isAuthenticated) {
-        throw new AuthError({ message: "Session expired", data: {}, requireLogin: true });
+        throw new AuthError({ message: "", data: {}, requireLogin: true });
     }
     try {
         const url = `${baseUrl}/web/friendships/${req.data.user.id}/unfollow/`;
