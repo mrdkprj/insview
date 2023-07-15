@@ -20,7 +20,7 @@ import useWindowDimensions from "./dimensions";
 import {appStateReducer, initialAppState, AppAction} from "./state/appStateReducer";
 import {mediaStateReducer, initialMediaState, MediaAction} from "./state/mediaStateReducer";
 import {authStateReducer, initialAuthState, AuthAction} from "./state/authStateReducer";
-
+import { RequestError } from "../entity";
 
 function App(){
 
@@ -33,11 +33,11 @@ function App(){
     const [mediaState, dispatchMediaState] = useReducer(mediaStateReducer, initialMediaState);
     const [authState, dispatchAuthState] = useReducer(authStateReducer, initialAuthState);
 
-    const handleError = useCallback( async (ex:any) => {
+    const handleError = useCallback( async (ex:RequestError) => {
 
-        dispatchAuthState({type:AuthAction.toggleAuth, value: {success:ex.data.igAuth}})
+        dispatchAuthState({type:AuthAction.toggleAuth, value: {success:!ex.requireLogin}})
 
-        if(!ex.data.igAuth){
+        if(ex instanceof RequestError && ex.requireLogin){
             return openLoginDialog();
         }
 

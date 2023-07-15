@@ -62,11 +62,11 @@ class Controller{
         const data = ex instanceof AuthError ? ex.detail : {message:ex.message}
 
         if(ex instanceof AuthError){
-            res.set({"ig-auth":ex.detail.requireLogin});
+            res.set({"ig-auth":!ex.detail.requireLogin});
         }
 
         if(ex instanceof RequestError){
-            res.set({"ig-auth":ex.requireLogin});
+            res.set({"ig-auth":!ex.requireLogin});
         }
 
         res.status(400).send(data)

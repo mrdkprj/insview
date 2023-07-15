@@ -332,7 +332,7 @@ const logError = (ex) => {
     }
     console.log("----------- Error Logging ----------");
     console.log(`message: ${message}`);
-    console.log(`data: ${errorData}`);
+    console.log(`data: ${JSON.stringify(errorData)}`);
     console.log("------------------------------------");
     if (ex.response && ex.response.data) {
         return ex.response.data.require_login;
@@ -380,6 +380,9 @@ const remoteLogin = async (req) => {
         console.log(response.data);
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
+        if (!response.data.authenticated) {
+            throw new AuthError({ message: "Account or password wrong", data: response.data, requireLogin: true });
+        }
         return {
             data: response.data,
             session
@@ -1184,10 +1187,10 @@ class Controller {
     sendErrorResponse(res, ex) {
         const data = ex instanceof AuthError ? ex.detail : { message: ex.message };
         if (ex instanceof AuthError) {
-            res.set({ "ig-auth": ex.detail.requireLogin });
+            res.set({ "ig-auth": !ex.detail.requireLogin });
         }
         if (ex instanceof RequestError) {
-            res.set({ "ig-auth": ex.requireLogin });
+            res.set({ "ig-auth": !ex.requireLogin });
         }
         res.status(400).send(data);
     }

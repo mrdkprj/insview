@@ -337,7 +337,7 @@ const logError = (ex:any):ErrorDetail => {
 
     console.log("----------- Error Logging ----------")
     console.log(`message: ${message}`)
-    console.log(`data: ${errorData}`)
+    console.log(`data: ${JSON.stringify(errorData)}`)
     console.log("------------------------------------")
 
     if(ex.response && ex.response.data){
