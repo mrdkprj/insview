@@ -1789,7 +1789,7 @@ app.use(external_express_session_default()({
     }
 }));
 app.use((req, res, next) => {
-    const passthru = ["/login", "/logout", "/challenge", "/test"];
+    const passthru = ["/login", "/logout", "/challenge"];
     if (req.session.account || passthru.includes(req.path) || req.method === "GET") {
         next();
     }
@@ -1865,10 +1865,6 @@ app.post("/remove", async (req, res) => {
     const current = req.body.current;
     const target = req.body.target;
     await server_controller.tryDeleteHistory(req, res, account, current, target, history);
-});
-app.post("/test", (req) => {
-    console.log(req.headers);
-    console.log(req.body);
 });
 app.listen(port, () => {
     console.log(`Start server on port ${port}.`);
