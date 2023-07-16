@@ -350,6 +350,7 @@ var external_axios_default = /*#__PURE__*/__webpack_require__.n(external_axios_n
 
 
 const isProduction = "production" === "production";
+//const isProduction = process.env.NODE_ENV !== "production";
 const login = async (req) => {
     if (isProduction)
         return await remoteLogin(req);
@@ -1788,12 +1789,12 @@ app.use(external_express_session_default()({
     }
 }));
 app.use((req, res, next) => {
-    const passthru = ["/login", "/logout", "/challenge"];
+    const passthru = ["/login", "/logout", "/challenge", "/test"];
     if (req.session.account || passthru.includes(req.path) || req.method === "GET") {
         next();
     }
     else {
-        server_controller.sendErrorResponse(res, new AuthError({ message: "Session expired", data: {}, requireLogin: true }));
+        server_controller.sendErrorResponse(res, new AuthError({ message: "", data: {}, requireLogin: true }));
     }
 });
 app.get("/", (_req, res) => {
@@ -1864,6 +1865,10 @@ app.post("/remove", async (req, res) => {
     const current = req.body.current;
     const target = req.body.target;
     await server_controller.tryDeleteHistory(req, res, account, current, target, history);
+});
+app.post("/test", (req) => {
+    console.log(req.headers);
+    console.log(req.body);
 });
 app.listen(port, () => {
     console.log(`Start server on port ${port}.`);

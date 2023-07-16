@@ -3,6 +3,7 @@ import { baseUrl, createHeaders, getAppId, getClientVersion, getSession, CookieS
 import { AuthError, RequestError } from "../entity";
 
 const isProduction = process.env.NODE_ENV === "production";
+//const isProduction = process.env.NODE_ENV !== "production";
 
 const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 

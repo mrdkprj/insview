@@ -38,7 +38,7 @@ app.use(session({
 
 app.use((req:Request, res:Response, next) => {
 
-    const passthru = ["/login", "/logout", "/challenge"]
+    const passthru = ["/login", "/logout", "/challenge", "/test"]
 
     if(req.session.account || passthru.includes(req.path) || req.method === "GET"){
         next()
@@ -160,6 +160,11 @@ app.post("/remove", async (req:Request, res:Response) => {
 
     await controller.tryDeleteHistory(req, res, account, current, target, history);
 
+})
+
+app.post("/test", (req:Request) => {
+    console.log(req.headers)
+    console.log(req.body)
 })
 
 app.listen(port, () => {
