@@ -22,7 +22,7 @@ const remoteLogin = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> 
     session.userAgent = req.headers["user-agent"];
     const headers = createHeaders(baseUrl, session);
     let cookies = [];
-    const jar = new CookieStore();
+    const jar = new CookieStore(process.env.API_URL);
 
     try{
 
@@ -39,7 +39,6 @@ const remoteLogin = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> 
         const response = await axios.request(options);
         console.log("----------auth response-------")
         console.log(response.data)
-        console.log(response.headers)
 
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
@@ -229,7 +228,7 @@ const remoteChallenge = async (req:IgRequest) : Promise<IgResponse<ILoginRespons
 
     const url = req.data.endpoint;
 
-    const jar = new CookieStore();
+    const jar = new CookieStore(process.env.API_URL);
     const options :AxiosRequestConfig = {}
     let session = getSession(req.headers);
     const headers = createHeaders(url, session);
@@ -333,7 +332,7 @@ const remoteLogout = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>>
 
 const localLogout = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>>  => {
 
-    const jar = new CookieStore();
+    const jar = new CookieStore(process.env.API_URL);
 
     let session = getSession(req.headers);
 

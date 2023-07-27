@@ -286,15 +286,16 @@ const updateCookie = (old, cs) => {
     return setCookieString;
 };
 class CookieStore {
-    constructor() {
+    constructor(url) {
         this.jar = new external_tough_cookie_namespaceObject.CookieJar();
+        this.url = url ? url : baseUrl;
     }
     async storeCookie(setCookie) {
         if (!setCookie) {
             return await this.getCookies();
         }
         for (const cookieString of setCookie) {
-            await this.jar.setCookie(cookieString, baseUrl, { ignoreError: true });
+            await this.jar.setCookie(cookieString, this.url, { ignoreError: true });
         }
         return await this.getCookies();
     }
@@ -311,15 +312,15 @@ class CookieStore {
         ];
         const validCookies = cookieHeader.split(";").map(item => item.trim()).filter(cookieString => !excludeKeys.some(key => cookieString.includes(key)));
         for (const cookieString of validCookies) {
-            await this.jar.setCookie(cookieString, baseUrl, { ignoreError: true });
+            await this.jar.setCookie(cookieString, this.url, { ignoreError: true });
         }
         return await this.getCookies();
     }
     async getCookieStrings() {
-        return await this.jar.getCookieString(baseUrl);
+        return await this.jar.getCookieString(this.url);
     }
     async getCookies() {
-        return await this.jar.getCookies(baseUrl);
+        return await this.jar.getCookies(this.url);
     }
 }
 const logError = (ex) => {
@@ -363,7 +364,7 @@ const remoteLogin = async (req) => {
     session.userAgent = req.headers["user-agent"];
     const headers = createHeaders(baseUrl, session);
     let cookies = [];
-    const jar = new CookieStore();
+    const jar = new CookieStore(process.env.API_URL);
     try {
         const options = {};
         options.url = process.env.API_URL + "/login";
@@ -376,7 +377,6 @@ const remoteLogin = async (req) => {
         const response = await external_axios_default().request(options);
         console.log("----------auth response-------");
         console.log(response.data);
-        console.log(response.headers);
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
         if (response.data.authenticated == false) {
@@ -511,7 +511,7 @@ const challenge = async (req) => {
 const remoteChallenge = async (req) => {
     console.log("-------------- code verification start ---------");
     const url = req.data.endpoint;
-    const jar = new CookieStore();
+    const jar = new CookieStore(process.env.API_URL);
     const options = {};
     let session = getSession(req.headers);
     const headers = createHeaders(url, session);
@@ -587,7 +587,7 @@ const remoteLogout = async (req) => {
     return await localLogout(req);
 };
 const localLogout = async (req) => {
-    const jar = new CookieStore();
+    const jar = new CookieStore(process.env.API_URL);
     let session = getSession(req.headers);
     if (!session.isAuthenticated)
         throw new RequestError("Already logged out", false);
@@ -1165,7 +1165,6 @@ class Controller {
         return false;
     }
     async sendResponse(req, res, data, session) {
-        console.log(session.cookies);
         const domain =  true ? req.hostname : 0;
         session.cookies.forEach((cookie) => {
             var _a;

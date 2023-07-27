@@ -272,9 +272,11 @@ const updateCookie = (old:string[] | undefined[], cs:string[] | undefined[]) => 
 class CookieStore{
 
     jar:tough.CookieJar;
+    url:string;
 
-    constructor(){
+    constructor(url?:string){
         this.jar = new CookieJar();
+        this.url = url ? url : baseUrl;
     }
 
     async storeCookie(setCookie:string[] | undefined){
@@ -284,7 +286,7 @@ class CookieStore{
         }
 
         for (const cookieString of setCookie) {
-            await this.jar.setCookie(cookieString, baseUrl, {ignoreError:true});
+            await this.jar.setCookie(cookieString, this.url, {ignoreError:true});
         }
 
         return await this.getCookies();
@@ -307,18 +309,18 @@ class CookieStore{
         const validCookies = cookieHeader.split(";").map(item => item.trim()).filter(cookieString => !excludeKeys.some(key => cookieString.includes(key)))
 
         for (const cookieString of validCookies) {
-            await this.jar.setCookie(cookieString, baseUrl, {ignoreError:true});
+            await this.jar.setCookie(cookieString, this.url, {ignoreError:true});
         }
 
         return await this.getCookies();
     }
 
     async getCookieStrings(){
-        return await this.jar.getCookieString(baseUrl)
+        return await this.jar.getCookieString(this.url)
     }
 
     async getCookies(){
-        return await this.jar.getCookies(baseUrl);
+        return await this.jar.getCookies(this.url);
     }
 
 }
