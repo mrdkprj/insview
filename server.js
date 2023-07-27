@@ -1165,6 +1165,7 @@ class Controller {
         return false;
     }
     async sendResponse(req, res, data, session) {
+        console.log(session.cookies);
         const domain =  true ? req.hostname : 0;
         session.cookies.forEach((cookie) => {
             var _a;

@@ -33,6 +33,7 @@ class Controller{
 
     async sendResponse(req:Request, res:Response, data:any, session:ISession){
 
+        console.log(session.cookies)
         const domain = process.env.NODE_ENV === "production" ? req.hostname : ""
 
         session.cookies.forEach((cookie:Cookie) => {
