@@ -301,10 +301,13 @@ class CookieStore{
         const excludeKeys = [
             "connect.sid",
             "ARRAffinity",
-            "ARRAffinitySameSite",
-            IgHeaderNames.ajax,
-            IgHeaderNames.appId
+            "ARRAffinitySameSite"
         ]
+
+        if(this.url == baseUrl){
+            excludeKeys.push(IgHeaderNames.ajax)
+            excludeKeys.push(IgHeaderNames.appId)
+        }
 
         const validCookies = cookieHeader.split(";").map(item => item.trim()).filter(cookieString => !excludeKeys.some(key => cookieString.includes(key)))
 
