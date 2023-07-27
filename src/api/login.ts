@@ -236,9 +236,9 @@ const remoteChallenge = async (req:IgRequest) : Promise<IgResponse<ILoginRespons
     await jar.storeRequestCookie(req.headers.cookie)
     headers.Cookie = await jar.getCookieStrings()
 
-    console.log(headers.Cookie)
+    //console.log(headers.Cookie)
 
-    const x = 10; if(x > 0) throw new Error("not now")
+    //const x = 10; if(x > 0) throw new Error("not now")
 
     try{
 

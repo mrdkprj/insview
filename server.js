@@ -519,10 +519,8 @@ const remoteChallenge = async (req) => {
     const headers = createHeaders(url, session);
     await jar.storeRequestCookie(req.headers.cookie);
     headers.Cookie = await jar.getCookieStrings();
-    console.log(headers.Cookie);
-    const x = 10;
-    if (x > 0)
-        throw new Error("not now");
+    //console.log(headers.Cookie)
+    //const x = 10; if(x > 0) throw new Error("not now")
     try {
         options.url = process.env.API_URL + "/challenge";
         options.data = {
