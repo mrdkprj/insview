@@ -2,8 +2,8 @@ import axios, { AxiosRequestConfig, AxiosRequestHeaders } from "axios";
 import { baseUrl, createHeaders, getAppId, getClientVersion, getSession, CookieStore, updateSession, logError, extractCsrfToken } from "./util";
 import { AuthError, RequestError } from "../entity";
 
-const isProduction = process.env.NODE_ENV === "production";
-//const isProduction = process.env.NODE_ENV !== "production";
+//const isProduction = process.env.NODE_ENV === "production";
+const isProduction = true;
 
 const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
@@ -39,6 +39,7 @@ const remoteLogin = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> 
         const response = await axios.request(options);
         console.log("----------auth response-------")
         console.log(response.data)
+        console.log(response.headers)
 
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);

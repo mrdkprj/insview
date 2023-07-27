@@ -349,8 +349,8 @@ var external_axios_default = /*#__PURE__*/__webpack_require__.n(external_axios_n
 
 
 
-const isProduction = "production" === "production";
-//const isProduction = process.env.NODE_ENV !== "production";
+//const isProduction = process.env.NODE_ENV === "production";
+const isProduction = true;
 const login = async (req) => {
     if (isProduction)
         return await remoteLogin(req);
@@ -376,6 +376,7 @@ const remoteLogin = async (req) => {
         const response = await external_axios_default().request(options);
         console.log("----------auth response-------");
         console.log(response.data);
+        console.log(response.headers);
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
         if (response.data.authenticated == false) {
