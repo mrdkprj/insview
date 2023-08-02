@@ -1201,6 +1201,7 @@ class Controller {
     }
     async tryRestore(req, res) {
         try {
+            console.log(req.headers.cookie);
             const session = getSession(req.headers);
             const result = await this.db.restore(req.session.account);
             result.isAuthenticated = session.isAuthenticated;

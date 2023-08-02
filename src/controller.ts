@@ -75,7 +75,7 @@ console.log(cookie)
     async tryRestore(req:Request, res:Response){
 
         try{
-
+console.log(req.headers.cookie)
             const session = api.getSession(req.headers);
 
             const result = await this.db.restore(req.session.account);
