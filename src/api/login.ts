@@ -236,10 +236,6 @@ const remoteChallenge = async (req:IgRequest) : Promise<IgResponse<ILoginRespons
     await jar.storeRequestCookie(req.headers.cookie)
     headers.Cookie = await jar.getCookieStrings()
 
-    //console.log(headers.Cookie)
-
-    //const x = 10; if(x > 0) throw new Error("not now")
-
     try{
 
         options.url = process.env.API_URL + "/challenge";
@@ -256,7 +252,6 @@ const remoteChallenge = async (req:IgRequest) : Promise<IgResponse<ILoginRespons
         const cookies = await jar.storeCookie(response.headers["set-cookie"])
         session = updateSession(session, cookies);
 
-        console.log(response.headers["set-cookie"])
         console.log(response.data)
 
         return {
