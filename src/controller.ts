@@ -76,6 +76,7 @@ class Controller{
 
         try{
 
+            console.log(req.headers)
             const session = api.getSession(req.headers);
 
             const result = await this.db.restore(req.session.account);
