@@ -533,6 +533,7 @@ const remoteChallenge = async (req) => {
         const response = await external_axios_default().request(options);
         const cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
+        console.log(response.headers["set-cookie"]);
         console.log(response.data);
         return {
             data: response.data,
@@ -1174,6 +1175,7 @@ class Controller {
             var _a;
             if (typeof cookie.maxAge === "number" && cookie.maxAge <= 0)
                 return;
+            console.log(cookie);
             res.cookie(cookie.key, cookie.value, {
                 domain: domain,
                 expires: cookie.expires === "Infinity" ? undefined : cookie.expires,
@@ -1199,7 +1201,6 @@ class Controller {
     }
     async tryRestore(req, res) {
         try {
-            console.log(req.headers);
             const session = getSession(req.headers);
             const result = await this.db.restore(req.session.account);
             result.isAuthenticated = session.isAuthenticated;

@@ -256,6 +256,7 @@ const remoteChallenge = async (req:IgRequest) : Promise<IgResponse<ILoginRespons
         const cookies = await jar.storeCookie(response.headers["set-cookie"])
         session = updateSession(session, cookies);
 
+        console.log(response.headers["set-cookie"])
         console.log(response.data)
 
         return {

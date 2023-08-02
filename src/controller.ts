@@ -38,7 +38,7 @@ class Controller{
         session.cookies.forEach((cookie:Cookie) => {
 
             if(typeof cookie.maxAge === "number" && cookie.maxAge <= 0) return;
-
+console.log(cookie)
             res.cookie(cookie.key, cookie.value, {
                 domain:domain,
                 expires:cookie.expires === "Infinity" ? undefined : cookie.expires,
@@ -76,7 +76,6 @@ class Controller{
 
         try{
 
-            console.log(req.headers)
             const session = api.getSession(req.headers);
 
             const result = await this.db.restore(req.session.account);
