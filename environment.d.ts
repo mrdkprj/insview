@@ -13,11 +13,10 @@ declare global {
             AZ_KEY:string;
             AZ_DB_ID:string;
             ACCOUNT:string;
-            API_URL:string
+            API_URL:string;
+            LOGIN_POINT: "Local" | "Remote"
         }
     }
-  }
+}
 
-  // If this file has no import/export statements (i.e. is a script)
-  // convert it into a module by adding an empty export statement.
-  export {}
+export {}

@@ -352,10 +352,9 @@ var external_axios_default = /*#__PURE__*/__webpack_require__.n(external_axios_n
 
 
 
-//const isProduction = process.env.NODE_ENV === "production";
-const isProduction = true;
+const useRemote = process.env.LOGIN_POINT === "Remote";
 const login = async (req) => {
-    if (isProduction)
+    if (useRemote)
         return await remoteLogin(req);
     return await localLogin(req);
 };
@@ -404,8 +403,8 @@ const localLogin = async (req) => {
     const jar = new CookieStore();
     try {
         const options = {};
-        headers.Cookie = "ig_cb=1;";
-        headers["x-instagram-ajax"] = 1;
+        headers.Cookie = "ig_cb=1";
+        headers["X-Instagram-Ajax"] = 1;
         options.url = baseUrl;
         options.method = "GET";
         options.headers = headers;
@@ -416,23 +415,24 @@ const localLogin = async (req) => {
         };
         session.csrfToken = extractCsrfToken(response.data);
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
-        headers["x-ig-app-id"] = xHeaders.appId;
+        headers["X-Ig-App-Id"] = xHeaders.appId;
         headers.Cookie = await jar.getCookieStrings();
         session = updateSession(session, cookies, xHeaders);
-        /*
-                options.url = "https://www.instagram.com/api/v1/public/landing_info/";
-                options.method = "GET"
-                options.headers = headers;
-        
-                response = await axios.request(options);
-        
-                cookies = await jar.storeCookie(response.headers["set-cookie"]);
-                session = updateSession(session, cookies, xHeaders)
-                headers.Cookie = await jar.getCookieStrings()
-        */
-        headers["x-ig-www-claim"] = 0;
-        headers["x-instagram-ajax"] = xHeaders.ajax;
-        headers["x-csrftoken"] = session.csrfToken;
+        headers["X-Asbd-Id"] = 129477;
+        headers["X-Ig-Www-Claim"] = 0;
+        headers["X-Instagram-Ajax"] = xHeaders.ajax;
+        headers["X-Csrftoken"] = session.csrfToken;
+        options.url = "https://www.instagram.com/api/v1/public/landing_info/";
+        options.method = "GET";
+        options.headers = headers;
+        response = await external_axios_default().request(options);
+        cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        session = updateSession(session, cookies, xHeaders);
+        headers.Cookie = await jar.getCookieStrings();
+        headers["X-Asbd-Id"] = 129477;
+        headers["X-Ig-Www-Claim"] = 0;
+        headers["X-Instagram-Ajax"] = xHeaders.ajax;
+        headers["X-Csrftoken"] = session.csrfToken;
         headers["content-type"] = "application/x-www-form-urlencoded";
         const createEncPassword = (pwd) => {
             return `#PWD_INSTAGRAM_BROWSER:0:${Math.floor(Date.now() / 1000)}:${pwd}`;
@@ -447,6 +447,7 @@ const localLogin = async (req) => {
         options.method = "POST";
         options.data = params;
         options.headers = headers;
+        console.log(headers);
         response = await external_axios_default().request(options);
         console.log("----------auth response-------");
         console.log(response.data);
@@ -460,7 +461,12 @@ const localLogin = async (req) => {
     }
     catch (ex) {
         if (ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required") {
+            console.log("------------- checkpoint required ------------");
             console.log(ex.response.data);
+            cookies = await jar.storeCookie(ex.response.headers["set-cookie"]);
+            session = updateSession(session, cookies);
+            headers["X-Csrftoken"] = session.csrfToken;
+            headers.Cookie = await jar.getCookieStrings();
             return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar);
         }
         const error = logError(ex);
@@ -468,24 +474,28 @@ const localLogin = async (req) => {
     }
 };
 const requestChallenge = async (account, checkpoint, headers, session, jar) => {
-    console.log("---------- challenge start -------");
+    console.log("---------- checkpoint start -------");
     try {
         const options = {};
-        const url = "https://www.instagram.com" + checkpoint;
-        console.log(url);
-        options.url = url;
+        const url = "https://www.instagram.com" + new URL(checkpoint).pathname.replace("/challenge/", "/challenge/action/");
+        options.url = checkpoint;
         options.method = "GET";
         options.headers = headers;
         let response = await external_axios_default().request(options);
+        console.log(response.headers);
+        console.log(response.status);
         let cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
         headers["referer"] = url;
-        headers["x-csrftoken"] = session.csrfToken;
+        headers["X-Csrftoken"] = session.csrfToken;
+        headers.Cookie = await jar.getCookieStrings();
         const params = new URLSearchParams();
         params.append("choice", "1");
         options.data = params;
         options.method = "POST";
         options.headers = headers;
+        console.log(url);
+        console.log(headers);
         response = await external_axios_default().request(options);
         console.log("---------- challenge response -------");
         console.log(response.data);
@@ -498,7 +508,7 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
                 session
             };
         }
-        throw new AuthError({ message: "Challenge request failed", data: { account: account, success: false, challenge: true, endpoint: url }, requireLogin: true });
+        throw new Error("Challange response not found");
     }
     catch (ex) {
         const error = logError(ex);
@@ -506,7 +516,7 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
     }
 };
 const challenge = async (req) => {
-    if (isProduction)
+    if (useRemote)
         return await remoteChallenge(req);
     return await localChallenge(req);
 };
@@ -519,8 +529,6 @@ const remoteChallenge = async (req) => {
     const headers = createHeaders(url, session);
     await jar.storeRequestCookie(req.headers.cookie);
     headers.Cookie = await jar.getCookieStrings();
-    //console.log(headers.Cookie)
-    //const x = 10; if(x > 0) throw new Error("not now")
     try {
         options.url = process.env.API_URL + "/challenge";
         options.data = {
@@ -533,7 +541,6 @@ const remoteChallenge = async (req) => {
         const response = await external_axios_default().request(options);
         const cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
-        console.log(response.headers["set-cookie"]);
         console.log(response.data);
         return {
             data: response.data,
@@ -554,12 +561,13 @@ const localChallenge = async (req) => {
     let session = getSession(req.headers);
     const headers = createHeaders(url, session);
     try {
-        headers["x-ig-app-id"] = session.xHeaders.appId;
-        headers["x-ig-www-claim"] = 0;
-        headers["x-instagram-ajax"] = session.xHeaders.ajax;
+        headers["X-Ig-App-Id"] = session.xHeaders.appId;
+        headers["X-Ig-Www-Claim"] = 0;
+        headers["X-Instagram-Ajax"] = session.xHeaders.ajax;
         headers["content-type"] = "application/x-www-form-urlencoded";
         await jar.storeRequestCookie(req.headers.cookie);
         headers.Cookie = await jar.getCookieStrings();
+        console.log(headers);
         const params = new URLSearchParams();
         params.append("security_code", req.data.code);
         options.url = url;
@@ -570,7 +578,48 @@ const localChallenge = async (req) => {
         const cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
         const data = { account: req.data.account, success: session.isAuthenticated, challenge: !session.isAuthenticated, endpoint: "" };
+        if (!response.headers["content-type"].includes("html")) {
+            console.log(response.data);
+        }
+        return {
+            data,
+            session
+        };
+    }
+    catch (ex) {
+        const error = logError(ex);
+        console.log(error.data);
+        throw new AuthError({ message: "Code verification failed", data: { account: req.data.account, success: false, challenge: true, endpoint: req.data.endpoint }, requireLogin: true });
+    }
+};
+const logout = async (req) => {
+    if (useRemote)
+        return await remoteLogout(req);
+    return await localLogout(req);
+};
+const remoteLogout = async (req) => {
+    const jar = new CookieStore(process.env.API_URL);
+    let session = getSession(req.headers);
+    if (!session.isAuthenticated)
+        throw new RequestError("Already logged out", false);
+    const options = {};
+    const headers = createHeaders(baseUrl, session);
+    await jar.storeRequestCookie(req.headers.cookie);
+    headers.Cookie = await jar.getCookieStrings();
+    try {
+        options.url = process.env.API_URL + "/logout";
+        options.data = {
+            endpoint: req.data.endpoint,
+            account: req.data.account,
+            code: req.data.code,
+        };
+        options.method = "POST";
+        options.headers = headers;
+        const response = await external_axios_default().request(options);
         console.log(response.data);
+        const cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        session = updateSession(session, cookies);
+        const data = { account: "", success: true, challenge: false, endpoint: "" };
         return {
             data,
             session
@@ -578,30 +627,22 @@ const localChallenge = async (req) => {
     }
     catch (ex) {
         return {
-            data: { account: req.data.account, success: false, challenge: true, endpoint: req.data.endpoint },
+            data: { account: "", success: true, challenge: false, endpoint: "" },
             session
         };
     }
 };
-const logout = async (req) => {
-    if (isProduction)
-        return await remoteLogout(req);
-    return await localLogout(req);
-};
-const remoteLogout = async (req) => {
-    return await localLogout(req);
-};
 const localLogout = async (req) => {
-    const jar = new CookieStore(process.env.API_URL);
+    const jar = new CookieStore();
     let session = getSession(req.headers);
     if (!session.isAuthenticated)
-        throw new RequestError("Already logged out", false);
+        throw new Error("Already logged out");
     try {
         const url = "https://www.instagram.com/api/v1/web/accounts/logout/ajax/";
         const headers = createHeaders(baseUrl, session);
-        headers["x-ig-app-id"] = session.xHeaders.appId;
-        headers["x-ig-www-claim"] = 0;
-        headers["x-instagram-ajax"] = session.xHeaders.ajax;
+        headers["X-Ig-App-Id"] = session.xHeaders.appId;
+        headers["X-Ig-Www-Claim"] = 0;
+        headers["X-Instagram-Ajax"] = session.xHeaders.ajax;
         headers["content-type"] = "application/x-www-form-urlencoded";
         await jar.storeRequestCookie(req.headers.cookie);
         headers.Cookie = await jar.getCookieStrings();
@@ -1175,7 +1216,6 @@ class Controller {
             var _a;
             if (typeof cookie.maxAge === "number" && cookie.maxAge <= 0)
                 return;
-            console.log(cookie);
             res.cookie(cookie.key, cookie.value, {
                 domain: domain,
                 expires: cookie.expires === "Infinity" ? undefined : cookie.expires,
@@ -1774,8 +1814,8 @@ var _a;
 
 
 const port = process.env.PORT || 5000;
-const server_isProduction = "production" === "production";
-const publicDir = server_isProduction ? "./public" : "../public";
+const isProduction = "production" === "production";
+const publicDir = isProduction ? "./public" : "../public";
 const app = external_express_default()();
 const server_controller = new controller(model.db);
 const store = model.store((external_express_session_default()));
@@ -1790,10 +1830,10 @@ app.use(external_express_session_default()({
     resave: false,
     saveUninitialized: true,
     cookie: {
-        secure: server_isProduction ? true : false,
+        secure: isProduction ? true : false,
         httpOnly: true,
         maxAge: 31449600,
-        sameSite: server_isProduction ? "none" : "strict"
+        sameSite: isProduction ? "none" : "strict"
     }
 }));
 app.use((req, res, next) => {

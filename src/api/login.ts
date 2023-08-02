@@ -2,12 +2,11 @@ import axios, { AxiosRequestConfig, AxiosRequestHeaders } from "axios";
 import { baseUrl, createHeaders, getAppId, getClientVersion, getSession, CookieStore, updateSession, logError, extractCsrfToken } from "./util";
 import { AuthError, RequestError } from "../entity";
 
-//const isProduction = process.env.NODE_ENV === "production";
-const isProduction = true;
+const useRemote = process.env.LOGIN_POINT === "Remote";
 
 const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
-    if(isProduction) return await remoteLogin(req)
+    if(useRemote) return await remoteLogin(req)
 
     return await localLogin(req);
 }
@@ -77,8 +76,8 @@ const localLogin = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =
 
         const options :AxiosRequestConfig= {};
 
-        headers.Cookie = "ig_cb=1;"
-        headers["x-instagram-ajax"] = 1;
+        headers.Cookie = "ig_cb=1"
+        headers["X-Instagram-Ajax"] = 1;
         options.url = baseUrl;
         options.method = "GET"
         options.headers = headers;
@@ -93,11 +92,14 @@ const localLogin = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =
 
         cookies = await jar.storeCookie(response.headers["set-cookie"])
 
-        headers["x-ig-app-id"] = xHeaders.appId
+        headers["X-Ig-App-Id"] = xHeaders.appId
         headers.Cookie = await jar.getCookieStrings();
         session = updateSession(session, cookies, xHeaders)
 
-/*
+        headers["X-Asbd-Id"] = 129477;
+        headers["X-Ig-Www-Claim"] = 0
+        headers["X-Instagram-Ajax"] = xHeaders.ajax
+        headers["X-Csrftoken"] = session.csrfToken;
         options.url = "https://www.instagram.com/api/v1/public/landing_info/";
         options.method = "GET"
         options.headers = headers;
@@ -107,11 +109,11 @@ const localLogin = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies, xHeaders)
         headers.Cookie = await jar.getCookieStrings()
-*/
 
-        headers["x-ig-www-claim"] = 0
-        headers["x-instagram-ajax"] = xHeaders.ajax
-        headers["x-csrftoken"] = session.csrfToken;
+        headers["X-Asbd-Id"] = 129477;
+        headers["X-Ig-Www-Claim"] = 0
+        headers["X-Instagram-Ajax"] = xHeaders.ajax
+        headers["X-Csrftoken"] = session.csrfToken;
         headers["content-type"] = "application/x-www-form-urlencoded"
 
         const createEncPassword = (pwd:string) => {
@@ -129,7 +131,7 @@ const localLogin = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =
         options.method = "POST"
         options.data = params;
         options.headers = headers;
-
+console.log(headers)
         response = await axios.request(options);
 
         console.log("----------auth response-------")
@@ -148,8 +150,16 @@ const localLogin = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =
     }catch(ex:any){
 
         if(ex.response && ex.response.data.message && ex.response.data.message === "checkpoint_required"){
+
+            console.log("------------- checkpoint required ------------")
             console.log(ex.response.data)
+            cookies = await jar.storeCookie(ex.response.headers["set-cookie"]);
+            session = updateSession(session, cookies);
+            headers["X-Csrftoken"] = session.csrfToken;
+            headers.Cookie = await jar.getCookieStrings()
+
             return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar)
+
         }
 
         const error = logError(ex)
@@ -160,25 +170,28 @@ const localLogin = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =
 
 const requestChallenge = async (account:string, checkpoint:string, headers:AxiosRequestHeaders, session:ISession, jar:CookieStore) :Promise<IgResponse<ILoginResponse>> => {
 
-    console.log("---------- challenge start -------")
+    console.log("---------- checkpoint start -------")
 
     try{
 
         const options :AxiosRequestConfig= {};
 
-        const url = "https://www.instagram.com" + checkpoint;
-        console.log(url)
-        options.url = url;
+        const url = "https://www.instagram.com" + new URL(checkpoint).pathname.replace("/challenge/","/challenge/action/");
+
+        options.url = checkpoint;
         options.method = "GET";
         options.headers = headers;
 
         let response = await axios.request(options);
+console.log(response.headers)
+console.log(response.status)
 
         let cookies = await jar.storeCookie(response.headers["set-cookie"])
         session = updateSession(session, cookies)
 
         headers["referer"] = url
-        headers["x-csrftoken"] = session.csrfToken;
+        headers["X-Csrftoken"] = session.csrfToken;
+        headers.Cookie = await jar.getCookieStrings();
 
         const params = new URLSearchParams();
         params.append("choice", "1")
@@ -186,6 +199,8 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
         options.data = params;
         options.method = "POST"
         options.headers = headers;
+        console.log(url)
+        console.log(headers)
 
         response = await axios.request(options);
 
@@ -204,7 +219,7 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
             }
         }
 
-        throw new AuthError({message:"Challenge request failed",data:{account:account, success:false, challenge: true, endpoint:url}, requireLogin:true});
+        throw new Error("Challange response not found")
 
     }catch(ex:any){
 
@@ -217,7 +232,7 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
 }
 
 const challenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
-    if(isProduction) return await remoteChallenge(req)
+    if(useRemote) return await remoteChallenge(req)
 
     return await localChallenge(req);
 }
@@ -282,14 +297,14 @@ const localChallenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse
 
     try{
 
-        headers["x-ig-app-id"] = session.xHeaders.appId
-        headers["x-ig-www-claim"] = 0
-        headers["x-instagram-ajax"] = session.xHeaders.ajax
+        headers["X-Ig-App-Id"] = session.xHeaders.appId
+        headers["X-Ig-Www-Claim"] = 0
+        headers["X-Instagram-Ajax"] = session.xHeaders.ajax
         headers["content-type"] = "application/x-www-form-urlencoded"
 
         await jar.storeRequestCookie(req.headers.cookie)
         headers.Cookie = await jar.getCookieStrings()
-
+        console.log(headers)
         const params = new URLSearchParams();
         params.append("security_code", req.data.code)
 
@@ -304,7 +319,62 @@ const localChallenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse
         session = updateSession(session, cookies);
         const data = {account:req.data.account, success:session.isAuthenticated, challenge:!session.isAuthenticated, endpoint:""};
 
+        if(!response.headers["content-type"].includes("html")){
+            console.log(response.data)
+        }
+
+        return {
+            data,
+            session
+        }
+
+    }catch(ex:any){
+
+        const error = logError(ex);
+        console.log(error.data)
+
+        throw new AuthError({message:"Code verification failed", data:{account:req.data.account, success:false, challenge:true, endpoint:req.data.endpoint}, requireLogin:true})
+    }
+
+}
+
+const logout = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>>  => {
+    if(useRemote) return await remoteLogout(req)
+
+    return await localLogout(req);
+}
+
+const remoteLogout = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>>  => {
+
+    const jar = new CookieStore(process.env.API_URL);
+
+    let session = getSession(req.headers);
+
+    if(!session.isAuthenticated) throw new RequestError("Already logged out", false)
+
+    const options :AxiosRequestConfig = {}
+    const headers = createHeaders(baseUrl, session);
+
+    await jar.storeRequestCookie(req.headers.cookie)
+    headers.Cookie = await jar.getCookieStrings()
+
+    try{
+        options.url = process.env.API_URL + "/logout";
+        options.data = {
+            endpoint:req.data.endpoint,
+            account:req.data.account,
+            code:req.data.code,
+        };
+        options.method = "POST"
+        options.headers = headers;
+
+        const response = await axios.request(options);
+
         console.log(response.data)
+        const cookies = await jar.storeCookie(response.headers["set-cookie"])
+        session = updateSession(session, cookies);
+
+        const data = {account:"", success:true, challenge:false, endpoint:""};
 
         return {
             data,
@@ -313,39 +383,28 @@ const localChallenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse
 
     }catch(ex:any){
         return {
-            data:{account:req.data.account, success:false, challenge:true, endpoint:req.data.endpoint},
+            data:{account:"", success:true, challenge:false, endpoint:""},
             session
         }
     }
-
-}
-
-const logout = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>>  => {
-    if(isProduction) return await remoteLogout(req)
-
-    return await localLogout(req);
-}
-
-const remoteLogout = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>>  => {
-    return await localLogout(req);
 }
 
 const localLogout = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>>  => {
 
-    const jar = new CookieStore(process.env.API_URL);
+    const jar = new CookieStore();
 
     let session = getSession(req.headers);
 
-    if(!session.isAuthenticated) throw new RequestError("Already logged out", false)
+    if(!session.isAuthenticated) throw new Error("Already logged out")
 
     try{
 
         const url = "https://www.instagram.com/api/v1/web/accounts/logout/ajax/";
 
         const headers = createHeaders(baseUrl, session);
-        headers["x-ig-app-id"] = session.xHeaders.appId
-        headers["x-ig-www-claim"] = 0
-        headers["x-instagram-ajax"] = session.xHeaders.ajax
+        headers["X-Ig-App-Id"] = session.xHeaders.appId
+        headers["X-Ig-Www-Claim"] = 0
+        headers["X-Instagram-Ajax"] = session.xHeaders.ajax
         headers["content-type"] = "application/x-www-form-urlencoded"
 
         await jar.storeRequestCookie(req.headers.cookie)
