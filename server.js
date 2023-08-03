@@ -366,6 +366,20 @@ const remoteLogin = async (req) => {
     const headers = createHeaders(baseUrl, session);
     let cookies = [];
     const jar = new CookieStore(process.env.API_URL);
+    /*
+    const t = ['']
+    cookies = await jar.storeCookie(t)
+    session = updateSession(session, cookies);
+    const data = {account, success:session.isAuthenticated, challenge:false, endpoint:""};
+
+    const x= 10;
+    if(x >0){
+        return {
+            data,
+            session
+        }
+    }
+    */
     try {
         const options = {};
         options.url = process.env.API_URL + "/login";
@@ -1199,9 +1213,9 @@ class Controller {
         this.db = db;
         this.db.create();
     }
-    _convertSameSite(_sameSite) {
+    convertSameSite(_sameSite) {
         if (!_sameSite)
-            return undefined;
+            return "none";
         if (_sameSite.toLowerCase() === "lax")
             return "lax";
         if (_sameSite.toLowerCase() === "strict")
@@ -1216,13 +1230,18 @@ class Controller {
             var _a;
             if (typeof cookie.maxAge === "number" && cookie.maxAge <= 0)
                 return;
+            const sameSite = this.convertSameSite(cookie.sameSite);
+            let secure = cookie.secure;
+            if (!secure && sameSite == "none") {
+                secure = true;
+            }
             res.cookie(cookie.key, cookie.value, {
                 domain: domain,
                 expires: cookie.expires === "Infinity" ? undefined : cookie.expires,
                 httpOnly: cookie.httpOnly,
                 path: (_a = cookie.path) !== null && _a !== void 0 ? _a : undefined,
-                secure: cookie.secure,
-                sameSite: this._convertSameSite(cookie.sameSite),
+                secure,
+                sameSite: sameSite,
                 encode: String
             });
         });

@@ -18,9 +18,9 @@ class Controller{
         this.db.create();
     }
 
-    _convertSameSite(_sameSite:string){
+    private convertSameSite(_sameSite:string){
 
-        if(!_sameSite) return undefined
+        if(!_sameSite) return "none"
 
         if(_sameSite.toLowerCase() === "lax") return "lax"
 
@@ -39,13 +39,19 @@ class Controller{
 
             if(typeof cookie.maxAge === "number" && cookie.maxAge <= 0) return;
 
+            const sameSite = this.convertSameSite(cookie.sameSite);
+            let secure = cookie.secure;
+            if(!secure && sameSite == "none"){
+                secure = true;
+            }
+
             res.cookie(cookie.key, cookie.value, {
                 domain:domain,
                 expires:cookie.expires === "Infinity" ? undefined : cookie.expires,
                 httpOnly:cookie.httpOnly,
                 path:cookie.path ?? undefined,
-                secure:cookie.secure,
-                sameSite:this._convertSameSite(cookie.sameSite),
+                secure,
+                sameSite:sameSite,
                 encode: String
             });
 

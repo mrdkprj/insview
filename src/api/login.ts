@@ -23,6 +23,21 @@ const remoteLogin = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> 
     let cookies = [];
     const jar = new CookieStore(process.env.API_URL);
 
+    /*
+    const t = ['']
+    cookies = await jar.storeCookie(t)
+    session = updateSession(session, cookies);
+    const data = {account, success:session.isAuthenticated, challenge:false, endpoint:""};
+
+    const x= 10;
+    if(x >0){
+        return {
+            data,
+            session
+        }
+    }
+    */
+
     try{
 
         const options :AxiosRequestConfig= {};
