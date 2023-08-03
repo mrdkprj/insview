@@ -1223,7 +1223,7 @@ class Controller {
     }
     async sendResponse(req, res, data, session) {
         const domain =  true ? req.hostname : 0;
-        console.log(session.cookies);
+        //console.log(session.cookies)
         session.cookies.forEach((cookie) => {
             var _a;
             if (typeof cookie.maxAge === "number" && cookie.maxAge <= 0)
