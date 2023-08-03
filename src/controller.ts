@@ -34,7 +34,7 @@ class Controller{
     async sendResponse(req:Request, res:Response, data:any, session:ISession){
 
         const domain = process.env.NODE_ENV === "production" ? req.hostname : ""
-console.log(session.cookies)
+
         session.cookies.forEach((cookie:Cookie) => {
 
             if(typeof cookie.maxAge === "number" && cookie.maxAge <= 0) return;
@@ -44,6 +44,8 @@ console.log(session.cookies)
             if(!secure && sameSite == "none"){
                 secure = true;
             }
+
+            console.log(`key:${cookie.key}, expires:${cookie.expires}`)
 
             res.cookie(cookie.key, cookie.value, {
                 domain:domain,

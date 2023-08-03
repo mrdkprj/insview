@@ -1223,7 +1223,6 @@ class Controller {
     }
     async sendResponse(req, res, data, session) {
         const domain =  true ? req.hostname : 0;
-        console.log(session.cookies);
         session.cookies.forEach((cookie) => {
             var _a;
             if (typeof cookie.maxAge === "number" && cookie.maxAge <= 0)
@@ -1233,6 +1232,7 @@ class Controller {
             if (!secure && sameSite == "none") {
                 secure = true;
             }
+            console.log(`key:${cookie.key}, expires:${cookie.expires}`);
             res.cookie(cookie.key, cookie.value, {
                 domain: domain,
                 expires: cookie.expires === "Infinity" ? undefined : cookie.expires,
