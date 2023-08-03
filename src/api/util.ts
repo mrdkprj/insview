@@ -25,7 +25,6 @@ const getSession = (headers:any) :ISession => {
             isAuthenticated:false,
             csrfToken:"",
             userId:"",
-            cookies:[],
             expires: null,
             xHeaders:{appId:"", ajax:""}
         }
@@ -50,13 +49,6 @@ const getSession = (headers:any) :ISession => {
 
                 session.isAuthenticated = true;
 
-                if(!cookie.expires){
-                    const expires = new Date();
-                    expires.setTime(expires.getTime() + (8*60*60*1000));
-                    cookie.expires = expires
-                }
-
-
                 if(cookie.expires !== "Infinity"){
                     session.expires = cookie.expires;
                 }
@@ -79,8 +71,6 @@ const getSession = (headers:any) :ISession => {
                 session.xHeaders.ajax = cookie.value;
             }
 
-            session.cookies.push(cookie);
-
         })
 
         return session;
@@ -97,50 +87,15 @@ const updateSession = (currentSession:ISession, cookies:tough.Cookie[], xHeaders
         isAuthenticated:false,
         csrfToken:currentSession.csrfToken,
         userId:currentSession.userId,
-        cookies:[],
         expires: currentSession.expires,
         xHeaders: xHeaders ?? currentSession.xHeaders,
     }
 
-    const updatedCookies:{[key:string]:tough.Cookie} = {}
-
-    currentSession.cookies.forEach(cookie => updatedCookies[cookie.key] = cookie)
-
-    cookies.forEach(cookie => updatedCookies[cookie.key] = cookie);
-
-    if(xHeaders){
-        const today = new Date();
-        const expires = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
-        const xAjaxCookie = new tough.Cookie();
-        xAjaxCookie.key = IgHeaderNames.ajax;
-        xAjaxCookie.value = xHeaders.ajax;
-        xAjaxCookie.expires = expires;
-        xAjaxCookie.path = "/"
-        xAjaxCookie.secure = true;
-        xAjaxCookie.maxAge = 31449600;
-        updatedCookies[xAjaxCookie.key] = xAjaxCookie
-        const xAppIdCookie = new tough.Cookie();
-        xAppIdCookie.key = IgHeaderNames.appId;
-        xAppIdCookie.value = xHeaders.appId;
-        xAppIdCookie.expires = expires;
-        xAppIdCookie.path = "/"
-        xAppIdCookie.secure = true;
-        xAppIdCookie.maxAge = 31449600;
-        updatedCookies[xAppIdCookie.key] = xAppIdCookie
-    }
-
-    Object.values(updatedCookies).forEach((cookie:tough.Cookie) => {
+    cookies.forEach((cookie:tough.Cookie) => {
 
         if(cookie.key.toLowerCase() === "sessionid" && cookie.value){
 
             session.isAuthenticated = true;
-
-            if(!cookie.expires){
-                const expires = new Date();
-                expires.setTime(expires.getTime() + (8*60*60*1000));
-                cookie.expires = expires
-            }
-
 
             if(cookie.expires !== "Infinity"){
                 session.expires = cookie.expires;
@@ -155,8 +110,6 @@ const updateSession = (currentSession:ISession, cookies:tough.Cookie[], xHeaders
         if(cookie.key.toLowerCase() === "ds_user_id"){
             session.userId = cookie.value;
         }
-
-        session.cookies.push(cookie);
 
     })
 
@@ -232,64 +185,30 @@ const getCookieString = (cookies:string[] | undefined[]) => {
     return setCookieString;
 }
 
-const updateCookie = (old:string[] | undefined[], cs:string[] | undefined[]) => {
-
-    const cookies:{[key:string]:any} = {}
-
-    old.forEach((c:any) => {
-        const cookie = Cookie.parse(c);
-
-        if(!cookie || cookie.value === "" || cookie.value === undefined || cookie.value === null){
-            return
-        }
-
-        cookies[cookie.key] = cookie.value;
-    })
-
-    cs.forEach((cookieString:any) => {
-
-        const cookie = Cookie.parse(cookieString);
-
-        if(!cookie || cookie.value === "" || cookie.value === undefined || cookie.value === null){
-            return
-        }
-
-        cookies[cookie.key] = cookie.value;
-
-    })
-
-    let setCookieString = "";
-
-    Object.keys(cookies).forEach((k:any) => {
-
-        setCookieString += `${k}=${cookies[k]};`
-
-    })
-
-    return setCookieString;
-}
-
 class CookieStore{
 
     jar:tough.CookieJar;
+    responseJar:tough.CookieJar;
     url:string;
 
     constructor(url?:string){
         this.jar = new CookieJar();
+        this.responseJar = new CookieJar();
         this.url = url ? url : baseUrl;
     }
 
     async storeCookie(setCookie:string[] | undefined){
 
         if(!setCookie){
-            return await this.getCookies();
+            return await this.getAllCookies();
         }
 
         for (const cookieString of setCookie) {
             await this.jar.setCookie(cookieString, this.url, {ignoreError:true});
+            await this.responseJar.setCookie(cookieString, this.url, {ignoreError:true});
         }
 
-        return await this.getCookies();
+        return await this.getAllCookies();
     }
 
     async storeRequestCookie(cookieHeader:string | undefined){
@@ -315,7 +234,30 @@ class CookieStore{
             await this.jar.setCookie(cookieString, this.url, {ignoreError:true});
         }
 
-        return await this.getCookies();
+        return await this.getAllCookies();
+    }
+
+    async storeXHeaderCookie(xHeaders:IgHeaders){
+        const today = new Date();
+        const expires = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
+        const xAjaxCookie = new tough.Cookie();
+        xAjaxCookie.key = IgHeaderNames.ajax;
+        xAjaxCookie.value = xHeaders.ajax;
+        xAjaxCookie.expires = expires;
+        xAjaxCookie.path = "/"
+        xAjaxCookie.secure = true;
+        xAjaxCookie.maxAge = 31449600;
+        xAjaxCookie.domain = this.url
+        await this.responseJar.setCookie(xAjaxCookie, this.url, {ignoreError:true});
+        const xAppIdCookie = new tough.Cookie();
+        xAppIdCookie.key = IgHeaderNames.appId;
+        xAppIdCookie.value = xHeaders.appId;
+        xAppIdCookie.expires = expires;
+        xAppIdCookie.path = "/"
+        xAppIdCookie.secure = true;
+        xAppIdCookie.maxAge = 31449600;
+        xAppIdCookie.domain = this.url
+        await this.responseJar.setCookie(xAppIdCookie, this.url, {ignoreError:true});
     }
 
     async getCookieStrings(){
@@ -323,6 +265,10 @@ class CookieStore{
     }
 
     async getCookies(){
+        return await this.responseJar.getCookies(this.url);
+    }
+
+    private async getAllCookies(){
         return await this.jar.getCookies(this.url);
     }
 
@@ -352,4 +298,4 @@ const logError = (ex:any):ErrorDetail => {
     }
 }
 
-export {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, getAppId, getClientVersion, getCookieString, extractToken, updateCookie, CookieStore, logError, extractUserId, extractCsrfToken}
+export {baseUrl, baseRequestHeaders, getSession, updateSession, createHeaders, getAppId, getClientVersion, getCookieString, extractToken, CookieStore, logError, extractUserId, extractCsrfToken}

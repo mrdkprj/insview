@@ -116,7 +116,6 @@ const getSession = (headers) => {
             isAuthenticated: false,
             csrfToken: "",
             userId: "",
-            cookies: [],
             expires: null,
             xHeaders: { appId: "", ajax: "" }
         };
@@ -132,11 +131,6 @@ const getSession = (headers) => {
             const key = cookie.key.toLowerCase();
             if (key === "sessionid" && cookie.value) {
                 session.isAuthenticated = true;
-                if (!cookie.expires) {
-                    const expires = new Date();
-                    expires.setTime(expires.getTime() + (8 * 60 * 60 * 1000));
-                    cookie.expires = expires;
-                }
                 if (cookie.expires !== "Infinity") {
                     session.expires = cookie.expires;
                 }
@@ -153,7 +147,6 @@ const getSession = (headers) => {
             if (key === IgHeaderNames.ajax.toLowerCase()) {
                 session.xHeaders.ajax = cookie.value;
             }
-            session.cookies.push(cookie);
         });
         return session;
     }
@@ -167,41 +160,12 @@ const updateSession = (currentSession, cookies, xHeaders) => {
         isAuthenticated: false,
         csrfToken: currentSession.csrfToken,
         userId: currentSession.userId,
-        cookies: [],
         expires: currentSession.expires,
         xHeaders: xHeaders !== null && xHeaders !== void 0 ? xHeaders : currentSession.xHeaders,
     };
-    const updatedCookies = {};
-    currentSession.cookies.forEach(cookie => updatedCookies[cookie.key] = cookie);
-    cookies.forEach(cookie => updatedCookies[cookie.key] = cookie);
-    if (xHeaders) {
-        const today = new Date();
-        const expires = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
-        const xAjaxCookie = new (external_tough_cookie_default()).Cookie();
-        xAjaxCookie.key = IgHeaderNames.ajax;
-        xAjaxCookie.value = xHeaders.ajax;
-        xAjaxCookie.expires = expires;
-        xAjaxCookie.path = "/";
-        xAjaxCookie.secure = true;
-        xAjaxCookie.maxAge = 31449600;
-        updatedCookies[xAjaxCookie.key] = xAjaxCookie;
-        const xAppIdCookie = new (external_tough_cookie_default()).Cookie();
-        xAppIdCookie.key = IgHeaderNames.appId;
-        xAppIdCookie.value = xHeaders.appId;
-        xAppIdCookie.expires = expires;
-        xAppIdCookie.path = "/";
-        xAppIdCookie.secure = true;
-        xAppIdCookie.maxAge = 31449600;
-        updatedCookies[xAppIdCookie.key] = xAppIdCookie;
-    }
-    Object.values(updatedCookies).forEach((cookie) => {
+    cookies.forEach((cookie) => {
         if (cookie.key.toLowerCase() === "sessionid" && cookie.value) {
             session.isAuthenticated = true;
-            if (!cookie.expires) {
-                const expires = new Date();
-                expires.setTime(expires.getTime() + (8 * 60 * 60 * 1000));
-                cookie.expires = expires;
-            }
             if (cookie.expires !== "Infinity") {
                 session.expires = cookie.expires;
             }
@@ -212,7 +176,6 @@ const updateSession = (currentSession, cookies, xHeaders) => {
         if (cookie.key.toLowerCase() === "ds_user_id") {
             session.userId = cookie.value;
         }
-        session.cookies.push(cookie);
     });
     return session;
 };
@@ -263,41 +226,21 @@ const getCookieString = (cookies) => {
     });
     return setCookieString;
 };
-const updateCookie = (old, cs) => {
-    const cookies = {};
-    old.forEach((c) => {
-        const cookie = Cookie.parse(c);
-        if (!cookie || cookie.value === "" || cookie.value === undefined || cookie.value === null) {
-            return;
-        }
-        cookies[cookie.key] = cookie.value;
-    });
-    cs.forEach((cookieString) => {
-        const cookie = Cookie.parse(cookieString);
-        if (!cookie || cookie.value === "" || cookie.value === undefined || cookie.value === null) {
-            return;
-        }
-        cookies[cookie.key] = cookie.value;
-    });
-    let setCookieString = "";
-    Object.keys(cookies).forEach((k) => {
-        setCookieString += `${k}=${cookies[k]};`;
-    });
-    return setCookieString;
-};
 class CookieStore {
     constructor(url) {
         this.jar = new external_tough_cookie_namespaceObject.CookieJar();
+        this.responseJar = new external_tough_cookie_namespaceObject.CookieJar();
         this.url = url ? url : baseUrl;
     }
     async storeCookie(setCookie) {
         if (!setCookie) {
-            return await this.getCookies();
+            return await this.getAllCookies();
         }
         for (const cookieString of setCookie) {
             await this.jar.setCookie(cookieString, this.url, { ignoreError: true });
+            await this.responseJar.setCookie(cookieString, this.url, { ignoreError: true });
         }
-        return await this.getCookies();
+        return await this.getAllCookies();
     }
     async storeRequestCookie(cookieHeader) {
         if (!cookieHeader) {
@@ -316,12 +259,37 @@ class CookieStore {
         for (const cookieString of validCookies) {
             await this.jar.setCookie(cookieString, this.url, { ignoreError: true });
         }
-        return await this.getCookies();
+        return await this.getAllCookies();
+    }
+    async storeXHeaderCookie(xHeaders) {
+        const today = new Date();
+        const expires = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
+        const xAjaxCookie = new (external_tough_cookie_default()).Cookie();
+        xAjaxCookie.key = IgHeaderNames.ajax;
+        xAjaxCookie.value = xHeaders.ajax;
+        xAjaxCookie.expires = expires;
+        xAjaxCookie.path = "/";
+        xAjaxCookie.secure = true;
+        xAjaxCookie.maxAge = 31449600;
+        xAjaxCookie.domain = this.url;
+        await this.responseJar.setCookie(xAjaxCookie, this.url, { ignoreError: true });
+        const xAppIdCookie = new (external_tough_cookie_default()).Cookie();
+        xAppIdCookie.key = IgHeaderNames.appId;
+        xAppIdCookie.value = xHeaders.appId;
+        xAppIdCookie.expires = expires;
+        xAppIdCookie.path = "/";
+        xAppIdCookie.secure = true;
+        xAppIdCookie.maxAge = 31449600;
+        xAppIdCookie.domain = this.url;
+        await this.responseJar.setCookie(xAppIdCookie, this.url, { ignoreError: true });
     }
     async getCookieStrings() {
         return await this.jar.getCookieString(this.url);
     }
     async getCookies() {
+        return await this.responseJar.getCookies(this.url);
+    }
+    async getAllCookies() {
         return await this.jar.getCookies(this.url);
     }
 }
@@ -374,7 +342,8 @@ const remoteLogin = async (req) => {
     if (x > 0) {
         return {
             data,
-            session
+            session,
+            cookies
         };
     }
     try {
@@ -396,7 +365,8 @@ const remoteLogin = async (req) => {
         }
         return {
             data: response.data,
-            session
+            session,
+            cookies
         };
     }
     catch (ex) {
@@ -424,6 +394,7 @@ const localLogin = async (req) => {
             appId: getAppId(response.data),
             ajax: getClientVersion(response.data)
         };
+        await jar.storeXHeaderCookie(xHeaders);
         session.csrfToken = extractCsrfToken(response.data);
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         headers["X-Ig-App-Id"] = xHeaders.appId;
@@ -465,9 +436,11 @@ const localLogin = async (req) => {
         cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
         const data = { account, success: session.isAuthenticated, challenge: false, endpoint: "" };
+        cookies = await jar.getCookies();
         return {
             data,
-            session
+            session,
+            cookies
         };
     }
     catch (ex) {
@@ -516,7 +489,8 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
         if (response.data.type && response.data.type === "CHALLENGE") {
             return {
                 data: { account: account, success: false, challenge: true, endpoint: url },
-                session
+                session,
+                cookies
             };
         }
         throw new Error("Challange response not found");
@@ -550,12 +524,14 @@ const remoteChallenge = async (req) => {
         options.method = "POST";
         options.headers = headers;
         const response = await external_axios_default().request(options);
-        const cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        let cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
+        cookies = await jar.getCookies();
         console.log(response.data);
         return {
             data: response.data,
-            session
+            session,
+            cookies
         };
     }
     catch (ex) {
@@ -586,15 +562,17 @@ const localChallenge = async (req) => {
         options.method = "POST";
         options.headers = headers;
         const response = await external_axios_default().request(options);
-        const cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        let cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
         const data = { account: req.data.account, success: session.isAuthenticated, challenge: !session.isAuthenticated, endpoint: "" };
+        cookies = await jar.getCookies();
         if (!response.headers["content-type"].includes("html")) {
             console.log(response.data);
         }
         return {
             data,
-            session
+            session,
+            cookies
         };
     }
     catch (ex) {
@@ -628,18 +606,21 @@ const remoteLogout = async (req) => {
         options.headers = headers;
         const response = await external_axios_default().request(options);
         console.log(response.data);
-        const cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        let cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
         const data = { account: "", success: true, challenge: false, endpoint: "" };
+        cookies = await jar.getCookies();
         return {
             data,
-            session
+            session,
+            cookies
         };
     }
     catch (ex) {
         return {
             data: { account: "", success: true, challenge: false, endpoint: "" },
-            session
+            session,
+            cookies: []
         };
     }
 };
@@ -664,18 +645,21 @@ const localLogout = async (req) => {
         };
         const response = await external_axios_default().request(options);
         console.log(response.data);
-        const cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        let cookies = await jar.storeCookie(response.headers["set-cookie"]);
         session = updateSession(session, cookies);
         const data = { account: "", success: true, challenge: false, endpoint: "" };
+        cookies = await jar.getCookies();
         return {
             data,
-            session
+            session,
+            cookies
         };
     }
     catch (ex) {
         return {
             data: { account: "", success: true, challenge: false, endpoint: "" },
-            session
+            session,
+            cookies: []
         };
     }
 };
@@ -702,7 +686,8 @@ const requestMedia = async (req) => {
         const data = _formatGraph(response.data);
         return {
             data,
-            session
+            session,
+            cookies: []
         };
     }
     catch (ex) {
@@ -722,7 +707,8 @@ const requestMore = async (req) => {
     const data = _formatGraph(response.data);
     return {
         data,
-        session
+        session,
+        cookies: []
     };
 };
 const _getVideoUrl = (url) => {
@@ -789,12 +775,12 @@ const _tryRequestPrivate = async (req, session) => {
     try {
         let cookies = await jar.storeRequestCookie(req.headers.cookie);
         session = updateSession(session, cookies);
-        headers["x-ig-app-id"] = session.xHeaders.appId;
+        headers["X-IG-App-Id"] = session.xHeaders.appId;
         headers.Cookie = await jar.getCookieStrings();
         const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`;
         // use when web_profile no longer works
         //const url = baseUrl + "/" + username + "/"
-        headers["x-asbd-id"] = "198387";
+        headers["X-Asbd-Id"] = "129477";
         const options = {
             url,
             method: "GET",
@@ -830,7 +816,8 @@ const _tryRequestPrivate = async (req, session) => {
         const data = _formatMedia(response.data, session, user);
         return {
             data,
-            session
+            session,
+            cookies
         };
     }
     catch (ex) {
@@ -846,13 +833,14 @@ const _tryRequestMorePrivate = async (req, session) => {
     const jar = new CookieStore();
     try {
         const response = await _requestMorePrivate(req, session, jar);
-        const cookie = await jar.getCookies();
-        session = updateSession(session, cookie);
+        const cookies = await jar.getCookies();
+        session = updateSession(session, cookies);
         const formatResult = _formatMedia(response.data, session, req.data.user);
         const data = formatResult;
         return {
             data,
-            session
+            session,
+            cookies
         };
     }
     catch (ex) {
@@ -1100,12 +1088,14 @@ const requestFollowings = async (req) => {
         if (response.headers["content-type"].includes("html")) {
             throw new AuthError({ message: "", data: {}, requireLogin: true });
         }
-        const cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        let cookies = await jar.storeCookie(response.headers["set-cookie"]);
         const data = _formatFollowings(response.data);
         const session = updateSession(currentSession, cookies);
+        cookies = await jar.getCookies();
         return {
             data,
-            session
+            session,
+            cookies
         };
     }
     catch (ex) {
@@ -1149,12 +1139,14 @@ const follow = async (req) => {
             withCredentials: true
         };
         const response = await external_axios_default().request(options);
-        const cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        let cookies = await jar.storeCookie(response.headers["set-cookie"]);
         const data = response.data;
         const session = updateSession(currentSession, cookies);
+        cookies = await jar.getCookies();
         return {
             data,
-            session
+            session,
+            cookies
         };
     }
     catch (ex) {
@@ -1180,12 +1172,14 @@ const unfollow = async (req) => {
             withCredentials: true
         };
         const response = await external_axios_default().request(options);
-        const cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        let cookies = await jar.storeCookie(response.headers["set-cookie"]);
         const data = response.data;
         const session = updateSession(currentSession, cookies);
+        cookies = await jar.getCookies();
         return {
             data,
-            session
+            session,
+            cookies
         };
     }
     catch (ex) {
@@ -1221,9 +1215,9 @@ class Controller {
             return "none";
         return false;
     }
-    async sendResponse(req, res, data, session) {
+    async sendResponse(req, res, data) {
         const domain =  true ? req.hostname : 0;
-        session.cookies.forEach((cookie) => {
+        data.cookies.forEach((cookie) => {
             var _a;
             if (typeof cookie.maxAge === "number" && cookie.maxAge <= 0)
                 return;
@@ -1243,7 +1237,7 @@ class Controller {
                 encode: String
             });
         });
-        res.set({ "ig-auth": session.isAuthenticated });
+        res.set({ "ig-auth": data.session.isAuthenticated });
         res.status(200).send(data);
     }
     sendErrorResponse(res, ex) {
@@ -1258,12 +1252,12 @@ class Controller {
     }
     async tryRestore(req, res) {
         try {
-            //console.log(req.headers.cookie)
+            console.log(req.headers.cookie);
             const session = getSession(req.headers);
             const result = await this.db.restore(req.session.account);
             result.isAuthenticated = session.isAuthenticated;
             result.account = req.session.account;
-            await this.sendResponse(req, res, result, session);
+            await this.sendResponse(req, res, { data: result, session, cookies: [] });
         }
         catch (ex) {
             this.sendErrorResponse(res, new Error("Restore failed"));
@@ -1304,7 +1298,12 @@ class Controller {
                 status: result.data,
                 media
             };
-            await this.sendResponse(req, res, authResponse, result.session);
+            const response = {
+                data: authResponse,
+                session: result.session,
+                cookies: result.cookies
+            };
+            await this.sendResponse(req, res, response);
         }
         catch (ex) {
             this.sendErrorResponse(res, ex);
@@ -1321,7 +1320,12 @@ class Controller {
                 status: result.data,
                 media
             };
-            await this.sendResponse(req, res, authResponse, result.session);
+            const response = {
+                data: authResponse,
+                session: result.session,
+                cookies: result.cookies
+            };
+            await this.sendResponse(req, res, response);
         }
         catch (ex) {
             this.sendErrorResponse(res, ex);
@@ -1335,7 +1339,12 @@ class Controller {
                 status: result.data,
                 media: emptyResponse,
             };
-            await this.sendResponse(req, res, authResponse, result.session);
+            const response = {
+                data: authResponse,
+                session: result.session,
+                cookies: result.cookies
+            };
+            await this.sendResponse(req, res, response);
         }
         catch (ex) {
             this.sendErrorResponse(res, ex);
@@ -1345,32 +1354,33 @@ class Controller {
         const newHistory = history;
         try {
             const exisitingData = await this.db.queryMedia(req.session.account, username);
-            let session;
             let mediaResponse;
             if (exisitingData.username) {
-                session = getSession(req.headers);
+                const session = getSession(req.headers);
                 mediaResponse = {
-                    username: exisitingData.username,
-                    media: exisitingData.media,
-                    user: exisitingData.user,
-                    rowIndex: exisitingData.rowIndex,
-                    next: exisitingData.next,
-                    history: newHistory,
-                    isAuthenticated: session.isAuthenticated
+                    session,
+                    data: {
+                        username: exisitingData.username,
+                        media: exisitingData.media,
+                        user: exisitingData.user,
+                        rowIndex: exisitingData.rowIndex,
+                        next: exisitingData.next,
+                        history: newHistory,
+                        isAuthenticated: session.isAuthenticated
+                    },
+                    cookies: []
                 };
             }
             else {
-                const result = await requestMedia({ data: { username }, headers: req.headers });
-                mediaResponse = result.data;
-                session = result.session;
+                mediaResponse = await requestMedia({ data: { username }, headers: req.headers });
             }
             if (!preview) {
-                newHistory[mediaResponse.username] = mediaResponse.user;
-                mediaResponse.history = newHistory;
+                newHistory[mediaResponse.data.username] = mediaResponse.data.user;
+                mediaResponse.data.history = newHistory;
                 await this.db.saveHistory(req.session.account, username, newHistory);
-                await this.db.saveMedia(req.session.account, mediaResponse);
+                await this.db.saveMedia(req.session.account, mediaResponse.data);
             }
-            await this.sendResponse(req, res, mediaResponse, session);
+            await this.sendResponse(req, res, mediaResponse);
         }
         catch (ex) {
             console.log("try query error");
@@ -1380,12 +1390,12 @@ class Controller {
     async tryQueryMore(req, res, user, next, preview) {
         try {
             const historyData = await this.db.queryHistory(req.session.account);
-            const igResponse = await requestMore({ data: { user, next }, headers: req.headers });
+            const mediaResponse = await requestMore({ data: { user, next }, headers: req.headers });
             if (!preview) {
-                igResponse.data.history = historyData.history;
-                await this.db.appendMedia(req.session.account, igResponse.data);
+                mediaResponse.data.history = historyData.history;
+                await this.db.appendMedia(req.session.account, mediaResponse.data);
             }
-            await this.sendResponse(req, res, igResponse.data, igResponse.session);
+            await this.sendResponse(req, res, mediaResponse);
         }
         catch (ex) {
             console.log("try query more error");
@@ -1394,11 +1404,11 @@ class Controller {
     }
     async tryReload(req, res, username, history) {
         try {
-            const igResponse = await requestMedia({ data: { username }, headers: req.headers });
-            history[username] = igResponse.data.history[username];
-            igResponse.data.history = history;
-            await this.db.saveMedia(req.session.account, igResponse.data);
-            await this.sendResponse(req, res, igResponse.data, igResponse.session);
+            const mediaResponse = await requestMedia({ data: { username }, headers: req.headers });
+            history[username] = mediaResponse.data.history[username];
+            mediaResponse.data.history = history;
+            await this.db.saveMedia(req.session.account, mediaResponse.data);
+            await this.sendResponse(req, res, mediaResponse);
         }
         catch (ex) {
             console.log("tryReload error");
@@ -1408,7 +1418,7 @@ class Controller {
     async tryGetFollowings(req, res, next) {
         try {
             const result = await requestFollowings({ data: { next }, headers: req.headers });
-            await this.sendResponse(req, res, result.data, result.session);
+            await this.sendResponse(req, res, result);
         }
         catch (ex) {
             return this.sendErrorResponse(res, ex);
@@ -1417,7 +1427,7 @@ class Controller {
     async tryFollow(req, res, user) {
         try {
             const result = await follow({ data: { user }, headers: req.headers });
-            await this.sendResponse(req, res, result.data, result.session);
+            await this.sendResponse(req, res, result);
         }
         catch (ex) {
             return this.sendErrorResponse(res, ex);
@@ -1426,7 +1436,7 @@ class Controller {
     async tryUnfollow(req, res, user) {
         try {
             const result = await unfollow({ data: { user }, headers: req.headers });
-            await this.sendResponse(req, res, result.data, result.session);
+            await this.sendResponse(req, res, result);
         }
         catch (ex) {
             return this.sendErrorResponse(res, ex);

@@ -33,7 +33,8 @@ const remoteLogin = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> 
     if(x >0){
         return {
             data,
-            session
+            session,
+            cookies
         }
     }
 
@@ -63,7 +64,8 @@ const remoteLogin = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> 
 
         return {
             data:response.data,
-            session
+            session,
+            cookies
         }
 
     }catch(ex:any){
@@ -102,6 +104,8 @@ const localLogin = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> =
             appId: getAppId(response.data),
             ajax: getClientVersion(response.data)
         }
+
+        await jar.storeXHeaderCookie(xHeaders);
 
         session.csrfToken = extractCsrfToken(response.data)
 
@@ -156,10 +160,12 @@ console.log(headers)
         session = updateSession(session, cookies);
 
         const data = {account, success:session.isAuthenticated, challenge:false, endpoint:""};
+        cookies = await jar.getCookies();
 
         return {
             data,
-            session
+            session,
+            cookies
         }
 
     }catch(ex:any){
@@ -230,7 +236,8 @@ console.log(response.status)
 
             return {
                 data:{account:account, success:false, challenge: true, endpoint:url},
-                session
+                session,
+                cookies
             }
         }
 
@@ -279,14 +286,16 @@ const remoteChallenge = async (req:IgRequest) : Promise<IgResponse<ILoginRespons
 
         const response = await axios.request(options);
 
-        const cookies = await jar.storeCookie(response.headers["set-cookie"])
+        let cookies = await jar.storeCookie(response.headers["set-cookie"])
         session = updateSession(session, cookies);
+        cookies = await jar.getCookies();
 
         console.log(response.data)
 
         return {
             data:response.data,
-            session
+            session,
+            cookies
         }
 
     }catch(ex:any){
@@ -330,9 +339,10 @@ const localChallenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse
 
         const response = await axios.request(options);
 
-        const cookies = await jar.storeCookie(response.headers["set-cookie"])
+        let cookies = await jar.storeCookie(response.headers["set-cookie"])
         session = updateSession(session, cookies);
         const data = {account:req.data.account, success:session.isAuthenticated, challenge:!session.isAuthenticated, endpoint:""};
+        cookies = await jar.getCookies();
 
         if(!response.headers["content-type"].includes("html")){
             console.log(response.data)
@@ -340,7 +350,8 @@ const localChallenge = async (req:IgRequest) : Promise<IgResponse<ILoginResponse
 
         return {
             data,
-            session
+            session,
+            cookies
         }
 
     }catch(ex:any){
@@ -386,20 +397,24 @@ const remoteLogout = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>>
         const response = await axios.request(options);
 
         console.log(response.data)
-        const cookies = await jar.storeCookie(response.headers["set-cookie"])
+
+        let cookies = await jar.storeCookie(response.headers["set-cookie"])
         session = updateSession(session, cookies);
 
         const data = {account:"", success:true, challenge:false, endpoint:""};
+        cookies = await jar.getCookies();
 
         return {
             data,
-            session
+            session,
+            cookies
         }
 
     }catch(ex:any){
         return {
             data:{account:"", success:true, challenge:false, endpoint:""},
-            session
+            session,
+            cookies:[]
         }
     }
 }
@@ -434,20 +449,24 @@ const localLogout = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> 
         const response = await axios.request(options);
 
         console.log(response.data)
-        const cookies = await jar.storeCookie(response.headers["set-cookie"])
+
+        let cookies = await jar.storeCookie(response.headers["set-cookie"])
         session = updateSession(session, cookies);
 
         const data = {account:"", success:true, challenge:false, endpoint:""};
+        cookies = await jar.getCookies();
 
         return {
             data,
-            session
+            session,
+            cookies
         }
 
     }catch(ex:any){
         return {
             data:{account:"", success:true, challenge:false, endpoint:""},
-            session
+            session,
+            cookies:[]
         }
     }
 }

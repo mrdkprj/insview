@@ -31,11 +31,11 @@ class Controller{
         return false;
     }
 
-    async sendResponse(req:Request, res:Response, data:any, session:ISession){
+    async sendResponse<T>(req:Request, res:Response, data:IgResponse<T>){
 
         const domain = process.env.NODE_ENV === "production" ? req.hostname : ""
 
-        session.cookies.forEach((cookie:Cookie) => {
+        data.cookies.forEach((cookie:Cookie) => {
 
             if(typeof cookie.maxAge === "number" && cookie.maxAge <= 0) return;
 
@@ -59,7 +59,7 @@ class Controller{
 
         })
 
-        res.set({"ig-auth":session.isAuthenticated});
+        res.set({"ig-auth":data.session.isAuthenticated});
 
         res.status(200).send(data);
 
@@ -83,7 +83,7 @@ class Controller{
     async tryRestore(req:Request, res:Response){
 
         try{
-//console.log(req.headers.cookie)
+console.log(req.headers.cookie)
             const session = api.getSession(req.headers);
 
             const result = await this.db.restore(req.session.account);
@@ -91,7 +91,7 @@ class Controller{
             result.isAuthenticated = session.isAuthenticated;
             result.account = req.session.account
 
-            await this.sendResponse(req, res, result, session);
+            await this.sendResponse(req, res, {data:result, session, cookies:[]});
 
         }catch(ex:any){
 
@@ -100,7 +100,7 @@ class Controller{
 
     }
 
-    async restoreBySession(req:Request){
+    private async restoreBySession(req:Request){
 
         if(!req.session.account){
             return emptyResponse;
@@ -114,7 +114,7 @@ class Controller{
 
     }
 
-    async saveSession(req:Request, account:string, session:ISession){
+    private async saveSession(req:Request, account:string, session:ISession){
 
         req.session.account = account
 
@@ -149,7 +149,13 @@ class Controller{
                 media
             }
 
-            await this.sendResponse(req, res, authResponse, result.session);
+            const response:IgResponse<IAuthResponse> = {
+                data:authResponse,
+                session:result.session,
+                cookies:result.cookies
+            }
+
+            await this.sendResponse(req, res, response);
 
         }catch(ex:any){
             this.sendErrorResponse(res, ex);
@@ -174,7 +180,13 @@ class Controller{
                 media
             }
 
-            await this.sendResponse(req, res, authResponse, result.session);
+            const response:IgResponse<IAuthResponse> = {
+                data:authResponse,
+                session:result.session,
+                cookies:result.cookies
+            }
+
+            await this.sendResponse(req, res, response);
 
         }catch(ex:any){
 
@@ -197,7 +209,13 @@ class Controller{
                 media:emptyResponse,
             }
 
-            await this.sendResponse(req, res, authResponse, result.session);
+            const response:IgResponse<IAuthResponse> = {
+                data:authResponse,
+                session:result.session,
+                cookies:result.cookies
+            }
+
+            await this.sendResponse(req, res, response);
 
         }catch(ex:any){
 
@@ -214,35 +232,36 @@ class Controller{
 
             const exisitingData = await this.db.queryMedia(req.session.account, username);
 
-            let session;
-            let mediaResponse:IMediaResponse;
+            let mediaResponse:IgResponse<IMediaResponse>;
 
             if(exisitingData.username){
-                session = api.getSession(req.headers);
+                const session = api.getSession(req.headers);
                 mediaResponse = {
-                    username: exisitingData.username,
-                    media: exisitingData.media,
-                    user: exisitingData.user,
-                    rowIndex: exisitingData.rowIndex,
-                    next: exisitingData.next,
-                    history: newHistory,
-                    isAuthenticated: session.isAuthenticated
+                    session,
+                    data: {
+                        username: exisitingData.username,
+                        media: exisitingData.media,
+                        user: exisitingData.user,
+                        rowIndex: exisitingData.rowIndex,
+                        next: exisitingData.next,
+                        history: newHistory,
+                        isAuthenticated: session.isAuthenticated
+                    },
+                    cookies:[]
                 }
 
             }else{
-                const result = await api.requestMedia({data:{username}, headers: req.headers});
-                mediaResponse = result.data
-                session = result.session
+                mediaResponse = await api.requestMedia({data:{username}, headers: req.headers});
             }
 
             if(!preview){
-                newHistory[mediaResponse.username] = mediaResponse.user;
-                mediaResponse.history = newHistory;
+                newHistory[mediaResponse.data.username] = mediaResponse.data.user;
+                mediaResponse.data.history = newHistory;
                 await this.db.saveHistory(req.session.account, username, newHistory);
-                await this.db.saveMedia(req.session.account, mediaResponse);
+                await this.db.saveMedia(req.session.account, mediaResponse.data);
             }
 
-            await this.sendResponse(req, res, mediaResponse, session);
+            await this.sendResponse(req, res, mediaResponse);
 
         }catch(ex:any){
             console.log("try query error")
@@ -257,14 +276,14 @@ class Controller{
 
             const historyData = await this.db.queryHistory(req.session.account);
 
-            const igResponse = await api.requestMore({data:{user, next}, headers:req.headers});
+            const mediaResponse = await api.requestMore({data:{user, next}, headers:req.headers});
 
             if(!preview){
-                igResponse.data.history = historyData.history;
-                await this.db.appendMedia(req.session.account,igResponse.data);
+                mediaResponse.data.history = historyData.history;
+                await this.db.appendMedia(req.session.account, mediaResponse.data);
             }
 
-            await this.sendResponse(req, res, igResponse.data, igResponse.session);
+            await this.sendResponse(req, res, mediaResponse);
 
         }catch(ex:any){
             console.log("try query more error")
@@ -278,15 +297,15 @@ class Controller{
 
         try{
 
-            const igResponse = await api.requestMedia({data:{username},headers:req.headers});
+            const mediaResponse = await api.requestMedia({data:{username},headers:req.headers});
 
-            history[username] = igResponse.data.history[username];
+            history[username] = mediaResponse.data.history[username];
 
-            igResponse.data.history = history;
+            mediaResponse.data.history = history;
 
-            await this.db.saveMedia(req.session.account, igResponse.data);
+            await this.db.saveMedia(req.session.account, mediaResponse.data);
 
-            await this.sendResponse(req, res, igResponse.data, igResponse.session);
+            await this.sendResponse(req, res, mediaResponse);
 
         }catch(ex:any){
             console.log("tryReload error")
@@ -302,7 +321,7 @@ class Controller{
 
             const result = await api.requestFollowings({data:{next},headers:req.headers});
 
-            await this.sendResponse(req, res, result.data, result.session);
+            await this.sendResponse(req, res, result);
 
         }catch(ex:any){
 
@@ -318,7 +337,7 @@ class Controller{
 
             const result = await api.follow({data:{user},headers:req.headers});
 
-            await this.sendResponse(req, res, result.data, result.session);
+            await this.sendResponse(req, res, result);
 
         }catch(ex:any){
 
@@ -334,7 +353,7 @@ class Controller{
 
             const result = await api.unfollow({data:{user},headers:req.headers});
 
-            await this.sendResponse(req, res, result.data, result.session);
+            await this.sendResponse(req, res, result);
 
         }catch(ex:any){
 

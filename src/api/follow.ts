@@ -37,13 +37,15 @@ const requestFollowings = async (req:IgRequest) : Promise<IgResponse<IFollowing>
             throw new AuthError({message:"", data:{}, requireLogin:true})
         }
 
-        const cookies = await jar.storeCookie(response.headers["set-cookie"])
+        let cookies = await jar.storeCookie(response.headers["set-cookie"])
         const data = _formatFollowings(response.data);
         const session = updateSession(currentSession, cookies);
+        cookies = await jar.getCookies();
 
         return {
             data,
-            session
+            session,
+            cookies
         }
 
     }catch(ex:any){
@@ -80,7 +82,7 @@ const _formatFollowings = (data:any) :IFollowing => {
 }
 
 
-const follow = async (req:IgRequest) => {
+const follow = async (req:IgRequest):Promise<IgResponse<any>> => {
 
     const jar = new CookieStore();
 
@@ -107,13 +109,15 @@ const follow = async (req:IgRequest) => {
 
         const response = await axios.request(options);
 
-        const cookies = await jar.storeCookie(response.headers["set-cookie"])
+        let cookies = await jar.storeCookie(response.headers["set-cookie"])
         const data = response.data;
         const session = updateSession(currentSession, cookies);
+        cookies = await jar.getCookies();
 
         return {
             data,
-            session
+            session,
+            cookies
         }
 
     }catch(ex:any){
@@ -122,7 +126,7 @@ const follow = async (req:IgRequest) => {
     }
 }
 
-const unfollow = async (req:IgRequest) => {
+const unfollow = async (req:IgRequest):Promise<IgResponse<any>> => {
 
     const jar = new CookieStore();
 
@@ -149,13 +153,15 @@ const unfollow = async (req:IgRequest) => {
 
         const response = await axios.request(options);
 
-        const cookies = await jar.storeCookie(response.headers["set-cookie"])
+        let cookies = await jar.storeCookie(response.headers["set-cookie"])
         const data = response.data;
         const session = updateSession(currentSession, cookies);
+        cookies = await jar.getCookies();
 
         return {
             data,
-            session
+            session,
+            cookies
         }
 
     }catch(ex:any){

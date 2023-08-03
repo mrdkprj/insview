@@ -75,13 +75,13 @@ declare global {
     interface IgResponse<T>{
         data:T;
         session: ISession;
+        cookies:Cookie[];
     }
 
     interface ISession {
         isAuthenticated:boolean;
         csrfToken:string;
         userId:string;
-        cookies: Cookie[];
         expires: Date | null;
         xHeaders:IgHeaders;
         userAgent?:string;

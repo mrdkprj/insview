@@ -25,7 +25,8 @@ const requestMedia = async (req:IgRequest) : Promise<IgResponse<IMediaResponse>>
 
         return {
             data,
-            session
+            session,
+            cookies:[]
         }
 
     }catch(ex:any){
@@ -55,7 +56,8 @@ const requestMore = async (req:IgRequest) : Promise<IgResponse<IMediaResponse>> 
 
     return {
         data,
-        session
+        session,
+        cookies:[]
     }
 }
 
@@ -148,14 +150,14 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
         let cookies = await jar.storeRequestCookie(req.headers.cookie)
         session = updateSession(session, cookies)
 
-        headers["x-ig-app-id"] = session.xHeaders.appId
+        headers["X-IG-App-Id"] = session.xHeaders.appId
 
         headers.Cookie = await jar.getCookieStrings();
 
         const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`
         // use when web_profile no longer works
         //const url = baseUrl + "/" + username + "/"
-        headers["x-asbd-id"] = "198387"
+        headers["X-Asbd-Id"] = "129477"
         const options :AxiosRequestConfig = {
             url,
             method: "GET",
@@ -198,7 +200,8 @@ const _tryRequestPrivate = async (req:IgRequest, session:ISession) : Promise<IgR
 
         return {
             data,
-            session
+            session,
+            cookies
         }
 
     }catch(ex:any){
@@ -219,8 +222,8 @@ const _tryRequestMorePrivate = async (req:IgRequest, session:ISession) : Promise
 
     try{
         const response = await _requestMorePrivate(req, session, jar);
-        const cookie = await jar.getCookies();
-        session = updateSession(session, cookie)
+        const cookies = await jar.getCookies();
+        session = updateSession(session, cookies)
 
         const formatResult = _formatMedia(response.data, session, req.data.user);
 
@@ -228,7 +231,8 @@ const _tryRequestMorePrivate = async (req:IgRequest, session:ISession) : Promise
 
         return {
             data,
-            session
+            session,
+            cookies
         }
 
     }catch(ex:any){
