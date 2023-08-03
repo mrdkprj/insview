@@ -14,7 +14,8 @@ declare global {
             AZ_DB_ID:string;
             ACCOUNT:string;
             API_URL:string;
-            LOGIN_POINT: "Local" | "Remote"
+            LOGIN_POINT: "Local" | "Remote";
+            MOCK:string;
         }
     }
 }

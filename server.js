@@ -366,20 +366,17 @@ const remoteLogin = async (req) => {
     const headers = createHeaders(baseUrl, session);
     let cookies = [];
     const jar = new CookieStore(process.env.API_URL);
-    /*
-    const t = ['']
-    cookies = await jar.storeCookie(t)
+    const t = process.env.MOCK.split("@");
+    cookies = await jar.storeCookie(t);
     session = updateSession(session, cookies);
-    const data = {account, success:session.isAuthenticated, challenge:false, endpoint:""};
-
-    const x= 10;
-    if(x >0){
+    const data = { account, success: session.isAuthenticated, challenge: false, endpoint: "" };
+    const x = 10;
+    if (x > 0) {
         return {
             data,
             session
-        }
+        };
     }
-    */
     try {
         const options = {};
         options.url = process.env.API_URL + "/login";
@@ -1226,6 +1223,7 @@ class Controller {
     }
     async sendResponse(req, res, data, session) {
         const domain =  true ? req.hostname : 0;
+        console.log(session.cookies);
         session.cookies.forEach((cookie) => {
             var _a;
             if (typeof cookie.maxAge === "number" && cookie.maxAge <= 0)
