@@ -34,7 +34,7 @@ class Controller{
     async sendResponse(req:Request, res:Response, data:any, session:ISession){
 
         const domain = process.env.NODE_ENV === "production" ? req.hostname : ""
-//console.log(session.cookies)
+console.log(session.cookies)
         session.cookies.forEach((cookie:Cookie) => {
 
             if(typeof cookie.maxAge === "number" && cookie.maxAge <= 0) return;
@@ -81,7 +81,7 @@ class Controller{
     async tryRestore(req:Request, res:Response){
 
         try{
-console.log(req.headers.cookie)
+//console.log(req.headers.cookie)
             const session = api.getSession(req.headers);
 
             const result = await this.db.restore(req.session.account);
