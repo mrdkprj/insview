@@ -1238,7 +1238,7 @@ class Controller {
             });
         });
         res.set({ "ig-auth": data.session.isAuthenticated });
-        res.status(200).send(data);
+        res.status(200).send(data.data);
     }
     sendErrorResponse(res, ex) {
         const data = ex instanceof AuthError ? ex.detail : { message: ex.message };
