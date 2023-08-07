@@ -117,7 +117,8 @@ const getSession = (headers) => {
             csrfToken: "",
             userId: "",
             expires: null,
-            xHeaders: { appId: "", ajax: "" }
+            xHeaders: { appId: "", ajax: "" },
+            userAgent: headers["user-agent"]
         };
         if (!headers.cookie) {
             return session;

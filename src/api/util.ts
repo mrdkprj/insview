@@ -27,7 +27,8 @@ const getSession = (headers:any) :ISession => {
             csrfToken:"",
             userId:"",
             expires: null,
-            xHeaders:{appId:"", ajax:""}
+            xHeaders:{appId:"", ajax:""},
+            userAgent:headers["user-agent"]
         }
 
         if(!headers.cookie){
