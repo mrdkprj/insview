@@ -125,9 +125,17 @@ const createHeaders = (referer:string, session:ISession) :AxiosRequestHeaders =>
     headers["origin"] = "https://www.instagram.com"
     headers["referer"] = referer
     headers["x-requested-with"] = "XMLHttpRequest"
-    headers["x-csrftoken"] = session.csrfToken;
+    headers["X-Csrftoken"] = session.csrfToken;
     if(session.userAgent){
-        headers["user-agent"] = "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1"//session.userAgent
+        headers["user-agent"] = session.userAgent//"Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1"
+    }
+
+    if(session.xHeaders.ajax){
+        headers["X-Instagram-Ajax"] = session.xHeaders.ajax
+    }
+
+    if(session.xHeaders.appId){
+        headers["X-Ig-App-Id"] = session.xHeaders.appId
     }
 
     return headers;

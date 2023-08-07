@@ -185,9 +185,15 @@ const createHeaders = (referer, session) => {
     headers["origin"] = "https://www.instagram.com";
     headers["referer"] = referer;
     headers["x-requested-with"] = "XMLHttpRequest";
-    headers["x-csrftoken"] = session.csrfToken;
+    headers["X-Csrftoken"] = session.csrfToken;
     if (session.userAgent) {
-        headers["user-agent"] = "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1"; //session.userAgent
+        headers["user-agent"] = session.userAgent; //"Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1"
+    }
+    if (session.xHeaders.ajax) {
+        headers["X-Instagram-Ajax"] = session.xHeaders.ajax;
+    }
+    if (session.xHeaders.appId) {
+        headers["X-Ig-App-Id"] = session.xHeaders.appId;
     }
     return headers;
 };
@@ -1204,6 +1210,10 @@ const tryUpdate = async (req) => {
         let cookies = await jar.storeCookie(response.headers["set-cookie"]);
         const data = response.data;
         const session = updateSession(currentSession, cookies);
+        await jar.storeCookie([
+            'x_app_id=1217981644879628; Domain=instagram.com; Path=/; Expires=Tue, 31 Oct 2024 02:11:30 GMT; Secure',
+            "x_ajax=1007947353; Domain=instagram.com; Path=/; Expires=Tue, 31 Oct 2024 02:11:30 GMT; Secure"
+        ]);
         cookies = await jar.getCookies();
         console.log(response.headers);
         return {
