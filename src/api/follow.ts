@@ -172,35 +172,28 @@ const unfollow = async (req:IgRequest):Promise<IgResponse<any>> => {
 
 const tryUpdate = async (req:IgRequest):Promise<IgResponse<any>> => {
 
-    const jar = new CookieStore();
+    const session = getSession(req.headers);
 
-    const currentSession = getSession(req.headers);
+    const jar = new CookieStore();
+    const headers = createHeaders(baseUrl, session);
 
     try{
 
-        const headers = createHeaders(baseUrl, currentSession);
-        await jar.storeRequestCookie(req.headers.cookie);
         headers.Cookie = await jar.getCookieStrings();
 
         const options :AxiosRequestConfig = {
-            url:baseUrl,
+            url: "https://www.instagram.com/api/v1/public/landing_info/",
             method: "GET",
             headers
         }
 
         const response = await axios.request(options);
 
-        let cookies = await jar.storeCookie(response.headers["set-cookie"])
-        const data = response.data;
-        const session = updateSession(currentSession, cookies);
-        await jar.storeCookie([
-            'x_app_id=1217981644879628; Domain=instagram.com; Path=/; Expires=Tue, 31 Oct 2024 02:11:30 GMT; Secure',
-            "x_ajax=1007947353; Domain=instagram.com; Path=/; Expires=Tue, 31 Oct 2024 02:11:30 GMT; Secure"
-        ]);
-        cookies = await jar.getCookies();
-console.log(response.headers)
+        await jar.storeCookie(response.headers["set-cookie"])
+        const cookies = await jar.getCookies();
+
         return {
-            data,
+            data:{},
             session,
             cookies
         }

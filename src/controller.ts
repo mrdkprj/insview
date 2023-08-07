@@ -91,9 +91,13 @@ console.log(req.headers.cookie)
             result.isAuthenticated = session.isAuthenticated;
             result.account = req.session.account
 
-            const x = await api.tryUpdate({data:{},headers:req.headers})
+            let cookies:Cookie[] = [];
+            if(session.isAuthenticated){
+                const x = await api.tryUpdate({data:{},headers:req.headers})
+                cookies = x.cookies
+            }
 
-            await this.sendResponse(req, res, {data:result, session, cookies:x.cookies});
+            await this.sendResponse(req, res, {data:result, session, cookies});
 
         }catch(ex:any){
 

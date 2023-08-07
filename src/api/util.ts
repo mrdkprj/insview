@@ -86,7 +86,7 @@ const getSession = (headers:any) :ISession => {
 const updateSession = (currentSession:ISession, cookies:tough.Cookie[], xHeaders?:IgHeaders) => {
 
     const session :ISession = {
-        isAuthenticated:false,
+        isAuthenticated:currentSession.isAuthenticated,
         csrfToken:currentSession.csrfToken,
         userId:currentSession.userId,
         expires: currentSession.expires,

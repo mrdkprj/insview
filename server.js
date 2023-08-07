@@ -158,7 +158,7 @@ const getSession = (headers) => {
 };
 const updateSession = (currentSession, cookies, xHeaders) => {
     const session = {
-        isAuthenticated: false,
+        isAuthenticated: currentSession.isAuthenticated,
         csrfToken: currentSession.csrfToken,
         userId: currentSession.userId,
         expires: currentSession.expires,
@@ -1195,29 +1195,21 @@ const unfollow = async (req) => {
     }
 };
 const tryUpdate = async (req) => {
+    const session = getSession(req.headers);
     const jar = new CookieStore();
-    const currentSession = getSession(req.headers);
+    const headers = createHeaders(baseUrl, session);
     try {
-        const headers = createHeaders(baseUrl, currentSession);
-        await jar.storeRequestCookie(req.headers.cookie);
         headers.Cookie = await jar.getCookieStrings();
         const options = {
-            url: baseUrl,
+            url: "https://www.instagram.com/api/v1/public/landing_info/",
             method: "GET",
             headers
         };
         const response = await external_axios_default().request(options);
-        let cookies = await jar.storeCookie(response.headers["set-cookie"]);
-        const data = response.data;
-        const session = updateSession(currentSession, cookies);
-        await jar.storeCookie([
-            'x_app_id=1217981644879628; Domain=instagram.com; Path=/; Expires=Tue, 31 Oct 2024 02:11:30 GMT; Secure',
-            "x_ajax=1007947353; Domain=instagram.com; Path=/; Expires=Tue, 31 Oct 2024 02:11:30 GMT; Secure"
-        ]);
-        cookies = await jar.getCookies();
-        console.log(response.headers);
+        await jar.storeCookie(response.headers["set-cookie"]);
+        const cookies = await jar.getCookies();
         return {
-            data,
+            data: {},
             session,
             cookies
         };
@@ -1297,8 +1289,12 @@ class Controller {
             const result = await this.db.restore(req.session.account);
             result.isAuthenticated = session.isAuthenticated;
             result.account = req.session.account;
-            const x = await tryUpdate({ data: {}, headers: req.headers });
-            await this.sendResponse(req, res, { data: result, session, cookies: x.cookies });
+            let cookies = [];
+            if (session.isAuthenticated) {
+                const x = await tryUpdate({ data: {}, headers: req.headers });
+                cookies = x.cookies;
+            }
+            await this.sendResponse(req, res, { data: result, session, cookies });
         }
         catch (ex) {
             this.sendErrorResponse(res, new Error("Restore failed"));
