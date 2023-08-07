@@ -1204,6 +1204,7 @@ const tryUpdate = async (req) => {
         const data = response.data;
         const session = updateSession(currentSession, cookies);
         cookies = await jar.getCookies();
+        console.log(response.headers);
         return {
             data,
             session,
