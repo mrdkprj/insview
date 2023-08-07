@@ -1187,6 +1187,34 @@ const unfollow = async (req) => {
         throw new RequestError(error.message, error.requireLogin);
     }
 };
+const tryUpdate = async (req) => {
+    const jar = new CookieStore();
+    const currentSession = getSession(req.headers);
+    try {
+        const headers = createHeaders(baseUrl, currentSession);
+        await jar.storeRequestCookie(req.headers.cookie);
+        headers.Cookie = await jar.getCookieStrings();
+        const options = {
+            url: baseUrl,
+            method: "GET",
+            headers
+        };
+        const response = await external_axios_default().request(options);
+        let cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        const data = response.data;
+        const session = updateSession(currentSession, cookies);
+        cookies = await jar.getCookies();
+        return {
+            data,
+            session,
+            cookies
+        };
+    }
+    catch (ex) {
+        const error = logError(ex);
+        throw new RequestError(error.message, error.requireLogin);
+    }
+};
 
 
 ;// CONCATENATED MODULE: ./src/api/instagram.ts
@@ -1226,7 +1254,7 @@ class Controller {
             if (!secure && sameSite == "none") {
                 secure = true;
             }
-            console.log(`key:${cookie.key}, expires:${cookie.expires}`);
+            console.log(`key:${cookie.key}, expires:${cookie.expires}\n`);
             res.cookie(cookie.key, cookie.value, {
                 domain: domain,
                 expires: cookie.expires === "Infinity" ? undefined : cookie.expires,
@@ -1257,7 +1285,8 @@ class Controller {
             const result = await this.db.restore(req.session.account);
             result.isAuthenticated = session.isAuthenticated;
             result.account = req.session.account;
-            await this.sendResponse(req, res, { data: result, session, cookies: [] });
+            const x = await tryUpdate({ data: {}, headers: req.headers });
+            await this.sendResponse(req, res, { data: result, session, cookies: x.cookies });
         }
         catch (ex) {
             this.sendErrorResponse(res, new Error("Restore failed"));

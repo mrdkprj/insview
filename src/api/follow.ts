@@ -170,4 +170,41 @@ const unfollow = async (req:IgRequest):Promise<IgResponse<any>> => {
     }
 }
 
-export {requestFollowings, follow, unfollow}
+const tryUpdate = async (req:IgRequest):Promise<IgResponse<any>> => {
+
+    const jar = new CookieStore();
+
+    const currentSession = getSession(req.headers);
+
+    try{
+
+        const headers = createHeaders(baseUrl, currentSession);
+        await jar.storeRequestCookie(req.headers.cookie);
+        headers.Cookie = await jar.getCookieStrings();
+
+        const options :AxiosRequestConfig = {
+            url:baseUrl,
+            method: "GET",
+            headers
+        }
+
+        const response = await axios.request(options);
+
+        let cookies = await jar.storeCookie(response.headers["set-cookie"])
+        const data = response.data;
+        const session = updateSession(currentSession, cookies);
+        cookies = await jar.getCookies();
+
+        return {
+            data,
+            session,
+            cookies
+        }
+
+    }catch(ex:any){
+        const error = logError(ex);
+        throw new RequestError(error.message, error.requireLogin)
+    }
+}
+
+export {requestFollowings, follow, unfollow, tryUpdate}

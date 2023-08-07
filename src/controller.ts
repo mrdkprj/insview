@@ -45,7 +45,7 @@ class Controller{
                 secure = true;
             }
 
-            console.log(`key:${cookie.key}, expires:${cookie.expires}`)
+            console.log(`key:${cookie.key}, expires:${cookie.expires}\n`)
 
             res.cookie(cookie.key, cookie.value, {
                 domain:domain,
@@ -91,7 +91,9 @@ console.log(req.headers.cookie)
             result.isAuthenticated = session.isAuthenticated;
             result.account = req.session.account
 
-            await this.sendResponse(req, res, {data:result, session, cookies:[]});
+            const x = await api.tryUpdate({data:{},headers:req.headers})
+
+            await this.sendResponse(req, res, {data:result, session, cookies:x.cookies});
 
         }catch(ex:any){
 
