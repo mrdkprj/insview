@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig } from "axios";
-import { baseUrl, createHeaders, getSession, updateSession, CookieStore, logError } from "./util";
+import { baseUrl, createHeaders, getSession, updateSession, CookieStore, logError, extractCsrfToken, getAppId, getClientVersion } from "./util";
 import { AuthError, RequestError } from "../entity";
 
 const requestFollowings = async (req:IgRequest) : Promise<IgResponse<IFollowing>> => {
@@ -179,18 +179,34 @@ const tryUpdate = async (req:IgRequest):Promise<IgResponse<any>> => {
 
     try{
 
-        headers.Cookie = await jar.getCookieStrings();
+        const options :AxiosRequestConfig= {};
 
-        const options :AxiosRequestConfig = {
-            url: "https://www.instagram.com/api/v1/public/landing_info/",
-            method: "GET",
-            headers
+        headers.Cookie = "ig_cb=1"
+        headers["X-Instagram-Ajax"] = 1;
+        options.url = baseUrl;
+        options.method = "GET"
+        options.headers = headers;
+
+        let response = await axios.request(options);
+
+        const xHeaders :IgHeaders = {
+            appId: getAppId(response.data),
+            ajax: getClientVersion(response.data)
         }
 
-        const response = await axios.request(options);
+        await jar.storeXHeaderCookie(xHeaders);
+
+        session.csrfToken = extractCsrfToken(response.data)
+
+        let cookies = await jar.storeCookie(response.headers["set-cookie"])
+        headers.Cookie = await jar.getCookieStrings();
+        options.url = "https://www.instagram.com/api/v1/public/landing_info/",
+        options.headers = headers;
+
+        response = await axios.request(options);
 
         await jar.storeCookie(response.headers["set-cookie"])
-        const cookies = await jar.getCookies();
+        cookies = await jar.getCookies();
 
         return {
             data:{},

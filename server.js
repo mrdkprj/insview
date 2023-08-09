@@ -1199,15 +1199,26 @@ const tryUpdate = async (req) => {
     const jar = new CookieStore();
     const headers = createHeaders(baseUrl, session);
     try {
-        headers.Cookie = await jar.getCookieStrings();
-        const options = {
-            url: "https://www.instagram.com/api/v1/public/landing_info/",
-            method: "GET",
-            headers
+        const options = {};
+        headers.Cookie = "ig_cb=1";
+        headers["X-Instagram-Ajax"] = 1;
+        options.url = baseUrl;
+        options.method = "GET";
+        options.headers = headers;
+        let response = await external_axios_default().request(options);
+        const xHeaders = {
+            appId: getAppId(response.data),
+            ajax: getClientVersion(response.data)
         };
-        const response = await external_axios_default().request(options);
+        await jar.storeXHeaderCookie(xHeaders);
+        session.csrfToken = extractCsrfToken(response.data);
+        let cookies = await jar.storeCookie(response.headers["set-cookie"]);
+        headers.Cookie = await jar.getCookieStrings();
+        options.url = "https://www.instagram.com/api/v1/public/landing_info/",
+            options.headers = headers;
+        response = await external_axios_default().request(options);
         await jar.storeCookie(response.headers["set-cookie"]);
-        const cookies = await jar.getCookies();
+        cookies = await jar.getCookies();
         return {
             data: {},
             session,
