@@ -1197,11 +1197,11 @@ const unfollow = async (req) => {
 const tryUpdate = async (req) => {
     const session = getSession(req.headers);
     const jar = new CookieStore();
+    await jar.storeRequestCookie(req.headers.cookie);
     const headers = createHeaders(baseUrl, session);
     try {
         const options = {};
-        headers.Cookie = "ig_cb=1";
-        headers["X-Instagram-Ajax"] = 1;
+        headers.Cookie = await jar.getCookieStrings();
         options.url = baseUrl;
         options.method = "GET";
         options.headers = headers;
