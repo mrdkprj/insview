@@ -256,7 +256,6 @@ class CookieStore{
         xAjaxCookie.expires = expires;
         xAjaxCookie.path = "/"
         xAjaxCookie.secure = true;
-        xAjaxCookie.maxAge = 31449600;
         xAjaxCookie.domain = this.url
         await this.responseJar.setCookie(xAjaxCookie, this.url, {ignoreError:true});
         const xAppIdCookie = new tough.Cookie();
@@ -265,7 +264,6 @@ class CookieStore{
         xAppIdCookie.expires = expires;
         xAppIdCookie.path = "/"
         xAppIdCookie.secure = true;
-        xAppIdCookie.maxAge = 31449600;
         xAppIdCookie.domain = this.url
         await this.responseJar.setCookie(xAppIdCookie, this.url, {ignoreError:true});
     }
@@ -287,7 +285,6 @@ class CookieStore{
 const logError = (ex:any):ErrorDetail => {
 
     const hasResponse = !!ex.response
-    const errorData = hasResponse ? ex.response.data : ex;
 
     const message = hasResponse ? ex.response.data.message : ex.message;
     let data = hasResponse ? ex.response.data : "";
@@ -298,7 +295,7 @@ const logError = (ex:any):ErrorDetail => {
 
     console.log("----------- Error Logging ----------")
     console.log(`message: ${message}`)
-    console.log(`data: ${JSON.stringify(errorData)}`)
+    console.log(`data: ${JSON.stringify(data)}`)
     console.log("------------------------------------")
 
     return {

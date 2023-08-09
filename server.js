@@ -277,7 +277,6 @@ class CookieStore {
         xAjaxCookie.expires = expires;
         xAjaxCookie.path = "/";
         xAjaxCookie.secure = true;
-        xAjaxCookie.maxAge = 31449600;
         xAjaxCookie.domain = this.url;
         await this.responseJar.setCookie(xAjaxCookie, this.url, { ignoreError: true });
         const xAppIdCookie = new (external_tough_cookie_default()).Cookie();
@@ -286,7 +285,6 @@ class CookieStore {
         xAppIdCookie.expires = expires;
         xAppIdCookie.path = "/";
         xAppIdCookie.secure = true;
-        xAppIdCookie.maxAge = 31449600;
         xAppIdCookie.domain = this.url;
         await this.responseJar.setCookie(xAppIdCookie, this.url, { ignoreError: true });
     }
@@ -302,7 +300,6 @@ class CookieStore {
 }
 const logError = (ex) => {
     const hasResponse = !!ex.response;
-    const errorData = hasResponse ? ex.response.data : ex;
     const message = hasResponse ? ex.response.data.message : ex.message;
     let data = hasResponse ? ex.response.data : "";
     if (hasResponse && ex.response.headers["content-type"].includes("html")) {
@@ -310,7 +307,7 @@ const logError = (ex) => {
     }
     console.log("----------- Error Logging ----------");
     console.log(`message: ${message}`);
-    console.log(`data: ${JSON.stringify(errorData)}`);
+    console.log(`data: ${JSON.stringify(data)}`);
     console.log("------------------------------------");
     return {
         message,
@@ -1197,28 +1194,27 @@ const unfollow = async (req) => {
 const tryUpdate = async (req) => {
     const session = getSession(req.headers);
     const jar = new CookieStore();
-    await jar.storeRequestCookie(req.headers.cookie);
     const headers = createHeaders(baseUrl, session);
-    try {
-        const options = {};
-        headers.Cookie = await jar.getCookieStrings();
-        options.url = baseUrl;
-        options.method = "GET";
-        options.headers = headers;
-        let response = await external_axios_default().request(options);
-        const xHeaders = {
-            appId: getAppId(response.data),
-            ajax: getClientVersion(response.data)
+    const x = 10;
+    if (x > 0) {
+        const c = await jar.storeCookie(process.env.MOCK.split("@"));
+        return {
+            data: {},
+            session,
+            cookies: c
         };
-        await jar.storeXHeaderCookie(xHeaders);
-        session.csrfToken = extractCsrfToken(response.data);
-        let cookies = await jar.storeCookie(response.headers["set-cookie"]);
+    }
+    try {
         headers.Cookie = await jar.getCookieStrings();
-        options.url = "https://www.instagram.com/api/v1/public/landing_info/",
-            options.headers = headers;
-        response = await external_axios_default().request(options);
+        const options = {
+            url: "https://www.instagram.com/api/v1/public/landing_info/",
+            method: "GET",
+            headers
+        };
+        const response = await external_axios_default().request(options);
         await jar.storeCookie(response.headers["set-cookie"]);
-        cookies = await jar.getCookies();
+        await jar.storeXHeaderCookie(session.xHeaders);
+        const cookies = await jar.getCookies();
         return {
             data: {},
             session,
