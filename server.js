@@ -1460,6 +1460,7 @@ class Controller {
         }
     }
     async tryGetFollowings(req, res, next) {
+        console.log(req.headers.cookie);
         try {
             const result = await requestFollowings({ data: { next }, headers: req.headers });
             await this.sendResponse(req, res, result);

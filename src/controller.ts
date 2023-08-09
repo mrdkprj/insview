@@ -322,7 +322,7 @@ console.log(req.headers.cookie)
     }
 
     async tryGetFollowings(req:any, res:any, next:string){
-
+        console.log(req.headers.cookie)
         try{
 
             const result = await api.requestFollowings({data:{next},headers:req.headers});
