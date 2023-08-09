@@ -174,7 +174,7 @@ const tryUpdate = async (req:IgRequest):Promise<IgResponse<any>> => {
 
     const session = getSession(req.headers);
 
-    const jar = new CookieStore();
+    const jar = new CookieStore(process.env.API_URL);
     const headers = createHeaders(baseUrl, session);
 
     const x = 10;
