@@ -24,19 +24,19 @@ const remoteLogin = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> 
     const jar = new CookieStore(process.env.API_URL);
 
 
-    const t = process.env.MOCK.split("@")
-    cookies = await jar.storeCookie(t)
-    session = updateSession(session, cookies);
-    const data = {account, success:session.isAuthenticated, challenge:false, endpoint:""};
+    // const t = process.env.MOCK.split("@")
+    // cookies = await jar.storeCookie(t)
+    // session = updateSession(session, cookies);
+    // const data = {account, success:session.isAuthenticated, challenge:false, endpoint:""};
 
-    const x= 10;
-    if(x >0){
-        return {
-            data,
-            session,
-            cookies
-        }
-    }
+    // const x= 10;
+    // if(x >0){
+    //     return {
+    //         data,
+    //         session,
+    //         cookies
+    //     }
+    // }
 
 
     try{
