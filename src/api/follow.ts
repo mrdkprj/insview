@@ -7,7 +7,7 @@ const requestFollowings = async (req:IgRequest) : Promise<IgResponse<IFollowing>
     const jar = new CookieStore();
 
     const currentSession = getSession(req.headers);
-
+/*
     const params = req.data.next ? {
         id: currentSession.userId,
         first:20,
@@ -16,15 +16,19 @@ const requestFollowings = async (req:IgRequest) : Promise<IgResponse<IFollowing>
         id: currentSession.userId,
         first:20
     }
+*/
 
+    const params = req.data.next ? "&max_id=12" : ""
     try{
         //https://i.instagram.com/api/v1/friendships/${userid}/following/?count=12&max_id=1
-        const url = `https://www.instagram.com/graphql/query/?query_hash=58712303d941c6855d4e888c5f0cd22f&variables=${encodeURIComponent(JSON.stringify(params))}`
+        //https://www.instagram.com/api/v1/friendships/52714401302/following/?count=12
+        //const url = `https://www.instagram.com/graphql/query/?query_hash=58712303d941c6855d4e888c5f0cd22f&variables=${encodeURIComponent(JSON.stringify(params))}`
+        const url = `https://www.instagram.com/api/v1/friendships/${currentSession.userId}/following/?count=12${params}`
 
         const headers = createHeaders(baseUrl, currentSession);
         await jar.storeRequestCookie(req.headers.cookie)
         headers.Cookie = await jar.getCookieStrings();
-console.log(headers.Cookie)
+
         const options :AxiosRequestConfig = {
             url,
             method: "GET",
@@ -57,7 +61,7 @@ console.log(headers.Cookie)
 }
 
 const _formatFollowings = (data:any) :IFollowing => {
-
+/*
     const dataNode = data.data.user.edge_follow;
 
     const users :IUser[] = dataNode.edges.map((user:any) :IUser => {
@@ -73,9 +77,25 @@ const _formatFollowings = (data:any) :IFollowing => {
             isPro:false,
         }
     })
+*/
 
-    const hasNext = dataNode.page_info.has_next_page;
-    const next = hasNext ? dataNode.page_info.end_cursor : "";
+    const users :IUser[] = data.users.map((user:any) :IUser => {
+
+        return {
+            id:user.pk_id,
+            igId:user.pk_id,
+            username:user.username,
+            name:user.full_name,
+            biography:"",
+            profileImage: "/image?url=" + encodeURIComponent(user.profile_pic_url),
+            following: true,
+            isPro:false,
+        }
+    })
+
+    const hasNext = data.next_max_id ? true : false //dataNode.page_info.has_next_page;
+    //const next = hasNext ? dataNode.page_info.end_cursor : "";
+    const next = hasNext ? data.next_max_id : "";
 
     return {users, hasNext, next};
 
