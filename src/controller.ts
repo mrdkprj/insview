@@ -93,8 +93,8 @@ console.log(req.headers.cookie)
 
             let cookies:Cookie[] = [];
             if(session.isAuthenticated){
-                const x = await api.tryUpdate({data:{},headers:req.headers})
-                cookies = x.cookies
+                //const x = await api.tryUpdate({data:{},headers:req.headers})
+                //cookies = x.cookies
             }
 
             await this.sendResponse(req, res, {data:result, session, cookies});
@@ -322,7 +322,7 @@ console.log(req.headers.cookie)
     }
 
     async tryGetFollowings(req:any, res:any, next:string){
-        console.log(req.headers.cookie)
+
         try{
 
             const result = await api.requestFollowings({data:{next},headers:req.headers});

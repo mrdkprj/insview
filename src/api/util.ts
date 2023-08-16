@@ -126,6 +126,7 @@ const createHeaders = (referer:string, session:ISession) :AxiosRequestHeaders =>
     headers["referer"] = referer
     headers["x-requested-with"] = "XMLHttpRequest"
     headers["X-Csrftoken"] = session.csrfToken;
+    headers["X-Asbd-Id"] = 129477
     if(session.userAgent){
         headers["user-agent"] = session.userAgent//"Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1"
     }
