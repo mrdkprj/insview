@@ -1083,6 +1083,7 @@ const requestFollowings = async (req) => {
         const headers = createHeaders(baseUrl, currentSession);
         await jar.storeRequestCookie(req.headers.cookie);
         headers.Cookie = await jar.getCookieStrings();
+        console.log(headers.Cookie);
         const options = {
             url,
             method: "GET",
