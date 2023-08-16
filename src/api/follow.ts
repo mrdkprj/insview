@@ -28,7 +28,7 @@ const requestFollowings = async (req:IgRequest) : Promise<IgResponse<IFollowing>
         const headers = createHeaders(baseUrl, currentSession);
         await jar.storeRequestCookie(req.headers.cookie)
         headers.Cookie = await jar.getCookieStrings();
-
+console.log(headers)
         const options :AxiosRequestConfig = {
             url,
             method: "GET",
