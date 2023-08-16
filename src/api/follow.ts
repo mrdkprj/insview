@@ -18,7 +18,7 @@ const requestFollowings = async (req:IgRequest) : Promise<IgResponse<IFollowing>
     }
 */
 
-    const params = req.data.next ? "&max_id=12" : ""
+    const params = req.data.next ? `&max_id=${req.data.next}` : ""
     try{
         //https://i.instagram.com/api/v1/friendships/${userid}/following/?count=12&max_id=1
         //https://www.instagram.com/api/v1/friendships/52714401302/following/?count=12
