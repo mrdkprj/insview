@@ -57,12 +57,12 @@ class AuthError extends Error {
         Object.setPrototypeOf(this, AuthError.prototype);
     }
 }
-class RequestError extends Error {
+class entity_RequestError extends Error {
     constructor(message, requireLogin) {
         super(message);
         this.name = "RequestError";
         this.requireLogin = requireLogin;
-        Object.setPrototypeOf(this, RequestError.prototype);
+        Object.setPrototypeOf(this, entity_RequestError.prototype);
     }
 }
 const emptyMedia = {
@@ -98,7 +98,7 @@ const external_tough_cookie_namespaceObject = require("tough-cookie");
 var external_tough_cookie_default = /*#__PURE__*/__webpack_require__.n(external_tough_cookie_namespaceObject);
 ;// CONCATENATED MODULE: ./src/api/util.ts
 
-const baseUrl = "https://www.instagram.com";
+const util_baseUrl = "https://www.instagram.com";
 const IgHeaderNames = {
     appId: "x_app_id",
     ajax: "x_ajax"
@@ -110,7 +110,7 @@ const baseRequestHeaders = {
     "Accept-Language": "en-US",
     "Authority": "www.instagram.com",
 };
-const getSession = (headers) => {
+const util_getSession = (headers) => {
     try {
         const session = {
             isAuthenticated: false,
@@ -180,7 +180,7 @@ const updateSession = (currentSession, cookies, xHeaders) => {
     });
     return session;
 };
-const createHeaders = (referer, session) => {
+const util_createHeaders = (referer, session) => {
     const headers = baseRequestHeaders;
     headers["origin"] = "https://www.instagram.com";
     headers["referer"] = referer;
@@ -234,11 +234,11 @@ const getCookieString = (cookies) => {
     });
     return setCookieString;
 };
-class CookieStore {
+class util_CookieStore {
     constructor(url) {
         this.jar = new external_tough_cookie_namespaceObject.CookieJar();
         this.responseJar = new external_tough_cookie_namespaceObject.CookieJar();
-        this.url = url ? url : baseUrl;
+        this.url = url ? url : util_baseUrl;
     }
     async storeCookie(setCookie) {
         if (!setCookie) {
@@ -259,7 +259,7 @@ class CookieStore {
             "ARRAffinity",
             "ARRAffinitySameSite"
         ];
-        if (this.url == baseUrl) {
+        if (this.url == util_baseUrl) {
             excludeKeys.push(IgHeaderNames.ajax);
             excludeKeys.push(IgHeaderNames.appId);
         }
@@ -299,7 +299,7 @@ class CookieStore {
         return await this.jar.getCookies(this.url);
     }
 }
-const logError = (ex) => {
+const util_logError = (ex) => {
     const hasResponse = !!ex.response;
     const message = hasResponse ? ex.response.data.message : ex.message;
     let data = hasResponse ? ex.response.data : "";
@@ -334,11 +334,11 @@ const login = async (req) => {
 const remoteLogin = async (req) => {
     console.log("---------- login start ----------");
     const account = req.data.account;
-    let session = getSession({});
+    let session = util_getSession({});
     session.userAgent = req.headers["user-agent"];
-    const headers = createHeaders(baseUrl, session);
+    const headers = util_createHeaders(util_baseUrl, session);
     let cookies = [];
-    const jar = new CookieStore(process.env.API_URL);
+    const jar = new util_CookieStore(process.env.API_URL);
     // const t = process.env.MOCK.split("@")
     // cookies = await jar.storeCookie(t)
     // session = updateSession(session, cookies);
@@ -375,23 +375,23 @@ const remoteLogin = async (req) => {
         };
     }
     catch (ex) {
-        const error = logError(ex);
+        const error = util_logError(ex);
         throw new AuthError(error);
     }
 };
 const localLogin = async (req) => {
     console.log("---------- login start ----------");
     const account = req.data.account;
-    let session = getSession({});
+    let session = util_getSession({});
     session.userAgent = req.headers["user-agent"];
-    const headers = createHeaders(baseUrl, session);
+    const headers = util_createHeaders(util_baseUrl, session);
     let cookies = [];
-    const jar = new CookieStore();
+    const jar = new util_CookieStore();
     try {
         const options = {};
         headers.Cookie = "ig_cb=1";
         headers["X-Instagram-Ajax"] = 1;
-        options.url = baseUrl;
+        options.url = util_baseUrl;
         options.method = "GET";
         options.headers = headers;
         let response = await external_axios_default().request(options);
@@ -458,7 +458,7 @@ const localLogin = async (req) => {
             headers.Cookie = await jar.getCookieStrings();
             return await requestChallenge(account, ex.response.data.checkpoint_url, headers, session, jar);
         }
-        const error = logError(ex);
+        const error = util_logError(ex);
         throw new AuthError(error);
     }
 };
@@ -501,7 +501,7 @@ const requestChallenge = async (account, checkpoint, headers, session, jar) => {
         throw new Error("Challange response not found");
     }
     catch (ex) {
-        const error = logError(ex);
+        const error = util_logError(ex);
         throw new AuthError(error);
     }
 };
@@ -513,10 +513,10 @@ const challenge = async (req) => {
 const remoteChallenge = async (req) => {
     console.log("-------------- code verification start ---------");
     const url = req.data.endpoint;
-    const jar = new CookieStore(process.env.API_URL);
+    const jar = new util_CookieStore(process.env.API_URL);
     const options = {};
-    let session = getSession(req.headers);
-    const headers = createHeaders(url, session);
+    let session = util_getSession(req.headers);
+    const headers = util_createHeaders(url, session);
     await jar.storeRequestCookie(req.headers.cookie);
     headers.Cookie = await jar.getCookieStrings();
     try {
@@ -540,7 +540,7 @@ const remoteChallenge = async (req) => {
         };
     }
     catch (ex) {
-        const error = logError(ex);
+        const error = util_logError(ex);
         error.data = { account: req.data.account, success: false, challenge: true, endpoint: req.data.endpoint };
         throw new AuthError(error);
     }
@@ -548,10 +548,10 @@ const remoteChallenge = async (req) => {
 const localChallenge = async (req) => {
     console.log("-------------- code verification start ---------");
     const url = req.data.endpoint;
-    const jar = new CookieStore();
+    const jar = new util_CookieStore();
     const options = {};
-    let session = getSession(req.headers);
-    const headers = createHeaders(url, session);
+    let session = util_getSession(req.headers);
+    const headers = util_createHeaders(url, session);
     try {
         headers["X-Ig-App-Id"] = session.xHeaders.appId;
         headers["X-Ig-Www-Claim"] = 0;
@@ -581,7 +581,7 @@ const localChallenge = async (req) => {
         };
     }
     catch (ex) {
-        const error = logError(ex);
+        const error = util_logError(ex);
         console.log(error.data);
         throw new AuthError({ message: "Code verification failed", data: { account: req.data.account, success: false, challenge: true, endpoint: req.data.endpoint }, requireLogin: true });
     }
@@ -592,12 +592,12 @@ const logout = async (req) => {
     return await localLogout(req);
 };
 const remoteLogout = async (req) => {
-    const jar = new CookieStore(process.env.API_URL);
-    let session = getSession(req.headers);
+    const jar = new util_CookieStore(process.env.API_URL);
+    let session = util_getSession(req.headers);
     if (!session.isAuthenticated)
-        throw new RequestError("Already logged out", false);
+        throw new entity_RequestError("Already logged out", false);
     const options = {};
-    const headers = createHeaders(baseUrl, session);
+    const headers = util_createHeaders(util_baseUrl, session);
     await jar.storeRequestCookie(req.headers.cookie);
     headers.Cookie = await jar.getCookieStrings();
     try {
@@ -630,13 +630,13 @@ const remoteLogout = async (req) => {
     }
 };
 const localLogout = async (req) => {
-    const jar = new CookieStore();
-    let session = getSession(req.headers);
+    const jar = new util_CookieStore();
+    let session = util_getSession(req.headers);
     if (!session.isAuthenticated)
         throw new Error("Already logged out");
     try {
         const url = "https://www.instagram.com/api/v1/web/accounts/logout/ajax/";
-        const headers = createHeaders(baseUrl, session);
+        const headers = util_createHeaders(util_baseUrl, session);
         headers["X-Ig-App-Id"] = session.xHeaders.appId;
         headers["X-Ig-Www-Claim"] = 0;
         headers["X-Instagram-Ajax"] = session.xHeaders.ajax;
@@ -680,7 +680,7 @@ const VIDEO_URL = "/video?url=";
 const IMAGE_PERMALINK_URL = "https://www.instagram.com/p/";
 const VIDEO_PERMALINK_URL = "https://www.instagram.com/reel/";
 const requestMedia = async (req) => {
-    const session = getSession(req.headers);
+    const session = util_getSession(req.headers);
     const access_token = process.env.TOKEN;
     const userId = process.env.USER_ID;
     const version = process.env.VERSION;
@@ -700,7 +700,7 @@ const requestMedia = async (req) => {
     }
 };
 const requestMore = async (req) => {
-    const session = getSession(req.headers);
+    const session = util_getSession(req.headers);
     if (req.data.next.startsWith(GRAPH_QL)) {
         return _tryRequestMorePrivate(req, session);
     }
@@ -774,9 +774,9 @@ const _tryRequestPrivate = async (req, session) => {
     if (!session.isAuthenticated) {
         throw new AuthError({ message: "", data: {}, requireLogin: true });
     }
-    const jar = new CookieStore();
+    const jar = new util_CookieStore();
     const username = req.data.username;
-    const headers = createHeaders(baseUrl + "/" + username + "/", session);
+    const headers = util_createHeaders(util_baseUrl + "/" + username + "/", session);
     try {
         let cookies = await jar.storeRequestCookie(req.headers.cookie);
         session = updateSession(session, cookies);
@@ -827,15 +827,15 @@ const _tryRequestPrivate = async (req, session) => {
     }
     catch (ex) {
         console.log("Private media request failed");
-        const error = logError(ex);
-        throw new RequestError(error.message, error.requireLogin);
+        const error = util_logError(ex);
+        throw new entity_RequestError(error.message, error.requireLogin);
     }
 };
 const _tryRequestMorePrivate = async (req, session) => {
     if (!session.isAuthenticated) {
         throw new AuthError({ message: "", data: {}, requireLogin: true });
     }
-    const jar = new CookieStore();
+    const jar = new util_CookieStore();
     try {
         const response = await _requestMorePrivate(req, session, jar);
         const cookies = await jar.getCookies();
@@ -850,12 +850,12 @@ const _tryRequestMorePrivate = async (req, session) => {
     }
     catch (ex) {
         console.log("Private querymore failed");
-        const error = logError(ex);
-        throw new RequestError(error.message, error.requireLogin);
+        const error = util_logError(ex);
+        throw new entity_RequestError(error.message, error.requireLogin);
     }
 };
 const _requestPrivate = async (req, session, user, jar) => {
-    const headers = createHeaders(baseUrl + "/" + user.username + "/", session);
+    const headers = util_createHeaders(util_baseUrl + "/" + user.username + "/", session);
     headers.Cookie = await jar.getCookieStrings();
     const params = JSON.stringify({
         id: user.id,
@@ -892,7 +892,7 @@ const _requestMorePrivate = async (req, session, jar) => {
     // use when query hash no longer works
     //const url = `https://www.instagram.com/api/v1/feed/user/${req.data.user.id}/?count=12&max_id=${req.data.next.replace(GRAPH_QL, "")}`
     await jar.storeRequestCookie(req.headers.cookie);
-    const headers = createHeaders(baseUrl + "/" + req.data.user.username + "/", session);
+    const headers = util_createHeaders(util_baseUrl + "/" + req.data.user.username + "/", session);
     headers.Cookie = await jar.getCookieStrings();
     const options = {
         url,
@@ -1068,8 +1068,8 @@ const downloadMedia = async (url) => {
 
 
 const requestFollowings = async (req) => {
-    const jar = new CookieStore();
-    const currentSession = getSession(req.headers);
+    const jar = new util_CookieStore();
+    const currentSession = util_getSession(req.headers);
     /*
         const params = req.data.next ? {
             id: currentSession.userId,
@@ -1086,7 +1086,7 @@ const requestFollowings = async (req) => {
         //https://www.instagram.com/api/v1/friendships/52714401302/following/?count=12
         //const url = `https://www.instagram.com/graphql/query/?query_hash=58712303d941c6855d4e888c5f0cd22f&variables=${encodeURIComponent(JSON.stringify(params))}`
         const url = `https://www.instagram.com/api/v1/friendships/${currentSession.userId}/following/?count=12${params}`;
-        const headers = createHeaders(baseUrl, currentSession);
+        const headers = util_createHeaders(util_baseUrl, currentSession);
         await jar.storeRequestCookie(req.headers.cookie);
         headers.Cookie = await jar.getCookieStrings();
         console.log(headers);
@@ -1110,8 +1110,8 @@ const requestFollowings = async (req) => {
         };
     }
     catch (ex) {
-        const error = logError(ex);
-        throw new RequestError(error.message, error.requireLogin);
+        const error = util_logError(ex);
+        throw new entity_RequestError(error.message, error.requireLogin);
     }
 };
 const _formatFollowings = (data) => {
@@ -1150,14 +1150,14 @@ const _formatFollowings = (data) => {
     return { users, hasNext, next };
 };
 const follow = async (req) => {
-    const jar = new CookieStore();
-    const currentSession = getSession(req.headers);
+    const jar = new util_CookieStore();
+    const currentSession = util_getSession(req.headers);
     if (!currentSession.isAuthenticated) {
         throw new AuthError({ message: "", data: {}, requireLogin: true });
     }
     try {
-        const url = `${baseUrl}/web/friendships/${req.data.user.id}/follow/`;
-        const headers = createHeaders(baseUrl, currentSession);
+        const url = `${util_baseUrl}/web/friendships/${req.data.user.id}/follow/`;
+        const headers = util_createHeaders(util_baseUrl, currentSession);
         await jar.storeRequestCookie(req.headers.cookie);
         headers.Cookie = await jar.getCookieStrings();
         const options = {
@@ -1178,19 +1178,19 @@ const follow = async (req) => {
         };
     }
     catch (ex) {
-        const error = logError(ex);
-        throw new RequestError(error.message, error.requireLogin);
+        const error = util_logError(ex);
+        throw new entity_RequestError(error.message, error.requireLogin);
     }
 };
 const unfollow = async (req) => {
-    const jar = new CookieStore();
-    const currentSession = getSession(req.headers);
+    const jar = new util_CookieStore();
+    const currentSession = util_getSession(req.headers);
     if (!currentSession.isAuthenticated) {
         throw new AuthError({ message: "", data: {}, requireLogin: true });
     }
     try {
-        const url = `${baseUrl}/web/friendships/${req.data.user.id}/unfollow/`;
-        const headers = createHeaders(baseUrl, currentSession);
+        const url = `${util_baseUrl}/web/friendships/${req.data.user.id}/unfollow/`;
+        const headers = util_createHeaders(util_baseUrl, currentSession);
         await jar.storeRequestCookie(req.headers.cookie);
         headers.Cookie = await jar.getCookieStrings();
         const options = {
@@ -1211,8 +1211,8 @@ const unfollow = async (req) => {
         };
     }
     catch (ex) {
-        const error = logError(ex);
-        throw new RequestError(error.message, error.requireLogin);
+        const error = util_logError(ex);
+        throw new entity_RequestError(error.message, error.requireLogin);
     }
 };
 const tryUpdate = async (req) => {
@@ -1235,7 +1235,7 @@ const tryUpdate = async (req) => {
             method: "GET",
             headers
         };
-        const response = await external_axios_default().request(options);
+        const response = await axios.request(options);
         await jar.storeCookie(response.headers["set-cookie"]);
         await jar.storeXHeaderCookie(session.xHeaders);
         const cookies = await jar.getCookies();
@@ -1308,7 +1308,7 @@ class Controller {
         if (ex instanceof AuthError) {
             res.set({ "ig-auth": !ex.detail.requireLogin });
         }
-        if (ex instanceof RequestError) {
+        if (ex instanceof entity_RequestError) {
             res.set({ "ig-auth": !ex.requireLogin });
         }
         res.status(400).send(data);
@@ -1316,14 +1316,14 @@ class Controller {
     async tryRestore(req, res) {
         try {
             console.log(req.headers.cookie);
-            const session = getSession(req.headers);
+            const session = util_getSession(req.headers);
             const result = await this.db.restore(req.session.account);
             result.isAuthenticated = session.isAuthenticated;
             result.account = req.session.account;
             let cookies = [];
             if (session.isAuthenticated) {
-                const x = await tryUpdate({ data: {}, headers: req.headers });
-                cookies = x.cookies;
+                // const x = await api.tryUpdate({data:{},headers:req.headers})
+                // cookies = x.cookies
             }
             await this.sendResponse(req, res, { data: result, session, cookies });
         }
@@ -1424,7 +1424,7 @@ class Controller {
             const exisitingData = await this.db.queryMedia(req.session.account, username);
             let mediaResponse;
             if (exisitingData.username) {
-                const session = getSession(req.headers);
+                const session = util_getSession(req.headers);
                 mediaResponse = {
                     session,
                     data: {
