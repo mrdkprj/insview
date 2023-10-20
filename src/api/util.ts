@@ -291,7 +291,7 @@ const logError = (ex:any):ErrorDetail => {
     let data = hasResponse ? ex.response.data : "No response data";
 
     if(hasResponse && ex.response.headers["content-type"].includes("html")){
-        data = "Response is HTML"
+        //data = "Response is HTML"
     }
 
     console.log("----------- Error Logging ----------")

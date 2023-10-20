@@ -304,7 +304,7 @@ const util_logError = (ex) => {
     const message = hasResponse ? ex.response.data.message : ex.message;
     let data = hasResponse ? ex.response.data : "No response data";
     if (hasResponse && ex.response.headers["content-type"].includes("html")) {
-        data = "Response is HTML";
+        //data = "Response is HTML"
     }
     console.log("----------- Error Logging ----------");
     console.log(`message: ${message}`);
@@ -1096,7 +1096,6 @@ const requestFollowings = async (req) => {
             headers,
         };
         const response = await external_axios_default().request(options);
-        console.log(response.data);
         if (response.headers["content-type"].includes("html")) {
             throw new AuthError({ message: "Failed to get followings", data: {}, requireLogin: true });
         }
