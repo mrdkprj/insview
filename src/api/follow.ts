@@ -36,9 +36,9 @@ console.log(headers)
         }
 
         const response = await axios.request(options);
-
+console.log(response.data)
         if(response.headers["content-type"].includes("html")){
-            throw new AuthError({message:"", data:{}, requireLogin:true})
+            throw new AuthError({message:"Failed to get followings", data:{}, requireLogin:true})
         }
 
         let cookies = await jar.storeCookie(response.headers["set-cookie"])
