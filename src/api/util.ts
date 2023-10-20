@@ -288,10 +288,10 @@ const logError = (ex:any):ErrorDetail => {
     const hasResponse = !!ex.response
 
     const message = hasResponse ? ex.response.data.message : ex.message;
-    let data = hasResponse ? ex.response.data : "";
+    let data = hasResponse ? ex.response.data : "No response data";
 
     if(hasResponse && ex.response.headers["content-type"].includes("html")){
-        data = ""
+        data = "Response is HTML"
     }
 
     console.log("----------- Error Logging ----------")
