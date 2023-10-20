@@ -111,6 +111,7 @@ const baseRequestHeaders = {
     "Authority": "www.instagram.com",
 };
 const util_getSession = (headers) => {
+    var _a;
     try {
         const session = {
             isAuthenticated: false,
@@ -149,6 +150,9 @@ const util_getSession = (headers) => {
                 session.xHeaders.ajax = cookie.value;
             }
         });
+        if (!session.userId) {
+            session.userId = (_a = process.env.IG_USER_ID) !== null && _a !== void 0 ? _a : "";
+        }
         return session;
     }
     catch (ex) {
@@ -304,7 +308,7 @@ const util_logError = (ex) => {
     const message = hasResponse ? ex.response.data.message : ex.message;
     let data = hasResponse ? ex.response.data : "No response data";
     if (hasResponse && ex.response.headers["content-type"].includes("html")) {
-        //data = "Response is HTML"
+        data = "Response is HTML";
     }
     console.log("----------- Error Logging ----------");
     console.log(`message: ${message}`);

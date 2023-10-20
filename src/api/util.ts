@@ -75,6 +75,10 @@ const getSession = (headers:any) :ISession => {
 
         })
 
+        if(!session.userId){
+            session.userId = process.env.IG_USER_ID ?? "";
+        }
+
         return session;
 
     }catch(ex:any){
@@ -291,7 +295,7 @@ const logError = (ex:any):ErrorDetail => {
     let data = hasResponse ? ex.response.data : "No response data";
 
     if(hasResponse && ex.response.headers["content-type"].includes("html")){
-        //data = "Response is HTML"
+        data = "Response is HTML"
     }
 
     console.log("----------- Error Logging ----------")
