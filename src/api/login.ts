@@ -181,7 +181,7 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
 
         const options :AxiosRequestConfig= {};
 
-        const url = "https://www.instagram.com" + new URL(checkpoint).pathname.replace("/challenge/","/challenge/action/");
+        const url = "https://www.instagram.com" + checkpoint
 
         options.url = checkpoint;
         options.method = "GET";
