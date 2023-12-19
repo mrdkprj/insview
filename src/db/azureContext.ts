@@ -14,7 +14,7 @@ export interface IContainerConfig {
 export async function create(client:CosmosClient, databaseId:string, containerConfigs:IContainerConfig[]) {
 
     const controller = new AbortController()
-
+console.log("befoer cxraeta")
     const { database } = await client.databases.createIfNotExists(
         { id: databaseId },
         { abortSignal: controller.signal}

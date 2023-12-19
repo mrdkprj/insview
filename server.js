@@ -1523,6 +1523,7 @@ var __asyncValues = (undefined && undefined.__asyncValues) || function (o) {
 async function create(client, databaseId, containerConfigs) {
     var e_1, _a;
     const controller = new external_node_abort_controller_namespaceObject.AbortController();
+    console.log("befoer cxraeta");
     const { database } = await client.databases.createIfNotExists({ id: databaseId }, { abortSignal: controller.signal });
     console.log(`Created database:\n${database.id}\n`);
     try {
