@@ -1524,13 +1524,11 @@ async function create(client, databaseId, containerConfigs) {
     var e_1, _a;
     const controller = new external_node_abort_controller_namespaceObject.AbortController();
     const { database } = await client.databases.createIfNotExists({ id: databaseId }, { abortSignal: controller.signal });
-    controller.abort();
     console.log(`Created database:\n${database.id}\n`);
     try {
         for (var containerConfigs_1 = __asyncValues(containerConfigs), containerConfigs_1_1; containerConfigs_1_1 = await containerConfigs_1.next(), !containerConfigs_1_1.done;) {
             const config = containerConfigs_1_1.value;
             const response = await client.database(databaseId).containers.createIfNotExists({ id: config.ContainerId, partitionKey: config.PartitionKey, defaultTtl: -1 }, { offerThroughput: 400, abortSignal: controller.signal });
-            controller.abort();
             console.log(`Created container:\n${response.container.id}\n`);
         }
     }

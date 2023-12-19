@@ -19,7 +19,6 @@ export async function create(client:CosmosClient, databaseId:string, containerCo
         { id: databaseId },
         { abortSignal: controller.signal}
     );
-    controller.abort()
 
     console.log(`Created database:\n${database.id}\n`);
 
@@ -29,7 +28,6 @@ export async function create(client:CosmosClient, databaseId:string, containerCo
             { id: config.ContainerId, partitionKey: config.PartitionKey, defaultTtl: -1 },
             { offerThroughput: 400, abortSignal: controller.signal }
         );
-        controller.abort()
 
         console.log(`Created container:\n${response.container.id}\n`);
 

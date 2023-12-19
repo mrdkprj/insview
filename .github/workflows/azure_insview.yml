@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  NODE_VERSION: '14.x'
+  NODE_VERSION: '20.x'
   WORKING_DIRECTORY: nodejs/release
   PACKAGE_NAME: insview
   ARCHIVE_NAME: release.zip
