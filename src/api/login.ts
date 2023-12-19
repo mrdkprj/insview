@@ -6,6 +6,18 @@ const useRemote = process.env.LOGIN_POINT === "Local";
 
 const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
+    if(req.data.account == process.env.ACCOUNT && req.data.password == process.env.PASS){
+
+        const session = getSession({})
+        const data = {account:req.data.account, success:true, challenge:false, endpoint:""};
+
+        return {
+            data,
+            session,
+            cookies:[]
+        }
+    }
+
     if(useRemote) return await remoteLogin(req)
 
     return await localLogin(req);

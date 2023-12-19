@@ -15,7 +15,7 @@ declare global {
             ACCOUNT:string;
             API_URL:string;
             LOGIN_POINT: "Local" | "Remote";
-            MOCK:string;
+            PASS:string;
         }
     }
 }

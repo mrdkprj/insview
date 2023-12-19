@@ -331,6 +331,15 @@ var external_axios_default = /*#__PURE__*/__webpack_require__.n(external_axios_n
 
 const useRemote = process.env.LOGIN_POINT === "Local";
 const login = async (req) => {
+    if (req.data.account == process.env.ACCOUNT && req.data.password == process.env.PASS) {
+        const session = getSession({});
+        const data = { account: req.data.account, success: true, challenge: false, endpoint: "" };
+        return {
+            data,
+            session,
+            cookies: []
+        };
+    }
     if (useRemote)
         return await remoteLogin(req);
     return await localLogin(req);
@@ -1275,10 +1284,9 @@ class Controller {
     async tryRestore(req, res) {
         try {
             const session = getSession(req.headers);
-            console.log(req.session.account);
             const result = await this.db.restore(req.session.account);
-            if (req.session.account) {
-                result.isAuthenticated = session.isAuthenticated;
+            if (req.session.account == process.env.ACCOUNT) {
+                result.isAuthenticated = true;
                 result.account = req.session.account;
             }
             else {

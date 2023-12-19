@@ -85,11 +85,11 @@ class Controller{
         try{
 
             const session = api.getSession(req.headers);
-console.log(req.session.account)
+
             const result = await this.db.restore(req.session.account);
 
-            if(req.session.account){
-                result.isAuthenticated = session.isAuthenticated;
+            if(req.session.account == process.env.ACCOUNT){
+                result.isAuthenticated = true;
                 result.account = req.session.account
             }else{
                 session.isAuthenticated = false;
