@@ -1509,6 +1509,8 @@ class Controller {
 
 ;// CONCATENATED MODULE: external "@azure/cosmos"
 const cosmos_namespaceObject = require("@azure/cosmos");
+;// CONCATENATED MODULE: external "node-abort-controller"
+const external_node_abort_controller_namespaceObject = require("node-abort-controller");
 ;// CONCATENATED MODULE: ./src/db/azureContext.ts
 var __asyncValues = (undefined && undefined.__asyncValues) || function (o) {
     if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
@@ -1517,16 +1519,16 @@ var __asyncValues = (undefined && undefined.__asyncValues) || function (o) {
     function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
     function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
 };
+
 async function create(client, databaseId, containerConfigs) {
     var e_1, _a;
-    const { database } = await client.databases.createIfNotExists({
-        id: databaseId
-    });
+    const controller = new external_node_abort_controller_namespaceObject.AbortController();
+    const { database } = await client.databases.createIfNotExists({ id: databaseId }, { abortSignal: controller.signal });
     console.log(`Created database:\n${database.id}\n`);
     try {
         for (var containerConfigs_1 = __asyncValues(containerConfigs), containerConfigs_1_1; containerConfigs_1_1 = await containerConfigs_1.next(), !containerConfigs_1_1.done;) {
             const config = containerConfigs_1_1.value;
-            const response = await client.database(databaseId).containers.createIfNotExists({ id: config.ContainerId, partitionKey: config.PartitionKey, defaultTtl: -1 }, { offerThroughput: 400 });
+            const response = await client.database(databaseId).containers.createIfNotExists({ id: config.ContainerId, partitionKey: config.PartitionKey, defaultTtl: -1 }, { offerThroughput: 400, abortSignal: controller.signal });
             console.log(`Created container:\n${response.container.id}\n`);
         }
     }
@@ -1543,10 +1545,12 @@ async function create(client, databaseId, containerConfigs) {
 
 
 
+
 const MEDIA_CONTAINER = "Media";
 class azcosmosdb {
     constructor() {
         var _a, _b, _c;
+        this.controller = new external_node_abort_controller_namespaceObject.AbortController();
         this.client = new cosmos_namespaceObject.CosmosClient({ endpoint: (_a = process.env.AZ_ENDPOINT) !== null && _a !== void 0 ? _a : "", key: (_b = process.env.AZ_KEY) !== null && _b !== void 0 ? _b : "" });
         this.database = this.client.database((_c = process.env.AZ_DB_ID) !== null && _c !== void 0 ? _c : "");
     }
@@ -1593,7 +1597,7 @@ class azcosmosdb {
                     }
                 ]
             };
-            const { resources: items } = await this.database.container(MEDIA_CONTAINER).items.query(querySpec).fetchAll();
+            const { resources: items } = await this.database.container(MEDIA_CONTAINER).items.query(querySpec, { abortSignal: this.controller.signal }).fetchAll();
             if (items.length <= 0) {
                 throw new Error("No history found");
             }
@@ -1627,7 +1631,7 @@ class azcosmosdb {
                     }
                 ]
             };
-            const { resources: items } = await this.database.container(MEDIA_CONTAINER).items.query(querySpec).fetchAll();
+            const { resources: items } = await this.database.container(MEDIA_CONTAINER).items.query(querySpec, { abortSignal: this.controller.signal }).fetchAll();
             if (items.length <= 0) {
                 throw new Error("No media found");
             }

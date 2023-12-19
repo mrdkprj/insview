@@ -1,6 +1,7 @@
 import {emptyResponse} from "../entity";
 import {CosmosClient, Database, PartitionKeyKind} from "@azure/cosmos";
 import {create, IContainerConfig} from "./azureContext"
+import { AbortController } from "node-abort-controller";
 
 const MEDIA_CONTAINER = "Media"
 
@@ -8,6 +9,7 @@ class azcosmosdb implements IDatabase{
 
     database:Database;
     client:CosmosClient;
+    controller = new AbortController()
 
     constructor(){
 
@@ -70,7 +72,7 @@ class azcosmosdb implements IDatabase{
                 ]
             };
 
-            const { resources: items } = await this.database.container(MEDIA_CONTAINER).items.query(querySpec).fetchAll();
+            const { resources: items } = await this.database.container(MEDIA_CONTAINER).items.query(querySpec, {abortSignal: this.controller.signal}).fetchAll();
 
             if(items.length <= 0){
                 throw new Error("No history found")
@@ -113,7 +115,7 @@ class azcosmosdb implements IDatabase{
                 ]
             };
 
-            const { resources: items } = await this.database.container(MEDIA_CONTAINER).items.query(querySpec).fetchAll();
+            const { resources: items } = await this.database.container(MEDIA_CONTAINER).items.query(querySpec, {abortSignal: this.controller.signal}).fetchAll();
 
             if(items.length <= 0){
                 throw new Error("No media found")

@@ -1,4 +1,5 @@
 import {CosmosClient, PartitionKeyKind} from "@azure/cosmos";
+import { AbortController } from "node-abort-controller";
 
 export interface IPartitionKey{
     kind: PartitionKeyKind;
@@ -12,9 +13,12 @@ export interface IContainerConfig {
 
 export async function create(client:CosmosClient, databaseId:string, containerConfigs:IContainerConfig[]) {
 
-    const { database } = await client.databases.createIfNotExists({
-        id: databaseId
-    });
+    const controller = new AbortController()
+
+    const { database } = await client.databases.createIfNotExists(
+        { id: databaseId },
+        { abortSignal: controller.signal}
+    );
 
     console.log(`Created database:\n${database.id}\n`);
 
@@ -22,7 +26,7 @@ export async function create(client:CosmosClient, databaseId:string, containerCo
 
         const response = await client.database(databaseId).containers.createIfNotExists(
             { id: config.ContainerId, partitionKey: config.PartitionKey, defaultTtl: -1 },
-            { offerThroughput: 400 }
+            { offerThroughput: 400, abortSignal: controller.signal }
         );
 
         console.log(`Created container:\n${response.container.id}\n`);
