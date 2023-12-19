@@ -28,7 +28,7 @@ const requestFollowings = async (req:IgRequest) : Promise<IgResponse<IFollowing>
         const headers = createHeaders(baseUrl, currentSession);
         await jar.storeRequestCookie(req.headers.cookie)
         headers.Cookie = await jar.getCookieStrings();
-console.log(headers)
+
         const options :AxiosRequestConfig = {
             url,
             method: "GET",
@@ -190,48 +190,4 @@ const unfollow = async (req:IgRequest):Promise<IgResponse<any>> => {
     }
 }
 
-const tryUpdate = async (req:IgRequest):Promise<IgResponse<any>> => {
-
-    const session = getSession(req.headers);
-
-    const jar = new CookieStore(process.env.API_URL);
-    const headers = createHeaders(baseUrl, session);
-
-    const x = 10;
-    if(x>0){
-        const c = await jar.storeCookie(process.env.MOCK.split("@"))
-        return {
-            data:{},
-            session,
-            cookies:c
-        }
-    }
-    try{
-
-        headers.Cookie = await jar.getCookieStrings();
-
-        const options :AxiosRequestConfig = {
-            url: "https://www.instagram.com/api/v1/public/landing_info/",
-            method: "GET",
-            headers
-        }
-
-        const response = await axios.request(options);
-
-        await jar.storeCookie(response.headers["set-cookie"])
-        await jar.storeXHeaderCookie(session.xHeaders)
-        const cookies = await jar.getCookies();
-
-        return {
-            data:{},
-            session,
-            cookies
-        }
-
-    }catch(ex:any){
-        const error = logError(ex);
-        throw new RequestError(error.message, error.requireLogin)
-    }
-}
-
-export {requestFollowings, follow, unfollow, tryUpdate}
+export {requestFollowings, follow, unfollow}

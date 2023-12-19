@@ -83,7 +83,7 @@ class Controller{
     async tryRestore(req:Request, res:Response){
 
         try{
-console.log(req.headers.cookie)
+
             const session = api.getSession(req.headers);
 
             const result = await this.db.restore(req.session.account);
@@ -91,13 +91,7 @@ console.log(req.headers.cookie)
             result.isAuthenticated = session.isAuthenticated;
             result.account = req.session.account
 
-            let cookies:Cookie[] = [];
-            if(session.isAuthenticated){
-                // const x = await api.tryUpdate({data:{},headers:req.headers})
-                // cookies = x.cookies
-            }
-
-            await this.sendResponse(req, res, {data:result, session, cookies});
+            await this.sendResponse(req, res, {data:result, session, cookies:[]});
 
         }catch(ex:any){
 

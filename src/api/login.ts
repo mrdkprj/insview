@@ -2,7 +2,7 @@ import axios, { AxiosRequestConfig, AxiosRequestHeaders } from "axios";
 import { baseUrl, createHeaders, getAppId, getClientVersion, getSession, CookieStore, updateSession, logError, extractCsrfToken } from "./util";
 import { AuthError, RequestError } from "../entity";
 
-const useRemote = process.env.LOGIN_POINT === "Remote";
+const useRemote = process.env.LOGIN_POINT === "Local";
 
 const login = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> => {
 
@@ -22,22 +22,6 @@ const remoteLogin = async (req:IgRequest) : Promise<IgResponse<ILoginResponse>> 
     const headers = createHeaders(baseUrl, session);
     let cookies = [];
     const jar = new CookieStore(process.env.API_URL);
-
-
-    // const t = process.env.MOCK.split("@")
-    // cookies = await jar.storeCookie(t)
-    // session = updateSession(session, cookies);
-    // const data = {account, success:session.isAuthenticated, challenge:false, endpoint:""};
-
-    // const x= 10;
-    // if(x >0){
-    //     return {
-    //         data,
-    //         session,
-    //         cookies
-    //     }
-    // }
-
 
     try{
 
@@ -204,8 +188,6 @@ const requestChallenge = async (account:string, checkpoint:string, headers:Axios
         options.headers = headers;
 
         let response = await axios.request(options);
-console.log(response.headers)
-console.log(response.status)
 
         let cookies = await jar.storeCookie(response.headers["set-cookie"])
         session = updateSession(session, cookies)
@@ -241,7 +223,12 @@ console.log(response.status)
             }
         }
 
-        throw new Error("Challange response not found")
+        console.log("Challange response not found")
+        return {
+            data:{account:account, success:true, challenge: false, endpoint:url},
+            session,
+            cookies
+        }
 
     }catch(ex:any){
 
