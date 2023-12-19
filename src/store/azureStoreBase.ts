@@ -1,4 +1,4 @@
-import {CosmosClient,Database} from "@azure/cosmos";
+import {CosmosClient,Database, PartitionKeyKind} from "@azure/cosmos";
 import {create, IContainerConfig} from "../db/azureContext"
 import session from "express-session"
 
@@ -27,7 +27,7 @@ export default class AzureStoreBase{
 
         const containerConfig:IContainerConfig = {
             ContainerId: CONTAINER_NAME,
-            PartitionKey: { kind: "Hash", paths: ["/id"] }
+            PartitionKey: { kind: PartitionKeyKind.Hash, paths: ["/id"] }
         }
 
         await create(this.client, process.env.AZ_DB_ID ?? "", [containerConfig]);

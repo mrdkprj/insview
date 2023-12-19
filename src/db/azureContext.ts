@@ -1,7 +1,7 @@
-import {CosmosClient} from "@azure/cosmos";
+import {CosmosClient, PartitionKeyKind} from "@azure/cosmos";
 
 export interface IPartitionKey{
-    kind: string;
+    kind: PartitionKeyKind;
     paths: string[];
 }
 

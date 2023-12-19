@@ -1,5 +1,5 @@
 import {emptyResponse} from "../entity";
-import {CosmosClient, Database} from "@azure/cosmos";
+import {CosmosClient, Database, PartitionKeyKind} from "@azure/cosmos";
 import {create, IContainerConfig} from "./azureContext"
 
 const MEDIA_CONTAINER = "Media"
@@ -21,7 +21,7 @@ class azcosmosdb implements IDatabase{
         const containerConfigs:IContainerConfig[] = [
             {
                 ContainerId: MEDIA_CONTAINER,
-                PartitionKey: { kind: "Hash", paths: ["/username"] }
+                PartitionKey: { kind: PartitionKeyKind.Hash, paths: ["/username"] }
             }
         ]
 

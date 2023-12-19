@@ -1555,7 +1555,7 @@ class azcosmosdb {
         const containerConfigs = [
             {
                 ContainerId: MEDIA_CONTAINER,
-                PartitionKey: { kind: "Hash", paths: ["/username"] }
+                PartitionKey: { kind: cosmos_namespaceObject.PartitionKeyKind.Hash, paths: ["/username"] }
             }
         ];
         await create(this.client, (_a = process.env.AZ_DB_ID) !== null && _a !== void 0 ? _a : "", containerConfigs);
@@ -1753,7 +1753,7 @@ class AzureStoreBase {
             return;
         const containerConfig = {
             ContainerId: CONTAINER_NAME,
-            PartitionKey: { kind: "Hash", paths: ["/id"] }
+            PartitionKey: { kind: cosmos_namespaceObject.PartitionKeyKind.Hash, paths: ["/id"] }
         };
         await create(this.client, (_a = process.env.AZ_DB_ID) !== null && _a !== void 0 ? _a : "", [containerConfig]);
         this.isReady = true;
