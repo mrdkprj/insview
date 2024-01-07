@@ -111,6 +111,7 @@ class Controller{
         }
 
         try{
+            req.session.cookie.maxAge = 31536000;
             return await this.db.restore(req.session.account);
         }catch(ex:any){
             return emptyResponse;
@@ -123,8 +124,7 @@ class Controller{
         req.session.account = account
 
         if(session.expires){
-            const maxAge = session.expires.getTime() - new Date().getTime();
-            req.session.cookie.maxAge = maxAge
+            req.session.cookie.maxAge = 31536000
         }
     }
 
@@ -143,7 +143,6 @@ class Controller{
             const result = await api.login({data:{account, password}, headers:req.headers})
 
             if(result.data.success){
-                console.log("success")
                 this.saveSession(req, account, result.session);
             }
 

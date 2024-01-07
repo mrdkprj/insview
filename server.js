@@ -1303,6 +1303,7 @@ class Controller {
             return emptyResponse;
         }
         try {
+            req.session.cookie.maxAge = 31536000;
             return await this.db.restore(req.session.account);
         }
         catch (ex) {
@@ -1312,8 +1313,7 @@ class Controller {
     async saveSession(req, account, session) {
         req.session.account = account;
         if (session.expires) {
-            const maxAge = session.expires.getTime() - new Date().getTime();
-            req.session.cookie.maxAge = maxAge;
+            req.session.cookie.maxAge = 31536000;
         }
     }
     async tryLogin(req, res, account, password) {
@@ -1326,7 +1326,6 @@ class Controller {
         try {
             const result = await login({ data: { account, password }, headers: req.headers });
             if (result.data.success) {
-                console.log("success");
                 this.saveSession(req, account, result.session);
             }
             const media = await this.restoreBySession(req);
