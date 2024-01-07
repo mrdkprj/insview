@@ -1326,6 +1326,7 @@ class Controller {
         try {
             const result = await login({ data: { account, password }, headers: req.headers });
             if (result.data.success) {
+                console.log("success");
                 this.saveSession(req, account, result.session);
             }
             const media = await this.restoreBySession(req);
